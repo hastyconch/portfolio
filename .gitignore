@@ -1,0 +1,23 @@
+# deps / build
+node_modules/
+dist/
+.astro/
+.wrangler/
+.lighthouseci/
+test-results/
+playwright-report/
+
+# never published (constitution art. 8)
+/private
+
+# local env / secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# factory run artifacts (screenshots are large; logs are committed)
+factory/out/
+
+.DS_Store
+.claude/settings.local.json

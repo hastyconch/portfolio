@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./.dev.vars)"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Documents/Claude/agent-harness/hooks/claude_code_shell_guard.py\"; [ -f \"$f\" ] || exit 0; exec /usr/bin/python3 \"$f\""
+          },
+          {
+            "type": "command",
+            "command": "f=\"$(git rev-parse --show-toplevel 2>/dev/null)/factory/hooks/portfolio_guard.py\"; [ -f \"$f\" ] || exit 0; exec /usr/bin/python3 \"$f\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$(git rev-parse --show-toplevel 2>/dev/null)/factory/stations/anonymize.mjs\"; [ -f \"$f\" ] || exit 0; exec node \"$f\" --hook"
+          }
+        ]
+      }
+    ]
+  }
+}
