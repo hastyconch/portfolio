@@ -1,13 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Static-only Worker: Cloudflare serves ./dist directly, no Worker script.
-  "name": "portfolio",
+  // Cloudflare Pages project (Git-connected): `main` → https://nakuliyer.pages.dev,
+  // every other branch → a preview URL. Static only: no Functions, no bindings.
+  "name": "nakuliyer",
+  "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-11-01",
-  "assets": {
-    "directory": "./dist",
-    "not_found_handling": "404-page",
-  },
-  "observability": { "enabled": true },
-  // Branch previews via Workers Builds (`npx wrangler preview`); settings inherit from the top level.
-  "previews": {},
 }

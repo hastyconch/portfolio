@@ -1,7 +1,7 @@
 # Portfolio
 
 Personal portfolio: product leadership, AI-enabled building, personal projects and music.
-Astro + React islands, served as static assets by Cloudflare Workers.
+Astro + React islands, a static site on Cloudflare Pages: <https://nakuliyer.pages.dev>.
 
 This repo is built by a **software factory**: small work orders flow through scripted stations
 and automated gates, and the owner signs off at milestones.
@@ -45,5 +45,5 @@ screenshots, and mobile Lighthouse budgets (Perf ≥ 95, A11y 100, LCP < 2 s, CL
 - `private/banned-terms.txt` (one term per line, gitignored) holds the client names the
   anonymizer blocks on every write. CI can also check them if a `BANNED_TERMS` repo secret is
   added (optional; without it CI checks image metadata only). Never commit the list.
-- Deploys: Cloudflare Workers Builds is connected to this repo; `main` deploys production and
+- Deploys: the Cloudflare Pages project `nakuliyer` is connected to this repo; `main` deploys production and
   every branch gets a preview URL. Agents push, merge or deploy only after the owner confirms.
