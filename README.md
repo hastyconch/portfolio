@@ -42,7 +42,8 @@ screenshots, and mobile Lighthouse budgets (Perf ≥ 95, A11y 100, LCP < 2 s, CL
 
 ## Setup notes
 
-- `private/banned-terms.txt` (one term per line) and the `BANNED_TERMS` repo secret hold the
-  client names the anonymizer blocks. Never commit them.
+- `private/banned-terms.txt` (one term per line, gitignored) holds the client names the
+  anonymizer blocks on every write. CI can also check them if a `BANNED_TERMS` repo secret is
+  added (optional; without it CI checks image metadata only). Never commit the list.
 - Deploys: Cloudflare Workers Builds is connected to this repo; `main` deploys production and
   every branch gets a preview URL. Agents never deploy.
