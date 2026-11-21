@@ -1,13 +1,18 @@
 ---
+// Neutral document shell shared by every page and direction: metadata, skip link, focus ring,
+// reduced motion. Directions bring their own tokens/stylesheet via the `head` slot and style
+// `body` themselves.
 interface Props {
   title: string;
   description?: string;
   noindex?: boolean;
+  bodyClass?: string;
 }
 const {
   title,
-  description = 'Portfolio — product, AI and the things I build.',
+  description = 'Portfolio — product leadership, AI-enabled building, games and music.',
   noindex = false,
+  bodyClass,
 } = Astro.props;
 ---
 
@@ -21,23 +26,33 @@ const {
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
+    <slot name="head" />
   </head>
-  <body>
-    <a class="skip" href="#main">
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main">
       Skip to content
     </a>
-    <main id="main">
+    <slot name="header" />
+    <main id="main" tabindex="-1">
       <slot />
     </main>
+    <slot name="footer" />
   </body>
 </html>
 
 <style is:global>
-  :root {
-    --bg: #fbfaf7;
-    --fg: #17161a;
-    --muted: #55525c;
-    --accent: #3b3bd1;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
     font-family:
       system-ui,
       -apple-system,
@@ -45,42 +60,42 @@ const {
       Roboto,
       sans-serif;
     line-height: 1.6;
-    color: var(--fg);
-    background: var(--bg);
+    color: CanvasText;
+    background: Canvas;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #121116;
-      --fg: #f1eff5;
-      --muted: #b4b0bd;
-      --accent: #a5a5ff;
-    }
+  img,
+  svg,
+  video {
+    max-width: 100%;
+    height: auto;
   }
-  body {
-    margin: 0;
-    background: var(--bg);
-  }
-  main {
-    max-width: 68ch;
-    margin: 0 auto;
-    padding: 4rem 1rem;
-  }
-  a {
-    color: var(--accent);
+  main:focus {
+    outline: none;
   }
   :focus-visible {
-    outline: 3px solid var(--accent);
+    outline: 3px solid currentColor;
     outline-offset: 3px;
   }
-  .skip {
+  .skip-link {
     position: absolute;
-    left: -9999px;
-  }
-  .skip:focus {
     left: 1rem;
-    top: 1rem;
-    background: var(--bg);
+    top: -100px;
+    z-index: 1000;
     padding: 0.5rem 1rem;
+    background: Canvas;
+    color: CanvasText;
+    outline: 3px solid currentColor;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   @media (prefers-reduced-motion: reduce) {
     *,

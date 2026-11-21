@@ -1,13 +1,30 @@
 ---
 import Base from '../layouts/Base.astro';
+import '@fontsource-variable/inter';
 ---
 
-<Base title="Portfolio — under construction">
-  <h1>Portfolio</h1>
-  <p>
-    Product leader, AI-enabled builder, songwriter. This site is being built in the open by a
-    software factory: every change passes automated accessibility, performance and privacy gates
-    before it ships.
-  </p>
-  <p>Four design directions are coming next.</p>
+<Base title="Nakul Iyer — portfolio in progress">
+  <div class="holding">
+    <h1>Portfolio, in progress</h1>
+    <p>
+      Product leader, AI-enabled builder, songwriter. This site is being built in the open by a
+      software factory: every change passes automated accessibility, performance and privacy gates
+      before it ships.
+    </p>
+    <p>Four design directions are on the drawing board now.</p>
+  </div>
 </Base>
+
+<style>
+  .holding {
+    max-width: 62ch;
+    margin: 0 auto;
+    padding: 18vh 16px 4rem;
+    font-family: 'Inter Variable', system-ui, sans-serif;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+</style>

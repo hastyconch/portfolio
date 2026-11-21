@@ -3,8 +3,18 @@ import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Page not found" noindex>
-  <h1>Page not found</h1>
-  <p>
-    <a href="/">Back to the home page</a>
-  </p>
+  <div class="nf">
+    <h1>Page not found</h1>
+    <p>
+      <a href="/">Back to the home page</a>
+    </p>
+  </div>
 </Base>
+
+<style>
+  .nf {
+    max-width: 62ch;
+    margin: 0 auto;
+    padding: 18vh 16px;
+  }
+</style>

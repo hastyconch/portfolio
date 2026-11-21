@@ -1,0 +1,195 @@
+/* Invented "Skyward Rewards" brand — deliberately not any real airline's palette. */
+.sky-app {
+  --sky-ink: #1d1530;
+  --sky-plum: #3d2c5e;
+  --sky-coral: #c2410c;
+  --sky-coral-soft: #ffedd5;
+  --sky-muted: #5b5470;
+  --sky-bg: #f6f3fb;
+  --sky-card: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 560px;
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--sky-ink);
+  background: var(--sky-bg);
+  text-align: left;
+}
+.sky-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  color: #fff;
+  background: var(--sky-plum);
+}
+.sky-logo {
+  font-size: 18px;
+}
+.sky-brand {
+  flex: 1;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.sky-tier-chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a2a00;
+  background: #fcd34d;
+}
+.sky-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sky-hello {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.sky-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--sky-card);
+  box-shadow: 0 1px 2px rgb(29 21 48 / 0.08);
+}
+.sky-balance {
+  display: grid;
+  gap: 2px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--sky-plum), #5b3f8c);
+}
+.sky-balance .sky-sub,
+.sky-balance .sky-label {
+  color: #e9e2f7;
+}
+.sky-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sky-muted);
+}
+.sky-points {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.sky-sub {
+  font-size: 13px;
+  color: var(--sky-muted);
+}
+.sky-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.sky-bar {
+  height: 10px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #e7e1f1;
+  overflow: hidden;
+}
+.sky-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--sky-coral);
+}
+.sky-cta,
+.sky-book {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: var(--sky-coral);
+  cursor: pointer;
+}
+.sky-book {
+  min-height: 36px;
+  min-width: 72px;
+  padding: 0 12px;
+}
+.sky-book:disabled {
+  color: var(--sky-muted);
+  background: #ece8f3;
+  cursor: not-allowed;
+}
+.sky-cta:focus-visible,
+.sky-book:focus-visible,
+.sky-tabs button:focus-visible {
+  outline: 3px solid var(--sky-plum);
+  outline-offset: 2px;
+}
+.sky-tiers,
+.sky-flights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.sky-tiers ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--sky-muted);
+}
+.sky-tiers .is-current {
+  outline: 2px solid var(--sky-coral);
+}
+.sky-flight {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
+}
+.sky-route {
+  display: block;
+  font-size: 17px;
+}
+.sky-price {
+  display: grid;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sky-flight > :last-child {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+.sky-booked {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: #14532d;
+  background: #dcfce7;
+}
+.sky-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid #e7e1f1;
+  background: var(--sky-card);
+}
+.sky-tabs button {
+  min-height: 52px;
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--sky-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.sky-tabs button[aria-selected='true'] {
+  color: var(--sky-plum);
+  box-shadow: inset 0 3px 0 var(--sky-coral);
+}

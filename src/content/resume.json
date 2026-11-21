@@ -1,0 +1,94 @@
+[
+  {
+    "id": "resume",
+    "summary": "Product leader at Deloitte Digital with seven years of large-scale digital delivery across loyalty, retail data, consent and healthcare, now focused on AI-enabled product development and AI SDLC transformation.",
+    "experience": [
+      {
+        "org": "Deloitte Digital",
+        "title": "Product — large-scale digital delivery",
+        "start": "Jan 2019",
+        "end": "Present",
+        "bullets": [
+          "Delivered loyalty platforms for a national airline and a national grocer, from discovery through launch.",
+          "Led product on a grocer data transformation and on consent strategy and capture mechanisms aligned to Canadian privacy and anti-spam law.",
+          "Product lead on a healthcare workforce-management transformation used by schedulers across a hospital network.",
+          "Technical program manager for internal real-estate software, using AI to turn meetings into executive updates and to drive follow-ups — delivering every initiative on time.",
+          "Leads AI SDLC transformation work: selecting AI tooling and processes and helping clients adopt them.",
+          "Supports the sales cycle: identifies opportunities, shapes proposals and maintains client relationships that secure follow-on work.",
+          "Co-authored the practice's product delivery and product strategy materials used to onboard other practitioners."
+        ]
+      },
+      {
+        "org": "Deloitte — D-space ideation lab",
+        "title": "Intern, emerging technology",
+        "start": "2018",
+        "end": "2018",
+        "bullets": [
+          "Built a reusable use-case library for IoT, blockchain and RPA from the firm's engagement repository, with teaching materials so practitioners could apply proven patterns on future work."
+        ]
+      },
+      {
+        "org": "Video streaming & conferencing startup",
+        "title": "Intern",
+        "start": "Placeholder",
+        "end": "Placeholder",
+        "bullets": ["Placeholder — details to come from the owner."]
+      },
+      {
+        "org": "Digital agency",
+        "title": "Intern",
+        "start": "Placeholder",
+        "end": "Placeholder",
+        "bullets": [
+          "Learned the fundamentals of coding and digital delivery; found the path into technology."
+        ]
+      }
+    ],
+    "capabilities": [
+      {
+        "group": "Product",
+        "items": [
+          "Discovery",
+          "Prioritization",
+          "Business & product requirements",
+          "User stories",
+          "Specification by example",
+          "Agile delivery"
+        ]
+      },
+      {
+        "group": "AI",
+        "items": [
+          "AI SDLC transformation",
+          "Prototyping with AI",
+          "LLM product design",
+          "Agentic workflows"
+        ]
+      },
+      {
+        "group": "Build",
+        "items": [
+          "TypeScript",
+          "React / Next.js / Astro",
+          "SwiftUI",
+          "Supabase / Postgres",
+          "Cloudflare & Vercel",
+          "Phaser"
+        ]
+      },
+      {
+        "group": "Delivery",
+        "items": [
+          "Program management",
+          "Stakeholder management",
+          "Sales support",
+          "Practice development"
+        ]
+      }
+    ],
+    "education": [
+      { "school": "Placeholder", "detail": "Degree and years to come from the owner." }
+    ],
+    "status": "placeholder"
+  }
+]
