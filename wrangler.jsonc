@@ -8,4 +8,6 @@
     "not_found_handling": "404-page",
   },
   "observability": { "enabled": true },
+  // Branch previews via Workers Builds (`npx wrangler preview`); settings inherit from the top level.
+  "previews": {},
 }

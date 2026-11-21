@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Claude Code PreToolUse hook for the portfolio factory (constitution art. 9).
 
-Blocks agents from shipping: production deploys, pushes to main, force pushes, history
-rewrites, and PR merges. The owner runs those commands themselves.
+ASK   — shipping actions need the owner's confirmation each time: pushes to main, PR merges,
+        production deploys. The hook returns permissionDecision "ask", so Claude Code shows the
+        owner an approval prompt even in permissive modes. One approval covers one command.
+BLOCK — never allowed: force/mirror/delete pushes, history rewrites, branch-protection or
+        ruleset changes, committing private/.
 
-Exit 2 + stderr = block and tell Claude why. Exit 0 = no opinion (normal permission flow).
-On its own errors it exits 0 so a bug here can't wedge a session; CI branch protection is the
-backstop.
+Exit 2 + stderr = block. Exit 0 + JSON on stdout = ask. Exit 0 and no output = no opinion.
+On its own errors it exits 0 so a bug here can't wedge a session.
 """
 
 import json
@@ -14,19 +16,24 @@ import re
 import subprocess
 import sys
 
-RULES = [
-    (r"\bwrangler\b[^|;&]*\b(deploy|versions\s+deploy|rollback)\b(?![^|;&]*--dry-run)",
-     "production deploys happen by merging to main (Workers Builds), never from an agent"),
-    (r"\bgit\s+push\b[^|;&]*\s(--force|-f\b|--force-with-lease|--mirror|--delete|-d\b)",
+SEG = r"[^|;&]*"  # stay within one shell command segment
+
+BLOCK = [
+    (rf"\bgit\s+push\b{SEG}\s(--force|-f\b|--force-with-lease|--mirror|--delete|-d\b)",
      "force/mirror/delete pushes are not allowed"),
-    (r"\bgit\s+push\b[^|;&]*\b(main|master)\b",
-     "agents never push to main; open a PR from a wo/* branch"),
-    (r"\bgh\s+pr\s+merge\b", "agents never merge PRs; the owner merges"),
-    (r"\bgh\s+api\b[^|;&]*\b(merge|branches/[^ ]*/protection)\b",
-     "merges and branch-protection changes are owner-only"),
     (r"\bgit\s+(filter-branch|filter-repo|rebase\s+-i|commit\s+--amend)\b",
      "history rewrites are not allowed"),
-    (r"\bgit\s+add\b[^|;&]*\bprivate\b", "private/ is never committed (art. 8)"),
+    (rf"\bgh\s+api\b{SEG}(branches/[^ ]*/protection|/rulesets)",
+     "branch protection and rulesets are owner-only"),
+    (rf"\bgit\s+add\b{SEG}\bprivate\b", "private/ is never committed (art. 8)"),
+]
+
+ASK = [
+    (rf"\bwrangler\b{SEG}\b(deploy|versions\s+deploy|rollback)\b(?!{SEG}--dry-run)",
+     "production deploy"),
+    (rf"\bgit\s+push\b{SEG}\b(main|master)\b", "push to main"),
+    (r"\bgh\s+pr\s+merge\b", "PR merge into main (deploys production)"),
+    (rf"\bgh\s+api\b{SEG}/merges?\b", "merge via the GitHub API"),
 ]
 
 
@@ -38,6 +45,15 @@ def current_branch() -> str:
         return ""
 
 
+def ask(what: str) -> int:
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "ask",
+        "permissionDecisionReason": f"Constitution art. 9: {what} needs the owner's confirmation.",
+    }}))
+    return 0
+
+
 def main() -> int:
     try:
         event = json.load(sys.stdin)
@@ -47,20 +63,18 @@ def main() -> int:
         return 0
     cmd = (event.get("tool_input") or {}).get("command") or ""
 
-    for pattern, why in RULES:
+    for pattern, why in BLOCK:
         if re.search(pattern, cmd):
-            print(f"portfolio_guard: blocked — {why}. Ask the owner to run it.", file=sys.stderr)
+            print(f"portfolio_guard: blocked — {why}.", file=sys.stderr)
             return 2
+
+    for pattern, what in ASK:
+        if re.search(pattern, cmd):
+            return ask(what)
 
     # A bare `git push` while on main is also a push to main.
     if re.search(r"\bgit\s+push\b", cmd) and current_branch() in ("main", "master"):
-        print("portfolio_guard: blocked — you are on main; agents push wo/* branches only.",
-              file=sys.stderr)
-        return 2
-    if re.search(r"\bgit\s+commit\b", cmd) and current_branch() in ("main", "master"):
-        print("portfolio_guard: blocked — don't commit on main; create a wo/* branch first.",
-              file=sys.stderr)
-        return 2
+        return ask("push to main")
     return 0
 
 

@@ -12,7 +12,7 @@ each at mobile (375px) and desktop (1440px), and the owner has recorded picks in
 
 ## Article 2 — The owner decides at milestones
 
-Work orders with `gate: human` are never merged by an agent. Milestones: end of each phase,
+Work orders with `gate: human` are merged only after the owner signs off on them. Milestones: end of each phase,
 every professional-work demo, the scheduler wireframe, music content, launch.
 
 ## Article 3 — Anonymity of clients
@@ -53,10 +53,13 @@ Write authoritatively, never vaguely — but never overclaim.
 `private/` (stack study guides, banned terms, raw notes) is gitignored, never imported by
 `src/`, and never copied into `dist/`.
 
-## Article 9 — Agents don't ship
+## Article 9 — Agents ship only with the owner's confirmation
 
-Agents never push to `main`, never run a production deploy, never merge a `gate: human` PR,
-never force-push, never rewrite history. Enforced by `factory/hooks/portfolio_guard.py`.
+Agents may push to `main`, merge PRs and run a production deploy, but only after the owner
+confirms that specific action. Each one triggers an approval prompt; one approval covers one
+action, never later ones. Agents never force-push, rewrite history, change branch protection,
+or commit `private/`. Enforced by `factory/hooks/portfolio_guard.py` (ask for the former,
+block for the latter).
 
 ## Article 10 — Small, testable work orders
 
