@@ -1,7 +1,7 @@
 # Portfolio
 
 Personal portfolio: product leadership, AI-enabled building, personal projects and music.
-Astro + React islands, served as static assets by Cloudflare Workers.
+Astro + React islands, a static site on Cloudflare Pages: <https://nakuliyer.pages.dev>.
 
 This repo is built by a **software factory**: small work orders flow through scripted stations
 and automated gates, and the owner signs off at milestones.
@@ -12,17 +12,17 @@ work order ─▶ spec lint ─▶ builder agent ─▶ gates ─▶ fresh revie
 
 ## Layout
 
-| Path                      | What                                                                       |
-| ------------------------- | -------------------------------------------------------------------------- |
-| `factory/constitution.md` | Rules every agent run is bound by                                          |
-| `factory/specs/WO-*.md`   | Work orders (copy `_TEMPLATE.md`)                                          |
-| `factory/stations/`       | `run-wo.sh`, `gates.sh`, `anonymize.mjs`, `speclint.mjs`, `linkcheck.mjs`  |
-| `factory/hooks/`          | `portfolio_guard.py` — blocks agents from deploying, pushing main, merging |
-| `factory/decisions.md`    | Owner decision log                                                         |
-| `.claude/agents/`         | builder, reviewer, a11y-auditor, design-critic                             |
-| `src/`                    | the site                                                                   |
-| `tests/e2e/`              | Playwright gates: every built route at 375 and 1440, light and dark        |
-| `private/` (gitignored)   | banned-terms list, stack study guides — never published                    |
+| Path                      | What                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `factory/constitution.md` | Rules every agent run is bound by                                            |
+| `factory/specs/WO-*.md`   | Work orders (copy `_TEMPLATE.md`)                                            |
+| `factory/stations/`       | `run-wo.sh`, `gates.sh`, `anonymize.mjs`, `speclint.mjs`, `linkcheck.mjs`    |
+| `factory/hooks/`          | `portfolio_guard.py` — asks the owner before deploys, pushes to main, merges |
+| `factory/decisions.md`    | Owner decision log                                                           |
+| `.claude/agents/`         | builder, reviewer, a11y-auditor, design-critic                               |
+| `src/`                    | the site                                                                     |
+| `tests/e2e/`              | Playwright gates: every built route at 375 and 1440, light and dark          |
+| `private/` (gitignored)   | banned-terms list, stack study guides — never published                      |
 
 ## Commands
 
@@ -42,7 +42,8 @@ screenshots, and mobile Lighthouse budgets (Perf ≥ 95, A11y 100, LCP < 2 s, CL
 
 ## Setup notes
 
-- `private/banned-terms.txt` (one term per line) and the `BANNED_TERMS` repo secret hold the
-  client names the anonymizer blocks. Never commit them.
-- Deploys: Cloudflare Workers Builds is connected to this repo; `main` deploys production and
-  every branch gets a preview URL. Agents never deploy.
+- `private/banned-terms.txt` (one term per line, gitignored) holds the client names the
+  anonymizer blocks on every write. CI can also check them if a `BANNED_TERMS` repo secret is
+  added (optional; without it CI checks image metadata only). Never commit the list.
+- Deploys: the Cloudflare Pages project `nakuliyer` is connected to this repo; `main` deploys production and
+  every branch gets a preview URL. Agents push, merge or deploy only after the owner confirms.

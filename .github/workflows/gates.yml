@@ -1,0 +1,69 @@
+name: gates
+# Same gates as `npm run gates`. Required status check on main (branch protection).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Optional: a BANNED_TERMS repo secret adds client-name checks in CI. Without it, CI checks
+      # image metadata only and the local hook + private/banned-terms.txt do the name checks.
+      BANNED_TERMS: ${{ secrets.BANNED_TERMS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: spec lint
+        run: npm run -s speclint
+      - name: types
+        run: npm run -s check
+      - name: lint
+        run: npx eslint .
+      - name: format
+        run: npx prettier --check . --log-level warn
+      - name: build
+        run: npx astro build
+      - name: anonymize (src + dist)
+        run: npm run -s anonymize
+      - name: internal links
+        run: npm run -s links
+      - name: external links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --root-dir ${{ github.workspace }}/dist 'dist/**/*.html'
+          fail: true
+      - name: secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: install browsers
+        run: npx playwright install --with-deps chromium
+      - name: e2e + axe + screenshots (375 & 1440)
+        run: npx playwright test
+      - name: lighthouse (mobile budgets)
+        run: npx lhci autorun --config=lighthouserc.cjs
+      - name: upload screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-out
+          path: |
+            factory/out/
+            playwright-report/
+          retention-days: 14

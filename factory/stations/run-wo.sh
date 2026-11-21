@@ -5,7 +5,7 @@
 #   factory/stations/run-wo.sh WO-012            full run, opens a PR
 #   factory/stations/run-wo.sh WO-012 --no-pr    stop after review
 #
-# Agents never merge or deploy (constitution art. 9). Human-gated WOs get the `owner-gate` label.
+# Merges and deploys need the owner's confirmation (constitution art. 9). Human-gated WOs get the `owner-gate` label.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WO=${1:?usage: run-wo.sh WO-### [--no-pr]}
@@ -63,4 +63,4 @@ gh pr create --base main --head "$BRANCH" --title "$WO: $TITLE" $LABEL \
 
 Gates: $GATES · Review: $VERDICT · Gate type: **$GATE**
 
-$( [[ $GATE == human ]] && echo '⚠️ Owner sign-off required — agents must not merge this PR.')"
+$( [[ $GATE == human ]] && echo '⚠️ Owner sign-off required — merge only after the owner signs off.')"
