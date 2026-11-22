@@ -7,6 +7,7 @@ import '@fontsource-variable/dm-sans';
 // Preload the main faces so text doesn't shift when web fonts swap in (CLS budget).
 import bricolageFont from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wdth-normal.woff2?url';
 import dmSansFont from '@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url';
+import './tokens.css';
 import './liner.css';
 import Nav from './Nav.astro';
 import Footer from './Footer.astro';
@@ -18,11 +19,9 @@ interface Props {
   description?: string;
   /** true on the one-page home, so nav links are plain fragments */
   home?: boolean;
-  /** initial "now playing" label in the header */
-  nowPlaying: string;
   noindex?: boolean;
 }
-const { title, description, home = false, nowPlaying, noindex = false } = Astro.props;
+const { title, description, home = false, noindex = false } = Astro.props;
 const { profile } = await getSiteContent();
 const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · ${profile.headline}`;
 ---
@@ -35,7 +34,7 @@ const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · ${
 >
   <link slot="head" rel="preload" href={bricolageFont} as="font" type="font/woff2" crossorigin />
   <link slot="head" rel="preload" href={dmSansFont} as="font" type="font/woff2" crossorigin />
-  <Nav slot="header" profile={profile} home={home} nowPlaying={nowPlaying} />
+  <Nav slot="header" profile={profile} home={home} />
   <slot />
   <Footer slot="footer" profile={profile} />
 </Base>

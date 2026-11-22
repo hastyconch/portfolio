@@ -2,28 +2,34 @@
 import Shell from '../system/Shell.astro';
 ---
 
-<Shell title="Page not found" nowPlaying="Skipped track" noindex>
+<Shell title="Page not found" noindex>
   <section class="nf ln-wrap">
-    <p class="ln-eyebrow">Error 404</p>
-    <h1>This track isn’t on the record.</h1>
+    <p class="label">404</p>
+    <h1>Page not found</h1>
+    <p class="nf-body">
+      There's nothing at this address. The link may be mistyped, or the page may have moved.
+    </p>
     <p>
-      <a href="/">Back to the home page</a>
+      <a class="ln-link" href="/">
+        Go to the home page
+      </a>
     </p>
   </section>
 </Shell>
 
 <style>
   .nf {
-    padding-block: clamp(5rem, 16vh, 10rem);
     display: grid;
-    gap: 1.25rem;
+    gap: var(--space-4);
+    justify-items: start;
+    padding-block: var(--space-9);
   }
   body :global(.nf h1) {
-    font-size: clamp(2.25rem, 7vw, 4.5rem);
-    font-stretch: 80%;
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
   }
-  .nf a {
-    font-weight: 700;
-    color: var(--ln-accent);
+  .nf-body {
+    max-width: 52ch;
+    color: var(--ln-ink-2);
   }
 </style>

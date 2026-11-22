@@ -1,0 +1,118 @@
+/*
+ * Scales for the Liner Notes system (constitution art. 12), from the ui-craft baseline
+ * (tokens/craft.css), tuned to this site: a 17px body, Bricolage for display, DM Sans for text.
+ * Colour lives in liner.css. Use these tokens in components; a literal needs a reason.
+ */
+
+:root {
+  /* Type: nine steps. Line-height follows size (see the leading tokens). */
+  --text-2xs: 0.75rem; /* 12  labels */
+  --text-xs: 0.8125rem; /* 13  captions, fine print */
+  --text-sm: 0.875rem; /* 14  secondary UI text */
+  --text-md: 1.0625rem; /* 17  body */
+  --text-lg: 1.25rem; /* 20  leads */
+  --text-xl: 1.5rem; /* 24  item titles */
+  --text-2xl: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem); /* 28 to 36  section titles */
+  --text-3xl: clamp(2.25rem, 1.6rem + 3vw, 3.5rem); /* 36 to 56  page titles */
+  --text-4xl: clamp(3rem, 1.8rem + 6vw, 6rem); /* 48 to 96  the one display moment */
+
+  --leading-display: 0.86; /* condensed display on the hero cover */
+  --leading-tight: 1.05;
+  --leading-snug: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  --tracking-display: -0.035em;
+  --tracking-title: -0.015em;
+  --tracking-label: 0.12em; /* small uppercase labels only */
+
+  --stretch-display: 75%; /* Bricolage's width axis: the hero cover only */
+
+  --measure: 68ch;
+
+  /* Space: a 4px grid in rem. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-section: clamp(4rem, 3rem + 5vw, 8rem);
+
+  /* Radius: inner, element, container, full (tags and chips only). */
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 12px;
+  --radius-full: 9999px;
+
+  /* Elevation: three levels, two layers each. Borders show structure; shadows only float. */
+  --shadow-color: 0 0% 0%;
+  --shadow-1: 0 1px 1px hsl(var(--shadow-color) / 0.08), 0 2px 6px hsl(var(--shadow-color) / 0.12);
+  --shadow-2:
+    0 1px 2px hsl(var(--shadow-color) / 0.12), 0 10px 24px hsl(var(--shadow-color) / 0.22);
+  --shadow-3:
+    0 2px 4px hsl(var(--shadow-color) / 0.16), 0 24px 48px hsl(var(--shadow-color) / 0.34);
+
+  /* Motion: one ease, short times, close faster than open. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.6, 0.6);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --dur-instant: 80ms;
+  --dur-quick: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 400ms;
+  --dur-reveal: 500ms;
+
+  --move-sm: 4px;
+  --move-md: 8px;
+  --move-lg: 12px;
+  --press-scale: 0.97;
+
+  /* Focus */
+  --focus-width: 3px;
+  --focus-offset: 3px;
+}
+
+/* Reduced motion: no movement or scaling; short fades only. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --move-sm: 0px;
+    --move-md: 0px;
+    --move-lg: 0px;
+    --press-scale: 1;
+    --dur-base: 150ms;
+    --dur-slow: 150ms;
+    --dur-reveal: 150ms;
+  }
+}
+
+/* The one eyebrow. */
+.label {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  line-height: var(--leading-snug);
+  text-transform: uppercase;
+}
+
+/* One section reveal, CSS only: content settles in as it scrolls into view. Browsers without
+   scroll-driven animations, and reduced motion, simply show it. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    translate: 0 var(--move-lg);
+  }
+}

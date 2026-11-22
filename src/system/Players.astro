@@ -71,25 +71,25 @@ const players = [
 <style>
   .pl {
     display: grid;
-    gap: 0.6rem;
-    margin: 0.5rem 0 0;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
     padding: 0;
     list-style: none;
   }
   .pl-player {
     display: grid;
-    gap: 0.35rem;
+    gap: var(--space-1);
     min-width: 0;
   }
   .pl-play {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: var(--space-3);
     width: 100%;
     min-height: 60px;
-    padding: 0.6rem 1rem 0.6rem 0.6rem;
-    border: 1px solid var(--ln-rule);
-    border-radius: 999px;
+    padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-3);
     background: var(--ln-bg-2);
     color: var(--ln-ink);
     font: inherit;
@@ -97,9 +97,18 @@ const players = [
   }
   button.pl-play {
     cursor: pointer;
+    transition:
+      border-color var(--dur-quick) var(--ease-out),
+      background-color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
   }
-  button.pl-play:hover {
-    border-color: var(--ln-ink);
+  button.pl-play:hover,
+  button.pl-play:focus-visible {
+    border-color: var(--ln-ink-2);
+    background: var(--ln-bg-3);
+  }
+  button.pl-play:active {
+    scale: var(--press-scale);
   }
   .pl-play.is-soon {
     border-style: dashed;
@@ -108,16 +117,16 @@ const players = [
   .pl-ico {
     position: relative;
     flex: none;
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--ln-ink);
   }
   .pl-ico::after {
     content: '';
     position: absolute;
-    left: 16px;
-    top: 13px;
+    left: 15px;
+    top: 12px;
     border-left: 13px solid var(--ln-bg);
     border-block: 8px solid transparent;
   }
@@ -140,25 +149,34 @@ const players = [
   }
   .pl-text {
     display: grid;
-    line-height: 1.25;
+    line-height: var(--leading-snug);
   }
   .pl-text strong {
     font-weight: 700;
   }
   .pl-text small {
-    font-size: 0.8125rem;
+    font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
   .pl-link {
     justify-self: start;
-    padding: 0.25rem 1rem;
-    font-size: 0.875rem;
+    padding: var(--space-1) var(--space-4);
+    font-size: var(--text-sm);
     color: var(--ln-ink-2);
+    text-underline-offset: 0.2em;
+    transition: color var(--dur-quick) var(--ease-out);
+  }
+  .pl-link:hover,
+  .pl-link:focus-visible {
+    color: var(--ln-ink);
+  }
+  .pl-link:active {
+    color: var(--ln-ink-3);
   }
   .pl-player :global(.pl-frame) {
     width: 100%;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-3);
   }
   .pl-player :global(.pl-frame-spotify) {
     height: 152px;

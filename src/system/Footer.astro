@@ -1,5 +1,5 @@
 ---
-// Footer/contact slot: the outro and the back-cover fine print.
+// Footer: contact links and the fine print.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -8,23 +8,20 @@ interface Props {
 }
 const { profile } = Astro.props;
 const external = (href: string) => /^https?:/.test(href);
-// Deterministic "barcode" from the name, purely decorative.
-const bars = [...`${profile.name}${profile.location}`].map((c) => (c.charCodeAt(0) % 4) + 1);
 ---
 
-<footer id="contact" class="ft ln-dark" data-np="Outro · Contact" aria-labelledby="contact-h">
-  <div class="ln-wrap">
-    <p class="ln-eyebrow ft-k">Outro · Contact</p>
-    <h2 id="contact-h" class="ft-title">
-      Thanks for listening.
-    </h2>
+<footer id="contact" class="ft ln-dark" aria-labelledby="contact-h">
+  <div class="ln-wrap ft-grid">
+    <div class="ft-intro">
+      <h2 id="contact-h" class="ft-title">
+        Get in touch
+      </h2>
+      {profile.status === 'placeholder' && <Placeholder label="Some links to come" />}
+    </div>
     <ul class="ft-links">
-      {profile.links.map((l, i) => (
+      {profile.links.map((l) => (
         <li>
           <a href={l.href} rel={external(l.href) ? 'noopener' : undefined}>
-            <span class="ft-n ln-num" aria-hidden="true">
-              {String(i + 1).padStart(2, '0')}
-            </span>
             <span class="ft-label">{l.label}</span>
             <span class="ft-arrow" aria-hidden="true">
               ↗
@@ -33,111 +30,103 @@ const bars = [...`${profile.name}${profile.location}`].map((c) => (c.charCodeAt(
         </li>
       ))}
     </ul>
-    {profile.status === 'placeholder' && <Placeholder label="Some links to come" />}
+  </div>
 
+  <div class="ln-wrap">
     <div class="ft-fine">
       <p>
-        <span>℗ {profile.name}</span>
+        <span>{profile.name}</span>
         <span>{profile.location}</span>
-        <span>Built in the open · WCAG 2.2 AA</span>
       </p>
-      <span class="ft-barcode" aria-hidden="true">
-        {bars.map((w) => (
-          <span style={`width:${w}px`} />
-        ))}
-      </span>
     </div>
   </div>
 </footer>
 
 <style>
   .ft {
-    padding-block: clamp(4.5rem, 10vw, 8rem) 2.5rem;
-    border-top: 1px solid var(--ln-rule);
-    background:
-      radial-gradient(60% 80% at 100% 0%, rgb(255 122 69 / 0.16), transparent 70%), var(--ln-bg);
+    padding-block: var(--space-8) var(--space-6);
+    border-top: var(--ln-hairline);
     scroll-margin-top: var(--ln-header);
   }
-  .ft-k {
-    color: var(--ln-accent);
+  .ft-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .ft-intro {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    align-content: start;
   }
   body.ln .ft-title {
-    margin-top: 0.75rem;
-    font-size: clamp(2.8rem, 10vw, 8.5rem);
-    font-weight: 800;
-    font-stretch: 75%;
-    line-height: 0.88;
-    letter-spacing: -0.035em;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
   }
   .ft-links {
-    margin: clamp(2rem, 5vw, 3.5rem) 0 1.5rem;
+    margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--ln-rule);
+    border-top: var(--ln-hairline);
   }
   .ft-links a {
-    display: grid;
-    grid-template-columns: 2.5rem 1fr auto;
+    display: flex;
     align-items: center;
-    gap: 1rem;
-    min-height: 64px;
-    padding: 0.9rem 0.25rem;
-    border-bottom: 1px solid var(--ln-rule);
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 60px;
+    padding-inline: var(--space-1);
+    border-bottom: var(--ln-hairline);
     text-decoration: none;
-  }
-  .ft-n {
-    font-size: 0.8125rem;
-    color: var(--ln-ink-3);
+    transition: background-color var(--dur-quick) var(--ease-out);
   }
   .ft-label {
     font-family: var(--ln-display);
-    font-size: clamp(1.5rem, 3.5vw, 2.4rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: var(--tracking-title);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color var(--dur-quick) var(--ease-out);
   }
   .ft-arrow {
-    font-size: 1.4rem;
     color: var(--ln-accent);
+    transition: translate var(--dur-quick) var(--ease-out);
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .ft-arrow {
-      transition: transform 0.25s ease;
-    }
-    .ft-links a:hover .ft-arrow {
-      transform: translate(4px, -4px);
-    }
+  .ft-links a:hover .ft-label,
+  .ft-links a:focus-visible .ft-label {
+    text-decoration-color: currentColor;
   }
-  .ft-links a:hover .ft-label {
-    text-decoration: underline;
-    text-decoration-thickness: 3px;
-    text-underline-offset: 6px;
+  .ft-links a:hover .ft-arrow,
+  .ft-links a:focus-visible .ft-arrow {
+    translate: var(--move-sm) calc(var(--move-sm) * -1);
+  }
+  .ft-links a:active {
+    background: var(--ln-hl);
   }
   .ft-fine {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 1.5rem;
-    margin-top: clamp(3rem, 8vw, 6rem);
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--ln-rule);
-    font-size: 0.8125rem;
+    gap: var(--space-5);
+    margin-top: var(--space-8);
+    padding-top: var(--space-4);
+    border-top: var(--ln-hairline);
+    font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
   .ft-fine p {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 1.5rem;
+    gap: var(--space-1) var(--space-5);
   }
-  .ft-barcode {
-    display: flex;
-    gap: 2px;
-    height: 34px;
-    padding: 4px 6px;
-    background: #f4ece1;
-    border-radius: 2px;
-  }
-  .ft-barcode span {
-    background: #1a1411;
+  @media (min-width: 900px) {
+    .ft-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: var(--space-8);
+    }
   }
 </style>

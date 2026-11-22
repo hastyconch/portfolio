@@ -1,8 +1,7 @@
 ---
-// Work: Side A. Organisation from direction A (owner pick): every engagement is open, with a
-// sector / company / role column beside the story. Demo frame from direction D: the live demo
-// sits inline beside its engagement (after the summary on phones) so nobody scrolls past
-// text to reach it. Styled in the Liner Notes system.
+// Work: engagements with a demo get the full layout (story, what I did, the live demo inline
+// beside it, after the summary on phones). The rest follow as a compact list, each summary in
+// a disclosure. Sector and role sit inline above each title.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -17,53 +16,38 @@ interface Props {
 }
 const { work } = Astro.props;
 const companies = [...new Set(work.map((w) => w.data.years))];
-const meta = `${work.length} engagements · ${companies.join(' / ')}`;
+const lead = `Client engagements at ${companies.join(' and ')}. The ones with a demo come first; each demo is playable, built on an invented brand and mock data.`;
 // Demos that are built. Others with a demo show the "coming soon" plate.
 const LIVE = new Set(['airline', 'grocer', 'pipeline', 'scheduler']);
 // Wide demos (desktop window, diagram) sit full-width under the summary on desktop.
 const isWide = (frame: string) => frame === 'desktop' || frame === 'diagram';
-const caption = 'Playable · invented brand, mock data';
+const caption = 'Playable. Invented brand, mock data.';
+const featured = work.filter((w) => w.data.demo !== 'none');
+const others = work.filter((w) => w.data.demo === 'none');
 ---
 
-<section
-  id="work"
-  class="ln-side work"
-  data-np="Side A · Professional work"
-  aria-labelledby="work-h"
->
+<section id="work" class="ln-sec work" aria-labelledby="work-h">
   <div class="ln-wrap">
-    <SideHead badge="A" kicker="Side A" title="Professional work" id="work-h" meta={meta} />
+    <SideHead title="Work" id="work-h" lead={lead} layout="aside" />
 
     <ol class="wk-list">
-      {work.map((w, i) => {
+      {featured.map((w) => {
         const d = w.data;
         const hid = `work-${w.id}`;
         const live = LIVE.has(d.demo);
-        const hasDemo = d.demo !== 'none';
         const wide = live && isWide(d.demoFrame);
         return (
-          <li class:list={['wk', live && 'wk-live', wide && 'wk-wide', !hasDemo && 'wk-nodemo']}>
-            <article aria-labelledby={hid}>
-              <div class="wk-meta">
-                <span class="wk-n ln-num">A{i + 1}</span>
-                <dl class="wk-dl">
-                  <div>
-                    <dt>Sector</dt>
-                    <dd>{d.sector}</dd>
-                  </div>
-                  <div>
-                    <dt>Company</dt>
-                    <dd>{d.years}</dd>
-                  </div>
-                  <div>
-                    <dt>Role</dt>
-                    <dd>{d.role}</dd>
-                  </div>
-                </dl>
-                {d.status === 'placeholder' && <Placeholder />}
-              </div>
-
+          <li class:list={['wk', live && 'wk-live', wide && 'wk-wide']}>
+            <article class="reveal" aria-labelledby={hid}>
               <div class="wk-head">
+                <p class="wk-meta">
+                  <span class="label">{d.sector}</span>
+                  <span class="wk-role">
+                    <span class="visually-hidden">Role: </span>
+                    {d.role}
+                  </span>
+                  {d.status === 'placeholder' && <Placeholder />}
+                </p>
                 <h3 id={hid} class="wk-title">
                   {d.title}
                 </h3>
@@ -71,40 +55,38 @@ const caption = 'Playable · invented brand, mock data';
                 <p class="wk-summary">{d.summary}</p>
               </div>
 
-              {hasDemo && (
-                <div class="wk-demo">
-                  {d.demo === 'airline' && (
-                    <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
-                      <AirlineDemo client:visible />
-                    </DemoFrame>
-                  )}
-                  {d.demo === 'grocer' && (
-                    <DemoFrame frame={d.demoFrame} caption={caption} tint={['#134e4a', '#f3f6f4']}>
-                      <GrocerDemo client:visible />
-                    </DemoFrame>
-                  )}
-                  {d.demo === 'pipeline' && (
-                    <DemoFrame
-                      frame={d.demoFrame}
-                      caption="Interactive · invented project, mock data"
-                    >
-                      <PipelineDemo client:visible />
-                    </DemoFrame>
-                  )}
-                  {d.demo === 'scheduler' && (
-                    <DemoFrame
-                      frame={d.demoFrame}
-                      caption="Interactive · invented unit and staff, mock data"
-                    >
-                      <SchedulerDemo client:visible />
-                    </DemoFrame>
-                  )}
-                  {!live && <DemoFrame frame={d.demoFrame} coming size="sm" />}
-                </div>
-              )}
+              <div class="wk-demo">
+                {d.demo === 'airline' && (
+                  <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
+                    <AirlineDemo client:visible />
+                  </DemoFrame>
+                )}
+                {d.demo === 'grocer' && (
+                  <DemoFrame frame={d.demoFrame} caption={caption} tint={['#134e4a', '#f3f6f4']}>
+                    <GrocerDemo client:visible />
+                  </DemoFrame>
+                )}
+                {d.demo === 'pipeline' && (
+                  <DemoFrame
+                    frame={d.demoFrame}
+                    caption="Interactive. Invented project, mock data."
+                  >
+                    <PipelineDemo client:visible />
+                  </DemoFrame>
+                )}
+                {d.demo === 'scheduler' && (
+                  <DemoFrame
+                    frame={d.demoFrame}
+                    caption="Interactive. Invented unit and staff, mock data."
+                  >
+                    <SchedulerDemo client:visible />
+                  </DemoFrame>
+                )}
+                {!live && <DemoFrame frame={d.demoFrame} coming size="sm" />}
+              </div>
 
               <div class="wk-details">
-                <h4 class="wk-h">What I did</h4>
+                <h4 class="wk-h label">What I did</h4>
                 <ul class="wk-ul">
                   {d.contributions.map((c) => (
                     <li>{c}</li>
@@ -112,7 +94,7 @@ const caption = 'Playable · invented brand, mock data';
                 </ul>
                 {d.outcomes.length > 0 && (
                   <>
-                    <h4 class="wk-h">Outcomes</h4>
+                    <h4 class="wk-h label">Outcomes</h4>
                     <ul class="wk-ul wk-outcomes">
                       {d.outcomes.map((o) => (
                         <li>{o}</li>
@@ -132,6 +114,46 @@ const caption = 'Playable · invented brand, mock data';
         );
       })}
     </ol>
+
+    {others.length > 0 && (
+      <section class="wk-more reveal" aria-labelledby="work-more-h">
+        <h3 id="work-more-h" class="wk-more-h label">
+          More client work
+        </h3>
+        <ul class="wk-more-list">
+          {others.map((w) => {
+            const d = w.data;
+            return (
+              <li class="wk-item">
+                <p class="wk-meta">
+                  <span class="label">{d.sector}</span>
+                  <span class="wk-role">
+                    <span class="visually-hidden">Role: </span>
+                    {d.role}
+                  </span>
+                  {d.status === 'placeholder' && <Placeholder />}
+                </p>
+                <h4 class="wk-item-title">{d.title}</h4>
+                <p class="wk-item-kicker">{d.kicker}</p>
+                <details class="wk-disc">
+                  <summary>
+                    Details<span class="visually-hidden">: {d.title}</span>
+                  </summary>
+                  <div class="wk-disc-body">
+                    <p>{d.summary}</p>
+                    <ul class="wk-ul">
+                      {d.contributions.map((c) => (
+                        <li>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    )}
   </div>
 </section>
 
@@ -140,119 +162,84 @@ const caption = 'Playable · invented brand, mock data';
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--ln-rule);
+    border-top: var(--ln-hairline);
   }
   .wk {
-    border-bottom: 1px solid var(--ln-rule);
+    border-bottom: var(--ln-hairline);
   }
   .wk article {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'meta' 'head' 'demo' 'details' 'skills';
-    padding-block: clamp(2.25rem, 5vw, 3.75rem);
+    grid-template-areas: 'head' 'demo' 'details' 'skills';
+    padding-block: var(--space-7);
   }
-  .wk-head,
   .wk-demo,
-  .wk-details,
-  .wk-skills {
-    margin-top: 1.5rem;
+  .wk-details {
+    margin-top: var(--space-5);
   }
 
-  /* Meta column: number, sector / company / role */
+  /* Sector (label) and role, one line above the title */
   .wk-meta {
-    grid-area: meta;
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 1rem;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    margin-bottom: var(--space-2);
   }
-  .wk-n {
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-stretch: 80%;
-    font-size: 1.125rem;
-    color: var(--ln-accent);
+  .wk-role {
+    font-size: var(--text-sm);
+    color: var(--ln-ink-2);
   }
-  .wk-dl {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    margin: 0;
-  }
-  .wk-dl dt {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  .wk-dl dd {
-    margin: 0;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ln-ink-3);
+  .wk-meta :global(.ln-ph) {
+    align-self: center;
   }
 
   /* Story */
   .wk-head {
     grid-area: head;
-    max-width: 40em;
+    max-width: var(--measure);
   }
   body.ln .wk-title {
-    font-size: clamp(1.9rem, 4.2vw, 3rem);
-    font-weight: 800;
-    font-stretch: 82%;
-    line-height: 0.98;
-    letter-spacing: -0.03em;
+    font-size: var(--text-xl);
+    font-weight: 700;
   }
   .wk-kicker {
-    margin-top: 0.75rem;
-    font-family: var(--ln-display);
-    font-size: clamp(1.15rem, 1.8vw, 1.375rem);
-    font-weight: 500;
-    line-height: 1.3;
+    margin-top: var(--space-1);
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
     color: var(--ln-ink-2);
   }
   .wk-summary {
-    margin-top: 1.25rem;
+    margin-top: var(--space-4);
   }
   .wk-details {
     grid-area: details;
-    max-width: 40em;
+    max-width: var(--measure);
   }
   body.ln .wk-h {
-    margin: 1.5rem 0 0;
-    font-family: var(--ln-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ln-accent);
+    margin: var(--space-5) 0 0;
   }
   body.ln .wk-h:first-child {
     margin-top: 0;
   }
   .wk-ul {
     display: grid;
-    gap: 0.5rem;
-    margin: 0.6rem 0 0;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
     padding: 0;
     list-style: none;
   }
   .wk-ul li {
     position: relative;
-    padding-left: 1.4rem;
+    padding-left: var(--space-5);
     color: var(--ln-ink-2);
   }
   .wk-ul li::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 0.75em;
-    width: 0.7rem;
+    top: 0.8em;
+    width: var(--space-3);
     height: 1px;
     background: var(--ln-ink-3);
   }
@@ -269,113 +256,144 @@ const caption = 'Playable · invented brand, mock data';
   .wk:not(.wk-live) .wk-demo :global(.df) {
     justify-items: start;
   }
-  .wk:not(.wk-live) .wk-demo :global(.df-device) {
-    max-width: 260px;
-  }
-  .wk:not(.wk-live) .wk-demo :global(.df-phone .df-device) {
-    max-width: 150px;
-  }
 
-  /* Skills */
+  /* Skills: tags on phones, a quiet list in the side column on wider screens */
   .wk-skills {
     grid-area: skills;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
+    gap: var(--space-2);
+    margin: var(--space-5) 0 0;
     padding: 0;
     list-style: none;
   }
   .wk-skills li {
-    padding: 0.3rem 0.75rem;
-    border: 1px solid var(--ln-rule);
-    border-radius: 999px;
-    font-size: 0.8125rem;
+    padding: var(--space-1) var(--space-3);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
     color: var(--ln-ink-2);
   }
 
-  /* Tablet: meta column + story */
+  /* More client work: a compact list */
+  .wk-more {
+    padding-top: var(--space-7);
+  }
+  .wk-more-list {
+    display: grid;
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: var(--ln-hairline);
+  }
+  .wk-item {
+    padding-block: var(--space-5);
+    border-bottom: var(--ln-hairline);
+  }
+  body.ln .wk-item-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+  .wk-item-kicker {
+    margin-top: var(--space-1);
+    color: var(--ln-ink-2);
+  }
+  .wk-disc {
+    margin-top: var(--space-2);
+  }
+  .wk-disc summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    border-radius: var(--radius-1);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ln-accent);
+    cursor: pointer;
+    list-style: none;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.25em;
+    transition: text-decoration-color var(--dur-quick) var(--ease-out);
+  }
+  .wk-disc summary::-webkit-details-marker {
+    display: none;
+  }
+  .wk-disc summary::before {
+    content: '';
+    width: 0.45em;
+    height: 0.45em;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--dur-quick) var(--ease-out);
+  }
+  .wk-disc[open] summary::before {
+    rotate: 45deg;
+  }
+  .wk-disc summary:is(:hover, :focus-visible) {
+    text-decoration-color: currentColor;
+  }
+  .wk-disc summary:active {
+    color: var(--ln-ink);
+  }
+  .wk-disc-body {
+    display: grid;
+    gap: var(--space-2);
+    max-width: var(--measure);
+    padding-bottom: var(--space-2);
+  }
+  .wk-disc-body .wk-ul {
+    margin-top: 0;
+  }
+
+  /* Tablet: skills column + story */
   @media (min-width: 760px) {
     .wk article {
       grid-template-columns: 11rem minmax(0, 1fr);
       grid-template-areas:
-        'meta head'
+        'skills head'
         'skills demo'
         'skills details';
       grid-template-rows: auto auto 1fr;
       column-gap: 2.5rem;
     }
-    .wk-head {
-      margin-top: 0;
-    }
     .wk-demo,
     .wk-details {
-      margin-top: 2rem;
-    }
-    .wk-nodemo .wk-details {
-      grid-row: 2 / 4;
-    }
-    .wk-skills {
-      margin-top: 2rem;
-    }
-    .wk-meta {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    .wk-n {
-      font-size: clamp(2.25rem, 4vw, 3rem);
-      line-height: 0.85;
-    }
-    .wk-dl {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .wk-dl dt {
-      position: static;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      clip: auto;
-      font-size: 0.6875rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--ln-ink-3);
-    }
-    .wk-dl dd {
-      margin-top: 0.15rem;
-      font-family: var(--ln-display);
-      font-size: 1.0625rem;
-      font-weight: 600;
-      letter-spacing: -0.005em;
-      text-transform: none;
-      color: var(--ln-ink);
-      line-height: 1.2;
+      margin-top: var(--space-6);
     }
     .wk-skills {
       align-self: start;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: var(--space-1);
+      margin-top: var(--space-1);
     }
     .wk-skills li {
       padding: 0;
       border: 0;
-      font-size: 0.9375rem;
+      font-size: var(--text-sm);
     }
-    .wk-skills li::before {
-      content: '•';
-      margin-right: 0.5em;
-      color: var(--ln-accent);
+    .wk-more {
+      display: grid;
+      grid-template-columns: 11rem minmax(0, 1fr);
+      column-gap: 2.5rem;
+      align-items: start;
+    }
+    .wk-more-h {
+      padding-top: var(--space-5);
+    }
+    .wk-more-list {
+      margin-top: 0;
     }
   }
 
-  /* Desktop: meta | story | demo, side by side */
+  /* Desktop: skills | story | demo, side by side */
   @media (min-width: 1100px) {
     .wk article {
       grid-template-columns: 11rem minmax(0, 1fr) 360px;
       grid-template-areas:
-        'meta head demo'
+        'skills head demo'
         'skills details demo';
       grid-template-rows: auto 1fr;
       column-gap: clamp(2.5rem, 4vw, 4rem);
@@ -384,29 +402,26 @@ const caption = 'Playable · invented brand, mock data';
       margin-top: 0;
       align-self: start;
     }
-    .wk-nodemo .wk-head,
-    .wk-nodemo .wk-details {
-      grid-column: 2 / 4;
-    }
-    .wk-nodemo .wk-head {
-      grid-row: 1;
-    }
-    .wk-nodemo .wk-details {
-      grid-row: 2;
-    }
     .wk:not(.wk-live) .wk-demo :global(.df) {
       justify-items: end;
     }
     /* Wide demos (desktop window, diagram): full width under the summary. */
     .wk-wide article {
       grid-template-areas:
-        'meta head head'
+        'skills head head'
         'skills demo demo'
         'skills details details';
       grid-template-rows: auto auto 1fr;
     }
     .wk-wide .wk-demo {
-      margin-top: 2rem;
+      margin-top: var(--space-6);
+    }
+    .wk-more {
+      column-gap: clamp(2.5rem, 4vw, 4rem);
+    }
+    .wk-more-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--space-6);
     }
   }
 </style>

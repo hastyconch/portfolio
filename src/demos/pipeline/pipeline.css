@@ -140,8 +140,12 @@
 .is-on .pl-short {
   color: var(--pl-ink);
 }
-.pl-node:hover .pl-num {
+.pl-node:hover .pl-num,
+.pl-node:focus-visible .pl-num {
   border-color: var(--pl-accent);
+}
+.pl-node:active .pl-num {
+  background: var(--pl-rule);
 }
 
 /* Stage: every step occupies the same grid cell, so the height never jumps between steps. */
@@ -409,6 +413,9 @@
 .pl-btn:hover {
   border-color: var(--pl-accent);
 }
+.pl-btn:active {
+  scale: 0.97;
+}
 .pl-next {
   border-color: var(--pl-accent);
   color: var(--pl-accent-ink);
@@ -419,6 +426,9 @@
   color: var(--pl-ink-3);
   background: transparent;
   cursor: not-allowed;
+}
+.pl-btn[aria-disabled='true']:active {
+  scale: 1;
 }
 .pl-node:focus-visible,
 .pl-btn:focus-visible {
