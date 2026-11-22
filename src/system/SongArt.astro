@@ -30,8 +30,9 @@ const decorative = !d.art || !d.artAlt;
       <Image
         src={d.art}
         alt={d.artAlt ?? ''}
-        widths={[300, 600]}
-        sizes="(min-width: 900px) 300px, 70vw"
+        widths={[300, 560]}
+        sizes="(min-width: 900px) 296px, 280px"
+        quality={60}
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : undefined}
         decoding="async"
