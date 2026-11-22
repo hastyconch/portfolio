@@ -44,32 +44,48 @@ const stackItem = z.object({ layer: z.string(), tech: z.string(), why: z.string(
 
 const projects = defineCollection({
   loader: glob({ pattern: '*.md', base: 'src/content/projects' }),
-  schema: z.object({
-    title: z.string(),
-    tagline: z.string(),
-    category: z.enum(['app', 'game', 'tool']),
-    year: z.string(),
-    platforms: z.array(z.string()),
-    problem: z.string(),
-    features: z.array(z.string()),
-    planned: z.array(z.string()).default([]), // honesty: roadmap items, labelled as planned
-    stack: z.array(stackItem),
-    engineering: z.array(z.object({ title: z.string(), body: z.string() })),
-    demo: z.enum([
-      'billable',
-      'travel',
-      'parking',
-      'fashion',
-      'mahjong',
-      'boxscores',
-      'tcg',
-      'none',
-    ]),
-    accent: z.string(), // brand-ish colour for cards; must pass contrast when used for text
-    order: z.number(),
-    featured: z.boolean().default(false),
-    status,
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      tagline: z.string(),
+      category: z.enum(['app', 'game', 'tool']),
+      year: z.string(),
+      platforms: z.array(z.string()),
+      problem: z.string(),
+      features: z.array(z.string()),
+      planned: z.array(z.string()).default([]), // honesty: roadmap items, labelled as planned
+      stack: z.array(stackItem),
+      engineering: z.array(z.object({ title: z.string(), body: z.string() })),
+      demo: z.enum([
+        'billable',
+        'travel',
+        'parking',
+        'fashion',
+        'mahjong',
+        'boxscores',
+        'tcg',
+        'none',
+      ]),
+      accent: z.string(), // brand-ish colour for cards; must pass contrast when used for text
+      order: z.number(),
+      featured: z.boolean().default(false),
+      // Optional process gallery (screenshots), e.g. the making-of story for this site.
+      gallery: z
+        .object({
+          title: z.string(),
+          intro: z.string(),
+          items: z.array(
+            z.object({
+              image: image(),
+              alt: z.string(),
+              caption: z.string(),
+              shape: z.enum(['full', 'wide', 'tall']).default('wide'),
+            }),
+          ),
+        })
+        .optional(),
+      status,
+    }),
 });
 
 const songs = defineCollection({
