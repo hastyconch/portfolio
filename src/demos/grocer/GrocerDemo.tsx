@@ -1,17 +1,18 @@
 // Anonymized grocer-loyalty member app (constitution art. 3 + 6): invented brand, mocked data.
 // The member is signed in and their loyalty account is already linked. Hosts place this inside
 // their own phone frame; they don't restyle its internals.
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { Icon, Logo, ProductArt, RecipeArt, type IconName, type Product } from './art';
+import '../kit.css';
 import './grocer.css';
 
 type Tab = 'home' | 'offers' | 'lists' | 'recipes';
 
-type Offer = { id: string; title: string; points: number; ends: string };
+type Offer = { id: string; title: string; points: number; ends: string; art: Product };
 type Item = { id: string; name: string; done: boolean; offer?: string };
 
 const member = {
   first: 'Sam',
-  card: '•••• 7316',
   points: 4_650,
   rewardAt: 5_000,
   reward: '$10 off your shop',
@@ -19,14 +20,32 @@ const member = {
 // Base earn for every item bought, on top of any loaded offer.
 const PER_ITEM = 10;
 
-type Shop = { items: number; base: number; bonus: { title: string; points: number }[] };
+type Shop = {
+  items: number;
+  base: number;
+  bonus: { title: string; points: number }[];
+  balance: number;
+  unlocked: boolean;
+};
 
 const offers: Offer[] = [
-  { id: 'cereal', title: 'Buy any cereal', points: 50, ends: 'Sun' },
-  { id: 'yogurt', title: 'Any 2 Greek yogurts', points: 75, ends: 'Sat' },
-  { id: 'berries', title: 'Spend $8 on fresh berries', points: 100, ends: 'Fri' },
-  { id: 'coffee', title: 'Any whole-bean coffee', points: 120, ends: 'Sun' },
+  { id: 'cereal', title: 'Buy any cereal', points: 50, ends: 'Sun', art: 'cereal' },
+  { id: 'yogurt', title: 'Any 2 Greek yogurts', points: 75, ends: 'Sat', art: 'yogurt' },
+  { id: 'berries', title: 'Spend $8 on fresh berries', points: 100, ends: 'Fri', art: 'berries' },
+  { id: 'coffee', title: 'Any whole-bean coffee', points: 120, ends: 'Sun', art: 'coffee' },
 ];
+
+// Aisles, in store order. Each has a colour and a name, so a category never rests on colour.
+const AISLES = ['Produce', 'Dairy', 'Bakery', 'Pantry'] as const;
+type Aisle = (typeof AISLES)[number];
+const AISLE_OF: Record<string, Aisle> = {
+  bananas: 'Produce',
+  berries: 'Produce',
+  milk: 'Dairy',
+  'greek yogurt': 'Dairy',
+  'sourdough bread': 'Bakery',
+};
+const aisleOf = (name: string): Aisle => AISLE_OF[name.toLowerCase()] ?? 'Pantry';
 
 const startList: Item[] = [
   { id: 'i1', name: 'Bananas', done: false },
@@ -38,15 +57,20 @@ const startList: Item[] = [
 
 const recipe = {
   title: 'Overnight oats with berries',
-  meta: 'Serves 2 · 10 min prep',
+  time: '10 min prep',
+  serves: 'Serves 2',
   ingredients: [
-    { name: 'Rolled oats' },
-    { name: 'Greek yogurt', offer: 'yogurt' },
-    { name: 'Milk' },
-    { name: 'Berries', offer: 'berries' },
-    { name: 'Maple syrup' },
+    { name: 'Rolled oats', qty: '1 cup' },
+    { name: 'Greek yogurt', qty: '½ cup', offer: 'yogurt' },
+    { name: 'Milk', qty: '¾ cup' },
+    { name: 'Berries', qty: '1 cup', offer: 'berries' },
+    { name: 'Maple syrup', qty: '1 tbsp' },
   ],
 };
+const recipeBonus = recipe.ingredients.reduce(
+  (n, g) => n + (offers.find((o) => o.id === g.offer)?.points ?? 0),
+  0,
+);
 
 const fmt = (n: number) => n.toLocaleString('en-CA');
 const offerById = (id?: string) => offers.find((o) => o.id === id);
@@ -59,13 +83,15 @@ export default function GrocerDemo() {
   const [points, setPoints] = useState(member.points);
   const [lastShop, setLastShop] = useState<Shop | null>(null);
   const [list, setList] = useState<Item[]>(startList);
+  const [seen, setSeen] = useState(false);
   const [announce, setAnnounce] = useState('');
   const base = useId();
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'home', label: 'Home' },
-    { id: 'offers', label: 'Offers' },
-    { id: 'lists', label: 'Lists' },
-    { id: 'recipes', label: 'Recipes' },
+  const panel = useRef<HTMLDivElement>(null);
+  const tabs: { id: Tab; label: string; icon: IconName }[] = [
+    { id: 'home', label: 'Home', icon: 'home' },
+    { id: 'offers', label: 'Offers', icon: 'tag' },
+    { id: 'lists', label: 'Lists', icon: 'list' },
+    { id: 'recipes', label: 'Recipes', icon: 'bowl' },
   ];
   const refs = useRef<Record<Tab, HTMLButtonElement | null>>({
     home: null,
@@ -79,6 +105,29 @@ export default function GrocerDemo() {
   const left = list.filter((i) => !i.done).length;
   const inBasket = list.filter((i) => i.done);
   const onList = (name: string) => list.some((i) => same(i.name, name));
+  const open = offers.filter((o) => !used.includes(o.id));
+  const loadedPts = open.filter((o) => loaded.includes(o.id)).reduce((n, o) => n + o.points, 0);
+  const estimate =
+    inBasket.length * PER_ITEM +
+    offers
+      .filter((o) => loaded.includes(o.id) && inBasket.some((i) => i.offer === o.id))
+      .reduce((n, o) => n + o.points, 0);
+
+  // The ring fills once, the first time Home is seen.
+  useEffect(() => {
+    if (tab !== 'home' || seen) return;
+    const t = window.setTimeout(() => setSeen(true), 800);
+    return () => window.clearTimeout(t);
+  }, [tab, seen]);
+
+  useEffect(() => {
+    panel.current?.scrollTo?.({ top: 0 });
+  }, [tab]);
+
+  function go(next: Tab) {
+    setSeen(true);
+    setTab(next);
+  }
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>, i: number) {
     const n = tabs.length;
@@ -95,7 +144,7 @@ export default function GrocerDemo() {
     if (target < 0) return;
     e.preventDefault();
     const next = tabs[target].id;
-    setTab(next);
+    go(next);
     refs.current[next]?.focus();
   }
 
@@ -110,21 +159,21 @@ export default function GrocerDemo() {
     const base = inBasket.length * PER_ITEM;
     const earned = base + bonus.reduce((n, b) => n + b.points, 0);
     const total = points + earned;
+    const unlocked = total >= member.rewardAt && points < member.rewardAt;
     const usedIds = offers.filter((o) => bonus.some((b) => b.title === o.title)).map((o) => o.id);
     setPoints(total);
     setUsed((u) => [...u, ...usedIds]);
     setLoaded((l) => l.filter((id) => !usedIds.includes(id)));
     setList((l) => l.filter((i) => !i.done));
-    setLastShop({ items: inBasket.length, base, bonus });
+    setLastShop({ items: inBasket.length, base, bonus, balance: total, unlocked });
+    panel.current?.scrollTo?.({ top: 0 });
     setAnnounce(
       `Checked out ${inBasket.length} ${inBasket.length === 1 ? 'item' : 'items'}: plus ${earned} points` +
         (bonus.length
           ? `, including ${bonus.length} ${bonus.length === 1 ? 'offer' : 'offers'}`
           : '') +
         `. Balance ${fmt(total)}.` +
-        (total >= member.rewardAt && points < member.rewardAt
-          ? ` Reward unlocked: ${member.reward}.`
-          : ''),
+        (unlocked ? ` Reward unlocked: ${member.reward}.` : ''),
     );
   }
 
@@ -171,55 +220,113 @@ export default function GrocerDemo() {
     );
   }
 
+  /** One offer: a card in the Home carousel or a tile on the Offers tab. */
+  function offerCard(o: Offer, kind: 'slide' | 'tile') {
+    const on = loaded.includes(o.id);
+    const done = used.includes(o.id);
+    return (
+      <li
+        key={o.id}
+        className={`gro-offer gro-offer-${kind}${on ? ' is-on' : ''}${done ? ' is-done' : ''}`}
+      >
+        <div className={`gro-offer-art gro-art-${o.art}`}>
+          <ProductArt product={o.art} />
+          <span className="gro-pts">+{o.points}</span>
+        </div>
+        <strong className="gro-offer-t">{o.title}</strong>
+        <span className="gro-sub">
+          +{o.points} pts · ends {o.ends}
+        </span>
+        {done ? (
+          <span className="gro-earned-chip">
+            <Icon name="check" size={16} /> Earned
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="gro-load"
+            aria-pressed={on}
+            onClick={() => toggleOffer(o)}
+          >
+            {on ? (
+              <>
+                <Icon name="check" size={16} />
+                Loaded
+              </>
+            ) : (
+              'Load'
+            )}
+            <span className="dk-sr"> offer: {o.title}</span>
+          </button>
+        )}
+      </li>
+    );
+  }
+
+  const ring = { '--p': progress } as CSSProperties;
+
   return (
     <div className="gro-app" aria-label="Demo: grocer loyalty app (mock data)" role="group">
       <header className="gro-top">
-        <span className="gro-logo" aria-hidden="true">
-          ❦
-        </span>
+        <Logo />
         <span className="gro-brand">Pantry Lane</span>
         <span className="gro-chip">
-          <span aria-hidden="true">✓ </span>Linked
+          <Icon name="check" size={14} />
+          Linked
         </span>
       </header>
 
       <div
+        ref={panel}
         className="gro-panel"
         role="tabpanel"
         id={`${base}-${tab}`}
         aria-labelledby={`${base}-tab-${tab}`}
       >
         {tab === 'home' && (
-          <>
+          <div className={`gro-home${seen ? '' : ' is-first'}`}>
             <p className="gro-hello">Hi {member.first}, happy shopping</p>
             <section className="gro-card gro-balance" aria-label="Points balance">
-              <span className="gro-label">Pantry Points</span>
-              <strong className="gro-points">{fmt(points)}</strong>
-              <span className="gro-sub">Card {member.card} · linked to your account</span>
-            </section>
-            <section className="gro-card" aria-label="Progress to your next reward">
-              <div className="gro-row">
-                <span className="gro-label">Next reward: {member.reward}</span>
-              </div>
               <div
-                className="gro-bar"
+                className="gro-ring"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(progress * 100)}
                 aria-label={`${Math.round(progress * 100)}% of the way to ${member.reward}`}
+                style={ring}
               >
-                <span style={{ width: `${progress * 100}%` }} />
+                <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                  <circle className="gro-ring-track" cx="50" cy="50" r="43" />
+                  <circle className="gro-ring-fill" cx="50" cy="50" r="43" pathLength="100" />
+                </svg>
+                <span className="gro-ring-in" aria-hidden="true">
+                  {rewardReady ? <Icon name="spark" size={26} /> : `${Math.round(progress * 100)}%`}
+                </span>
               </div>
-              <span className="gro-sub">
-                {rewardReady
-                  ? 'Reward ready · applies at your next checkout'
-                  : `${fmt(member.rewardAt - points)} pts to go · rewards at ${fmt(member.rewardAt)}`}
-              </span>
+              <div className="gro-balance-text">
+                <span className="gro-label">Pantry Points</span>
+                <strong className="gro-points">{fmt(points)}</strong>
+                <span className="gro-sub">
+                  {rewardReady
+                    ? 'Reward ready · applies at your next checkout'
+                    : `${fmt(member.rewardAt - points)} pts to go · rewards at ${fmt(member.rewardAt)}`}
+                </span>
+              </div>
+              <p className={`gro-next${rewardReady ? ' is-ready' : ''}`}>
+                <Icon name="tag" size={16} />
+                <span>
+                  {rewardReady ? 'Unlocked: ' : 'Next reward: '}
+                  <strong>{member.reward}</strong>
+                </span>
+              </p>
             </section>
+
             {lastShop && (
-              <section className="gro-card" aria-label="Your last shop">
-                <span className="gro-label">Last shop</span>
+              <section className="gro-card gro-last" aria-label="Your last shop">
+                <span className="gro-label">
+                  <Icon name="receipt" size={16} /> Last shop
+                </span>
                 <ul className="gro-earned">
                   <li>
                     <span>
@@ -236,7 +343,22 @@ export default function GrocerDemo() {
                 </ul>
               </section>
             )}
-            <section className="gro-card gro-row" aria-label="Your offers">
+
+            <section className="gro-picks" aria-labelledby={`${base}-picks`}>
+              <div className="gro-row">
+                <h3 id={`${base}-picks`} className="gro-h">
+                  Picked for you
+                </h3>
+                <button type="button" className="gro-link" onClick={() => go('offers')}>
+                  See offers
+                </button>
+              </div>
+              <ul className="gro-carousel" aria-label="Offers picked for you">
+                {offers.map((o) => offerCard(o, 'slide'))}
+              </ul>
+            </section>
+
+            <section className="gro-summary" aria-label="Your offers">
               {used.length === offers.length ? (
                 <span>
                   <strong>All {offers.length}</strong> offers earned this week
@@ -250,128 +372,195 @@ export default function GrocerDemo() {
                   {used.length > 0 && ` · ${used.length} earned`}
                 </span>
               )}
-              <button type="button" className="gro-link" onClick={() => setTab('offers')}>
-                See offers
-              </button>
             </section>
-          </>
+          </div>
         )}
 
         {tab === 'offers' && (
-          <>
-            <p className="gro-intro">
-              Picked for you. Load an offer, then buy the item to earn the bonus.
-            </p>
-            <ul className="gro-stack" aria-label="Personalized offers">
-              {offers.map((o) => {
-                const on = loaded.includes(o.id);
-                const done = used.includes(o.id);
-                return (
-                  <li key={o.id} className={`gro-card gro-offer${on ? ' is-on' : ''}`}>
-                    <span className="gro-pts" aria-hidden="true">
-                      +{o.points}
-                    </span>
-                    <div>
-                      <strong className="gro-offer-t">
-                        {o.title}, +{o.points} pts
-                      </strong>
-                      <span className="gro-sub">Ends {o.ends}</span>
-                    </div>
-                    {done ? (
-                      <span className="gro-earned-chip">
-                        <span aria-hidden="true">✓ </span>Earned
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="gro-load"
-                        aria-pressed={on}
-                        onClick={() => toggleOffer(o)}
-                      >
-                        {on ? (
-                          <>
-                            <span aria-hidden="true">✓ </span>Loaded
-                          </>
-                        ) : (
-                          'Load'
-                        )}
-                        <span className="gro-sr"> offer: {o.title}</span>
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
+          <div className="gro-offers">
+            <div className="gro-offers-head">
+              <p className="gro-intro">
+                Picked for you. Load an offer, then buy the item to earn the bonus.
+              </p>
+              <p className="gro-potential">
+                <strong>+{loadedPts} pts</strong> loaded
+                <span className="gro-sub">
+                  {' '}
+                  of +{open.reduce((n, o) => n + o.points, 0)} available
+                </span>
+              </p>
+            </div>
+            <ul className="gro-tiles" aria-label="Personalized offers">
+              {offers.map((o) => offerCard(o, 'tile'))}
             </ul>
-          </>
+          </div>
         )}
 
         {tab === 'lists' && (
-          <section className="gro-card" aria-labelledby={`${base}-list-h`}>
-            <div className="gro-row">
-              <strong id={`${base}-list-h`}>Weekly shop</strong>
-              <span className="gro-sub">
-                {left} of {list.length} left
-              </span>
-            </div>
-            <p className="gro-sub gro-hint">Tick items as they go in your basket.</p>
-            <ul className="gro-list">
-              {list.map((i) => {
-                const o = offerById(i.offer);
-                const flagId = `${base}-flag-${i.id}`;
-                return (
-                  <li key={i.id} className={i.done ? 'is-done' : undefined}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={i.done}
-                        onChange={() => tick(i.id)}
-                        aria-describedby={o ? flagId : undefined}
-                      />
-                      <span className="gro-item">{i.name}</span>
-                    </label>
-                    {o && (
-                      <span id={flagId} className="gro-flag">
-                        Offer +{o.points} pts
-                        {used.includes(o.id)
-                          ? ' · earned'
-                          : loaded.includes(o.id)
-                            ? ' · loaded'
-                            : ' · not loaded'}
-                      </span>
-                    )}
+          <div className="gro-lists">
+            {lastShop && (
+              <section className="gro-receipt" aria-label="Receipt">
+                <div className="gro-receipt-head">
+                  <strong>Pantry Lane · Elm St</strong>
+                  <span className="gro-sub">Receipt · points earned</span>
+                </div>
+                <ul className="gro-earned">
+                  <li>
+                    <span>
+                      {lastShop.items} {lastShop.items === 1 ? 'item' : 'items'} × {PER_ITEM} pts
+                    </span>
+                    <span>+{lastShop.base}</span>
                   </li>
+                  {lastShop.bonus.map((b) => (
+                    <li key={b.title}>
+                      <span>Offer: {b.title}</span>
+                      <span>+{b.points}</span>
+                    </li>
+                  ))}
+                  <li className="gro-total">
+                    <span>Points earned</span>
+                    <span>+{lastShop.base + lastShop.bonus.reduce((n, b) => n + b.points, 0)}</span>
+                  </li>
+                  <li className="gro-bal">
+                    <span>New balance</span>
+                    <span>{fmt(lastShop.balance)}</span>
+                  </li>
+                </ul>
+                {lastShop.unlocked && (
+                  <p className="gro-unlock">
+                    <Icon name="spark" size={20} />
+                    <span>
+                      <strong>Reward unlocked</strong>
+                      {member.reward}, applied at your next checkout
+                    </span>
+                  </p>
+                )}
+              </section>
+            )}
+
+            <section className="gro-card gro-listcard" aria-labelledby={`${base}-list-h`}>
+              <div className="gro-row">
+                <strong id={`${base}-list-h`} className="gro-h">
+                  Weekly shop
+                </strong>
+                <span className="gro-sub">
+                  {left} of {list.length} left
+                </span>
+              </div>
+              <div className="gro-basketbar" aria-hidden="true">
+                <span
+                  style={{ width: `${list.length ? (inBasket.length / list.length) * 100 : 0}%` }}
+                />
+              </div>
+              <p className="gro-sub gro-hint">Tick items as they go in your basket.</p>
+              {AISLES.map((aisle) => {
+                const items = list.filter((i) => aisleOf(i.name) === aisle);
+                if (!items.length) return null;
+                return (
+                  <div key={aisle} className={`gro-aisle gro-aisle-${aisle.toLowerCase()}`}>
+                    <p className="gro-aisle-h">
+                      <span className="gro-dot" aria-hidden="true" />
+                      {aisle}
+                    </p>
+                    <ul className="gro-list" aria-label={aisle}>
+                      {items.map((i) => {
+                        const o = offerById(i.offer);
+                        const flagId = `${base}-flag-${i.id}`;
+                        return (
+                          <li key={i.id} className={i.done ? 'is-done' : undefined}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={i.done}
+                                onChange={() => tick(i.id)}
+                                aria-describedby={o ? flagId : undefined}
+                              />
+                              <span className="gro-item">{i.name}</span>
+                            </label>
+                            {o && (
+                              <span
+                                id={flagId}
+                                className={`gro-flag${loaded.includes(o.id) ? ' is-loaded' : ''}`}
+                              >
+                                Offer +{o.points} pts
+                                {used.includes(o.id)
+                                  ? ' · earned'
+                                  : loaded.includes(o.id)
+                                    ? ' · loaded'
+                                    : ' · not loaded'}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 );
               })}
-            </ul>
-            {list.length === 0 && <p className="gro-sub">Your list is empty.</p>}
-            <button type="button" className="gro-cta" onClick={checkout}>
-              Check out {inBasket.length > 0 && `(${inBasket.length})`}
-            </button>
-          </section>
+              {list.length === 0 && (
+                <p className="gro-empty">
+                  Your list is empty. Add a recipe’s ingredients to start the next shop.
+                </p>
+              )}
+              <div className="gro-checkout">
+                <span className="gro-sub">
+                  {inBasket.length
+                    ? `${inBasket.length} in basket · about +${estimate} pts`
+                    : 'Basket is empty'}
+                </span>
+                <button type="button" className="gro-cta" onClick={checkout}>
+                  Check out {inBasket.length > 0 && `(${inBasket.length})`}
+                </button>
+              </div>
+            </section>
+          </div>
         )}
 
         {tab === 'recipes' && (
           <section className="gro-card gro-recipe" aria-labelledby={`${base}-recipe-h`}>
-            <div className="gro-dish" aria-hidden="true" />
-            <strong id={`${base}-recipe-h`} className="gro-recipe-t">
-              {recipe.title}
-            </strong>
-            <span className="gro-sub">{recipe.meta}</span>
-            <ul className="gro-ingredients" aria-label="Ingredients">
-              {recipe.ingredients.map((g) => {
-                const o = offerById(g.offer);
-                return (
-                  <li key={g.name}>
-                    <span>{g.name}</span>
-                    {o && <span className="gro-flag">Offer +{o.points} pts</span>}
-                    {onList(g.name) && <span className="gro-onlist">On list</span>}
-                  </li>
-                );
-              })}
-            </ul>
-            <button type="button" className="gro-cta" onClick={addIngredients}>
-              Add ingredients to list
-            </button>
+            <div className="gro-recipe-art">
+              <RecipeArt />
+              <span className="gro-tag">Breakfast</span>
+            </div>
+            <div className="gro-recipe-body">
+              <strong id={`${base}-recipe-h`} className="gro-recipe-t">
+                {recipe.title}
+              </strong>
+              <ul className="gro-meta" aria-label="About this recipe">
+                <li>
+                  <Icon name="clock" size={16} />
+                  {recipe.time}
+                </li>
+                <li>
+                  <Icon name="people" size={16} />
+                  {recipe.serves}
+                </li>
+                <li className="gro-meta-pts">
+                  <Icon name="tag" size={16} />+{recipeBonus} pts in offers
+                </li>
+              </ul>
+              <ul className="gro-ingredients" aria-label="Ingredients">
+                {recipe.ingredients.map((g) => {
+                  const o = offerById(g.offer);
+                  return (
+                    <li key={g.name}>
+                      <span className="gro-qty">{g.qty}</span>
+                      <span className="gro-ing">{g.name}</span>
+                      {o && <span className="gro-flag">Offer +{o.points} pts</span>}
+                      {onList(g.name) && (
+                        <span className="gro-onlist">
+                          <Icon name="check" size={14} />
+                          On list
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <button type="button" className="gro-cta" onClick={addIngredients}>
+                Add ingredients to list
+              </button>
+            </div>
           </section>
         )}
       </div>
@@ -389,14 +578,22 @@ export default function GrocerDemo() {
             aria-selected={tab === t.id}
             aria-controls={`${base}-${t.id}`}
             tabIndex={tab === t.id ? 0 : -1}
-            onClick={() => setTab(t.id)}
+            onClick={() => go(t.id)}
             onKeyDown={(e) => onTabKey(e, i)}
           >
+            <span className="gro-tab-ico">
+              <Icon name={t.icon} />
+              {t.id === 'lists' && left > 0 && (
+                <span className="gro-badge" aria-hidden="true">
+                  {left}
+                </span>
+              )}
+            </span>
             {t.label}
           </button>
         ))}
       </nav>
-      <p className="gro-sr" aria-live="polite">
+      <p className="dk-sr" aria-live="polite">
         {announce}
       </p>
     </div>
