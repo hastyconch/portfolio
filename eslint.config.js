@@ -6,6 +6,7 @@ export default [
   {
     ignores: [
       '.claude/worktrees/',
+      'factory/out/',
       'dist/',
       '.astro/',
       'node_modules/',

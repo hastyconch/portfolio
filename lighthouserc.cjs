@@ -42,10 +42,10 @@ module.exports = {
     },
     assert: {
       assertMatrix: [
-        // 404 and /lab/ pages are intentionally noindex, which Lighthouse scores as an SEO failure.
-        { matchingUrlPattern: '^(?!.*/(404|lab/)).*$', assertions: budgets },
+        // The 404 page is intentionally noindex, which Lighthouse scores as an SEO failure.
+        { matchingUrlPattern: '^(?!.*/404).*$', assertions: budgets },
         {
-          matchingUrlPattern: '.*/(404|lab/).*',
+          matchingUrlPattern: '.*/404.*',
           assertions: { ...budgets, 'categories:seo': 'off' },
         },
       ],

@@ -1,0 +1,246 @@
+---
+// Résumé slot — set like the credits page of a booklet. Print-friendly.
+import type { Resume } from '../lib/content';
+import SideHead from './SideHead.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  resume: Resume;
+}
+const { resume } = Astro.props;
+const span = (a: string, b: string) => (a === b ? a : `${a} – ${b}`);
+---
+
+<section
+  id="resume"
+  class="ln-side resume"
+  data-np="Liner notes · Résumé"
+  aria-labelledby="resume-h"
+>
+  <div class="ln-wrap">
+    <SideHead badge="℗" kicker="Liner notes" title="Résumé" id="resume-h" />
+    <div class="cv-top">
+      <p class="cv-summary">{resume.summary}</p>
+      <div class="cv-actions">
+        {resume.status === 'placeholder' && <Placeholder label="Some details to come" />}
+        <button type="button" class="cv-print" data-print>
+          Print résumé
+        </button>
+      </div>
+    </div>
+
+    <div class="cv-grid">
+      <div class="cv-exp">
+        <h3 class="cv-h">Experience</h3>
+        <ol class="cv-list">
+          {resume.experience.map((e) => (
+            <li class="cv-item">
+              <p class="cv-when ln-num">{span(e.start, e.end)}</p>
+              <div>
+                <h4 class="cv-org">{e.org}</h4>
+                <p class="cv-title">{e.title}</p>
+                <ul class="cv-bullets">
+                  {e.bullets.map((b) => (
+                    <li>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="cv-credits">
+        <h3 class="cv-h">Capabilities</h3>
+        <dl class="cv-caps">
+          {resume.capabilities.map((c) => (
+            <div>
+              <dt>{c.group}</dt>
+              <dd>{c.items.join(' / ')}</dd>
+            </div>
+          ))}
+        </dl>
+        <h3 class="cv-h">Education</h3>
+        <dl class="cv-caps">
+          {resume.education.map((e) => (
+            <div>
+              <dt>{e.school}</dt>
+              <dd class="cv-edu">{e.detail}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Print just the résumé (liner.css hides the rest while .ln-print-cv is set).
+  const html = document.documentElement;
+  document.querySelector('[data-print]')?.addEventListener('click', () => {
+    html.classList.add('ln-print-cv');
+    window.print();
+  });
+  addEventListener('afterprint', () => html.classList.remove('ln-print-cv'));
+</script>
+
+<style>
+  .cv-top {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .cv-summary {
+    font-family: var(--ln-display);
+    font-size: clamp(1.4rem, 3vw, 2.15rem);
+    font-weight: 500;
+    font-stretch: 92%;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    max-width: 30em;
+  }
+  .cv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+  .cv-print {
+    min-height: 44px;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid var(--ln-ink);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ln-ink);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+  .cv-print:hover {
+    background: var(--ln-ink);
+    color: var(--ln-bg);
+  }
+  .cv-grid {
+    display: grid;
+    gap: 3.5rem;
+  }
+  body.ln .cv-h {
+    font-family: var(--ln-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ln-accent);
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--ln-ink);
+  }
+  .cv-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cv-item {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1.6rem 0;
+    border-bottom: 1px solid var(--ln-rule);
+  }
+  .cv-when {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ln-ink-3);
+    padding-top: 0.35rem;
+  }
+  body.ln .cv-org {
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .cv-title {
+    margin-top: 0.2rem;
+    color: var(--ln-ink-2);
+    font-style: italic;
+  }
+  .cv-bullets {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.9rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cv-bullets li {
+    position: relative;
+    padding-left: 1.3rem;
+    font-size: 0.98rem;
+    color: var(--ln-ink-2);
+  }
+  .cv-bullets li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 0.6rem;
+    height: 1px;
+    background: var(--ln-ink-3);
+  }
+
+  /* Credits block */
+  .cv-caps {
+    display: grid;
+    gap: 1.5rem;
+    margin: 1.4rem 0 3rem;
+  }
+  .cv-caps dt {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ln-ink-3);
+  }
+  .cv-caps dd {
+    margin: 0.3rem 0 0;
+    font-family: var(--ln-display);
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+  .cv-caps dd.cv-edu {
+    font-family: var(--ln-body);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--ln-ink-2);
+  }
+
+  @media (min-width: 760px) {
+    .cv-item {
+      grid-template-columns: 10rem minmax(0, 1fr);
+      gap: 2rem;
+    }
+  }
+  @media (min-width: 1000px) {
+    .cv-top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 4rem;
+    }
+    .cv-grid {
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+      gap: 5rem;
+    }
+    .cv-credits {
+      position: sticky;
+      top: calc(var(--ln-header) + 2rem);
+      align-self: start;
+    }
+  }
+  @media print {
+    .cv-print,
+    .cv-actions {
+      display: none;
+    }
+  }
+</style>

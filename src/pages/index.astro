@@ -1,32 +1,24 @@
 ---
-import Base from '../layouts/Base.astro';
-import '@fontsource-variable/inter';
-import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+// The one-page home, built from the Phase 1 picks (factory/picks.yaml).
+import '@fontsource-variable/inter'; // the airline demo's own typeface
+import Shell from '../system/Shell.astro';
+import Hero from '../system/Hero.astro';
+import Work from '../system/Work.astro';
+import Projects from '../system/Projects.astro';
+import Music from '../system/Music.astro';
+import Resume from '../system/Resume.astro';
+import { getSiteContent } from '../lib/content';
+
+const { profile, resume, work, projects, songs } = await getSiteContent();
 ---
 
-<Base title="Nakul Iyer — portfolio in progress">
-  <link slot="head" rel="preload" href={interFont} as="font" type="font/woff2" crossorigin />
-  <div class="holding">
-    <h1>Portfolio, in progress</h1>
-    <p>
-      Product leader, AI-enabled builder, songwriter. This site is being built in the open by a
-      software factory: every change passes automated accessibility, performance and privacy gates
-      before it ships.
-    </p>
-    <p>Four design directions are on the drawing board now.</p>
-  </div>
-</Base>
-
-<style>
-  .holding {
-    max-width: 62ch;
-    margin: 0 auto;
-    padding: 18vh 16px 4rem;
-    font-family: 'Inter Variable', system-ui, sans-serif;
-  }
-  h1 {
-    font-size: clamp(2rem, 6vw, 3.2rem);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-  }
-</style>
+<Shell home nowPlaying="Intro" description={profile.headline}>
+  <Hero
+    profile={profile}
+    counts={{ work: work.length, projects: projects.length, songs: songs.length }}
+  />
+  <Work work={work} />
+  <Projects projects={projects} />
+  <Music songs={songs} />
+  <Resume resume={resume} />
+</Shell>
