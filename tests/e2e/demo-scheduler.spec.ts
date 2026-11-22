@@ -106,7 +106,7 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   await expect(live).toContainText('Priya assigned to Saturday night: 4 of 4 RNs.');
   await expect(live).toContainText('All rules pass.');
   await expect(openCover).toHaveAccessibleName(
-    '4/4 RNs on the Saturday night shift, including 2 RNs not shown here.',
+    '4/4 +2 more: RNs on the Saturday night shift, including 2 RNs not shown here.',
   );
   await expect(glyph(/^Priya, Saturday: Night/)).toHaveText('N');
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');

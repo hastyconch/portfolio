@@ -109,7 +109,8 @@ export default function SchedulerDemo() {
     if (gap && shift === gap.shift && c === gap.day)
       return `${have}/${t} open shift: ${when}, ${t - have} short${incl}.`;
     const diff = have < t ? `, ${t - have} short` : have > t ? `, ${have - t} over` : '';
-    return `${have}/${t} RNs on the ${when} shift${diff}${incl}.`;
+    // Starts with the visible text ("4/4 +3 more") to satisfy WCAG 2.5.3.
+    return `${have}/${t} +${others} more: RNs on the ${when} shift${diff}${incl}.`;
   }
 
   function cycle(r: number, c: number) {
