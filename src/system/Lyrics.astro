@@ -22,7 +22,7 @@ type Line = Song['data']['lyrics'][number];
 function stanzas(lines: Line[]) {
   const out: { section?: string; lines: Line[] }[] = [];
   for (const l of lines) {
-    if (l.section || out.length === 0) out.push({ section: l.section, lines: [] });
+    if (l.section || l.stanza || out.length === 0) out.push({ section: l.section, lines: [] });
     out[out.length - 1].lines.push(l);
   }
   return out;

@@ -118,6 +118,7 @@ const songs = defineCollection({
       lyrics: z.array(
         z.object({
           section: z.string().optional(), // "Verse 1", "Chorus"…
+          stanza: z.boolean().optional(), // start a new stanza here without a section label
           line: z.string(),
           note: z.string().optional(), // annotation shown when the line is selected
         }),
