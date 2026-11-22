@@ -301,7 +301,7 @@ export default function GrocerDemo() {
                   <circle className="gro-ring-fill" cx="50" cy="50" r="43" pathLength="100" />
                 </svg>
                 <span className="gro-ring-in" aria-hidden="true">
-                  {rewardReady ? <Icon name="spark" size={26} /> : `${Math.round(progress * 100)}%`}
+                  {Math.round(progress * 100)}%
                 </span>
               </div>
               <div className="gro-balance-text">
@@ -310,7 +310,7 @@ export default function GrocerDemo() {
                 <span className="gro-sub">
                   {rewardReady
                     ? 'Reward ready · applies at your next checkout'
-                    : `${fmt(member.rewardAt - points)} pts to go · rewards at ${fmt(member.rewardAt)}`}
+                    : `${fmt(member.rewardAt - points)} pts to go`}
                 </span>
               </div>
               <p className={`gro-next${rewardReady ? ' is-ready' : ''}`}>
@@ -438,81 +438,87 @@ export default function GrocerDemo() {
               </section>
             )}
 
-            <section className="gro-card gro-listcard" aria-labelledby={`${base}-list-h`}>
-              <div className="gro-row">
-                <strong id={`${base}-list-h`} className="gro-h">
-                  Weekly shop
-                </strong>
-                <span className="gro-sub">
-                  {left} of {list.length} left
-                </span>
-              </div>
-              <div className="gro-basketbar" aria-hidden="true">
-                <span
-                  style={{ width: `${list.length ? (inBasket.length / list.length) * 100 : 0}%` }}
-                />
-              </div>
-              <p className="gro-sub gro-hint">Tick items as they go in your basket.</p>
-              {AISLES.map((aisle) => {
-                const items = list.filter((i) => aisleOf(i.name) === aisle);
-                if (!items.length) return null;
-                return (
-                  <div key={aisle} className={`gro-aisle gro-aisle-${aisle.toLowerCase()}`}>
-                    <p className="gro-aisle-h">
-                      <span className="gro-dot" aria-hidden="true" />
-                      {aisle}
-                    </p>
-                    <ul className="gro-list" aria-label={aisle}>
-                      {items.map((i) => {
-                        const o = offerById(i.offer);
-                        const flagId = `${base}-flag-${i.id}`;
-                        return (
-                          <li key={i.id} className={i.done ? 'is-done' : undefined}>
-                            <label>
-                              <input
-                                type="checkbox"
-                                checked={i.done}
-                                onChange={() => tick(i.id)}
-                                aria-describedby={o ? flagId : undefined}
-                              />
-                              <span className="gro-item">{i.name}</span>
-                            </label>
-                            {o && (
-                              <span
-                                id={flagId}
-                                className={`gro-flag${loaded.includes(o.id) ? ' is-loaded' : ''}`}
-                              >
-                                Offer +{o.points} pts
-                                {used.includes(o.id)
-                                  ? ' · earned'
-                                  : loaded.includes(o.id)
-                                    ? ' · loaded'
-                                    : ' · not loaded'}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
-              {list.length === 0 && (
-                <p className="gro-empty">
-                  Your list is empty. Add a recipe’s ingredients to start the next shop.
-                </p>
-              )}
-              <div className="gro-checkout">
-                <span className="gro-sub">
-                  {inBasket.length
-                    ? `${inBasket.length} in basket · about +${estimate} pts`
-                    : 'Basket is empty'}
-                </span>
-                <button type="button" className="gro-cta" onClick={checkout}>
-                  Check out {inBasket.length > 0 && `(${inBasket.length})`}
-                </button>
-              </div>
-            </section>
+            {lastShop && list.length === 0 ? (
+              <p className="gro-empty">
+                Basket checked out. Add a recipe’s ingredients to start the next shop.
+              </p>
+            ) : (
+              <section className="gro-card gro-listcard" aria-labelledby={`${base}-list-h`}>
+                <div className="gro-row">
+                  <strong id={`${base}-list-h`} className="gro-h">
+                    Weekly shop
+                  </strong>
+                  <span className="gro-sub">
+                    {left} of {list.length} left
+                  </span>
+                </div>
+                <div className="gro-basketbar" aria-hidden="true">
+                  <span
+                    style={{ width: `${list.length ? (inBasket.length / list.length) * 100 : 0}%` }}
+                  />
+                </div>
+                <p className="gro-sub gro-hint">Tick items as they go in your basket.</p>
+                {AISLES.map((aisle) => {
+                  const items = list.filter((i) => aisleOf(i.name) === aisle);
+                  if (!items.length) return null;
+                  return (
+                    <div key={aisle} className={`gro-aisle gro-aisle-${aisle.toLowerCase()}`}>
+                      <p className="gro-aisle-h">
+                        <span className="gro-dot" aria-hidden="true" />
+                        {aisle}
+                      </p>
+                      <ul className="gro-list" aria-label={aisle}>
+                        {items.map((i) => {
+                          const o = offerById(i.offer);
+                          const flagId = `${base}-flag-${i.id}`;
+                          return (
+                            <li key={i.id} className={i.done ? 'is-done' : undefined}>
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={i.done}
+                                  onChange={() => tick(i.id)}
+                                  aria-describedby={o ? flagId : undefined}
+                                />
+                                <span className="gro-item">{i.name}</span>
+                              </label>
+                              {o && (
+                                <span
+                                  id={flagId}
+                                  className={`gro-flag${loaded.includes(o.id) ? ' is-loaded' : ''}`}
+                                >
+                                  Offer +{o.points} pts
+                                  {used.includes(o.id)
+                                    ? ' · earned'
+                                    : loaded.includes(o.id)
+                                      ? ' · loaded'
+                                      : ' · not loaded'}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
+                {list.length === 0 && (
+                  <p className="gro-empty">
+                    Your list is empty. Add a recipe’s ingredients to start the next shop.
+                  </p>
+                )}
+                <div className="gro-checkout">
+                  <span className="gro-sub">
+                    {inBasket.length
+                      ? `${inBasket.length} in basket · about +${estimate} pts`
+                      : 'Basket is empty'}
+                  </span>
+                  <button type="button" className="gro-cta" onClick={checkout}>
+                    Check out {inBasket.length > 0 && `(${inBasket.length})`}
+                  </button>
+                </div>
+              </section>
+            )}
           </div>
         )}
 

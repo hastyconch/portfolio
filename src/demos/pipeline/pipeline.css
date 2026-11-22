@@ -596,7 +596,6 @@
   gap: 2px;
   padding: var(--dk-2);
   border: 1px solid var(--pl-rule);
-  border-left: 3px solid var(--pl-accent);
   border-radius: var(--dk-r1);
   background: var(--pl-card);
   box-shadow: var(--dk-shadow-1);
@@ -636,9 +635,9 @@
   align-items: center;
   gap: var(--dk-3);
   padding: var(--dk-2) var(--dk-3);
+  border: 1px solid var(--pl-rule);
   border-radius: var(--dk-r2);
-  color: var(--pl-accent-ink);
-  background: var(--pl-accent);
+  background: var(--pl-card);
 }
 .pl-done strong {
   display: block;
@@ -648,6 +647,7 @@
 }
 .pl-done-sub {
   font-size: var(--dk-fs-sm);
+  color: var(--pl-ink-2);
 }
 .pl-done-mark {
   display: grid;
@@ -655,9 +655,10 @@
   flex: none;
   width: 2rem;
   height: 2rem;
-  border: 2px solid currentColor;
   border-radius: 50%;
   font-weight: 700;
+  color: var(--pl-card);
+  background: var(--pl-decision);
 }
 
 /* Controls */
@@ -708,6 +709,14 @@
 .pl-cite summary:focus-visible {
   outline: var(--dk-focus) solid var(--pl-accent);
   outline-offset: 2px;
+}
+
+/* Below the laptop layout the stage follows the current step, so the controls sit right under
+   it instead of under the tallest step. */
+@container pl (max-width: 879px) {
+  .pl-step:not(.is-on) {
+    display: none;
+  }
 }
 
 /* Tablet widths: labelled track, side-by-side cards, a real three-column board. */
@@ -837,6 +846,17 @@
   }
   .pl-stage {
     grid-area: stage;
+  }
+  /* The step's main block fills the pane's height, so short steps don't end half-way. */
+  .pl-step {
+    display: flex;
+    flex-direction: column;
+  }
+  .pl-step > :is(.pl-card, .pl-grid2, .pl-grid3, .pl-board) {
+    flex: 1;
+  }
+  .pl-lines {
+    gap: var(--dk-3);
   }
   .pl-controls {
     grid-area: ctrl;

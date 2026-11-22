@@ -231,6 +231,9 @@
   border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
 }
 /* Keys as keycaps: a raised edge in the text colour, so they hold in both schemes. */
+.bm-keys dd {
+  text-wrap: pretty;
+}
 .bm-keys kbd {
   display: inline-block;
   min-width: 1.5rem;
