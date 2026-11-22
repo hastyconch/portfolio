@@ -570,11 +570,11 @@
 }
 .sch-rules summary {
   min-height: 1.75rem;
-  padding: 0 var(--dk-2);
+  padding: var(--dk-1) var(--dk-2);
   border-radius: var(--dk-r1);
   font-size: var(--dk-fs-sm);
   font-weight: 600;
-  line-height: 1.75rem;
+  line-height: var(--dk-lh-normal);
   color: var(--sch-accent);
   cursor: pointer;
 }
