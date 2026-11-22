@@ -1,12 +1,13 @@
 // Invented ICU nurse scheduler (constitution art. 3 + 6): mock staff, mock rules, no network.
 // Concept A (week grid + live rule checker) with concept B (guided "fill the open shift")
 // running inside it. The grid follows the ARIA grid pattern with a roving tabindex.
-import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   DAYS,
   NEXT_SHIFT,
   NURSES,
   OPEN_DAY,
+  OTHERS,
   OPEN_SHIFT,
   RULES,
   SHIFT_GLYPH,
@@ -19,6 +20,7 @@ import {
   cloneWeek,
   coverKey,
   coverageOf,
+  findGap,
   hoursOf,
   rankCandidates,
   rowKey,
@@ -61,11 +63,29 @@ export default function SchedulerDemo() {
 
   const issues = useMemo(() => checkWeek(week), [week]);
   const marks = useMemo(() => marksOf(issues), [issues]);
-  const candidates = useMemo(() => rankCandidates(week), [week]);
   const taskDone = assigned !== null;
-  const openHave = coverageOf(week, OPEN_SHIFT, OPEN_DAY);
-  const openTarget = TARGET[OPEN_SHIFT];
-  const busy = NURSES.filter((_, r) => week[r][OPEN_DAY] !== 'O').map((n) => n.name);
+  // The open shift: Saturday night for the guided task, then whatever gap the visitor's edits open.
+  const gap = useMemo(
+    () => (taskDone ? findGap(week) : { day: OPEN_DAY, shift: OPEN_SHIFT }),
+    [taskDone, week],
+  );
+  const candidates = useMemo(
+    () => (gap ? rankCandidates(week, gap.day, gap.shift) : []),
+    [week, gap],
+  );
+  const gapWord = (g: { day: number; shift: 'D' | 'N' }, full = false) =>
+    `${full ? DAYS[g.day].full : DAYS[g.day].short} ${g.shift === 'D' ? 'day' : 'night'}`;
+  const gapHave = gap ? coverageOf(week, gap.shift, gap.day) : 0;
+  const busy = gap ? NURSES.filter((_, r) => week[r][gap.day] !== 'O').map((n) => n.name) : [];
+  const gridWrap = useRef<HTMLDivElement | null>(null);
+
+  // On a narrow screen the grid scrolls sideways: bring the open shift's column into view.
+  useEffect(() => {
+    const wrap = gridWrap.current;
+    if (!wrap || !gap || wrap.scrollWidth <= wrap.clientWidth) return;
+    const head = wrap.querySelectorAll('thead th')[gap.day + 1] as HTMLElement | undefined;
+    if (head) wrap.scrollLeft = Math.max(0, head.offsetLeft - wrap.clientWidth / 2);
+  }, [gap?.day]);
 
   function focusCell(r: number, c: number) {
     setActive([r, c]);
@@ -84,10 +104,12 @@ export default function SchedulerDemo() {
     const t = TARGET[shift];
     const when = `${DAYS[c].full} ${shift === 'D' ? 'day' : 'night'}`;
     // Names start with the visible text ("3/4", "3/4 open") to satisfy WCAG 2.5.3.
-    if (!taskDone && shift === OPEN_SHIFT && c === OPEN_DAY)
-      return `${have}/${t} open shift: ${when}, ${t - have} short.`;
-    const gap = have < t ? `, ${t - have} short` : have > t ? `, ${have - t} over` : '';
-    return `${have}/${t} RNs on the ${when} shift${gap}.`;
+    const others = OTHERS[c][shift === 'D' ? 0 : 1];
+    const incl = `, including ${others} RNs not shown here`;
+    if (gap && shift === gap.shift && c === gap.day)
+      return `${have}/${t} open shift: ${when}, ${t - have} short${incl}.`;
+    const diff = have < t ? `, ${t - have} short` : have > t ? `, ${have - t} over` : '';
+    return `${have}/${t} RNs on the ${when} shift${diff}${incl}.`;
   }
 
   function cycle(r: number, c: number) {
@@ -140,6 +162,7 @@ export default function SchedulerDemo() {
   }
 
   function assign(cand: Candidate) {
+    if (!gap) return;
     const n = NURSES[cand.nurse];
     if (cand.blocks.length) {
       setAnnounce(
@@ -148,16 +171,17 @@ export default function SchedulerDemo() {
       return;
     }
     const next = cloneWeek(week);
-    next[cand.nurse][OPEN_DAY] = OPEN_SHIFT;
+    next[cand.nurse][gap.day] = gap.shift;
     const nextIssues = checkWeek(next);
-    const have = coverageOf(next, OPEN_SHIFT, OPEN_DAY);
+    const have = coverageOf(next, gap.shift, gap.day);
     setWeek(next);
     setAssigned(cand.nurse);
     setAnnounce(
-      `${n.name} assigned to ${DAYS[OPEN_DAY].full} night. ${DAYS[OPEN_DAY].full} night: ${have} of ${openTarget} RNs. ` +
-        `Rule check: ${summarise(nextIssues)} The grid is now editable: Enter or Space cycles a cell.`,
+      `${n.name} assigned to ${gapWord(gap, true)}: ${have} of ${TARGET[gap.shift]} RNs. ` +
+        `Rule check: ${summarise(nextIssues)}` +
+        (taskDone ? '' : ' The grid is now editable: Enter or Space cycles a cell.'),
     );
-    focusCell(cand.nurse, OPEN_DAY);
+    focusCell(cand.nurse, gap.day);
   }
 
   function reset() {
@@ -165,7 +189,7 @@ export default function SchedulerDemo() {
     setAssigned(null);
     setActive([0, 0]);
     setAnnounce(
-      `Scenario reset. ${DAYS[OPEN_DAY].full} night is open again: ${coverageOf(START, OPEN_SHIFT, OPEN_DAY)} of ${openTarget} RNs.`,
+      `Scenario reset. ${DAYS[OPEN_DAY].full} night is open again: ${coverageOf(START, OPEN_SHIFT, OPEN_DAY)} of ${TARGET[OPEN_SHIFT]} RNs.`,
     );
   }
 
@@ -190,7 +214,7 @@ export default function SchedulerDemo() {
 
       <div className="sch-body">
         <div className="sch-main">
-          <div className="sch-gridwrap">
+          <div className="sch-gridwrap" ref={gridWrap}>
             <table
               className="sch-grid"
               role="grid"
@@ -208,7 +232,7 @@ export default function SchedulerDemo() {
                       key={d.short}
                       role="columnheader"
                       scope="col"
-                      className={!taskDone && c === OPEN_DAY ? 'is-open' : undefined}
+                      className={gap && c === gap.day ? 'is-open' : undefined}
                     >
                       <span aria-hidden="true">{d.short}</span>
                       <span className="sch-vh">{d.full}</span>
@@ -278,7 +302,8 @@ export default function SchedulerDemo() {
                       {DAYS.map((_, c) => {
                         const have = coverageOf(week, shift, c);
                         const bad = marks.has(coverKey(shift, c));
-                        const open = !taskDone && shift === OPEN_SHIFT && c === OPEN_DAY;
+                        const open = !!gap && shift === gap.shift && c === gap.day;
+                        const others = OTHERS[c][i];
                         return (
                           <td
                             key={c}
@@ -293,13 +318,10 @@ export default function SchedulerDemo() {
                           >
                             <span className="sch-glyph" aria-hidden="true">
                               {have}/{TARGET[shift]}
+                            </span>{' '}
+                            <span className="sch-tag" aria-hidden="true">
+                              {open ? 'open' : `+${others} more`}
                             </span>
-                            {open && ' '}
-                            {open && (
-                              <span className="sch-tag" aria-hidden="true">
-                                open
-                              </span>
-                            )}
                             {bad && !open && (
                               <span className="sch-flag" aria-hidden="true">
                                 !
@@ -319,30 +341,28 @@ export default function SchedulerDemo() {
             {taskDone
               ? 'Enter or Space (or a click) cycles Day → Night → Off.'
               : 'cells unlock once the open shift is filled.'}{' '}
-            Coverage counts the whole unit: these six RNs plus colleagues whose shifts are fixed in
-            this demo.
+            Cover counts the whole unit: the RNs above plus colleagues not shown (“+3 more”), whose
+            shifts are fixed in this demo.
           </p>
         </div>
 
         <div className="sch-side">
           <section className="sch-panel sch-task" aria-labelledby={`${id}-task`}>
-            {assigned !== null ? (
+            {!gap ? (
               <>
-                <p className="sch-kicker">Shift covered</p>
-                <h4 id={`${id}-task`}>
-                  {NURSES[assigned].name} works {DAYS[OPEN_DAY].short} night
-                </h4>
+                <p className="sch-kicker">All shifts covered</p>
+                <h4 id={`${id}-task`}>Every shift meets its target</h4>
                 <p>
-                  {DAYS[OPEN_DAY].short} night: {openHave} of {openTarget} RNs. Now edit any cell:
-                  Enter, Space or a click cycles Day → Night → Off, and the rule check updates live.
-                  Reset restores the scenario.
+                  Edit any cell: Enter, Space or a click cycles Day → Night → Off, and the rule
+                  check updates live. Take someone off a shift and this panel finds who can cover
+                  it. Reset restores the scenario.
                 </p>
               </>
             ) : (
               <>
-                <p className="sch-kicker">Open shift</p>
+                <p className="sch-kicker">{taskDone ? 'New gap' : 'Open shift'}</p>
                 <h4 id={`${id}-task`}>
-                  {DAYS[OPEN_DAY].short} night, ICU — {openHave} of {openTarget} RNs
+                  {gapWord(gap)}, ICU — {gapHave} of {TARGET[gap.shift]} RNs
                 </h4>
                 <p>Choose a nurse. Candidates are ranked by the unit’s rules.</p>
                 <ol className="sch-cands">
@@ -386,9 +406,17 @@ export default function SchedulerDemo() {
                     );
                   })}
                 </ol>
+                {candidates.length > 0 && candidates.every((c) => c.blocks.length) && (
+                  <p className="sch-note">
+                    No one can cover this without breaking a rule. Free someone up in the grid.
+                  </p>
+                )}
                 {busy.length > 0 && (
                   <p className="sch-note">
-                    {busy.join(' and ')} already work {DAYS[OPEN_DAY].short}.
+                    {busy.length > 2
+                      ? `${busy.slice(0, -1).join(', ')} and ${busy.at(-1)}`
+                      : busy.join(' and ')}{' '}
+                    already work {DAYS[gap.day].short}.
                   </p>
                 )}
               </>

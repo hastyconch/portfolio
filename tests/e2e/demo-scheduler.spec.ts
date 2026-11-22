@@ -77,7 +77,9 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   const openCover = cell(/(open shift: |RNs on the )Saturday night/);
 
   await expect(task.getByRole('heading')).toHaveText('Sat night, ICU — 3 of 4 RNs');
-  await expect(openCover).toHaveAccessibleName('3/4 open shift: Saturday night, 1 short.');
+  await expect(openCover).toHaveAccessibleName(
+    '3/4 open shift: Saturday night, 1 short, including 2 RNs not shown here.',
+  );
   await expect(demo.locator('.sch-status')).toHaveText('1 problem.');
 
   // Ranked candidates with plain-words reasons.
@@ -101,11 +103,13 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
 
   // Assigning an eligible nurse covers the shift and is announced.
   await task.getByRole('button', { name: 'Assign Priya' }).click();
-  await expect(live).toContainText('Priya assigned to Saturday night. Saturday night: 4 of 4 RNs.');
+  await expect(live).toContainText('Priya assigned to Saturday night: 4 of 4 RNs.');
   await expect(live).toContainText('All rules pass.');
-  await expect(openCover).toHaveAccessibleName('4/4 RNs on the Saturday night shift.');
+  await expect(openCover).toHaveAccessibleName(
+    '4/4 RNs on the Saturday night shift, including 2 RNs not shown here.',
+  );
   await expect(glyph(/^Priya, Saturday: Night/)).toHaveText('N');
-  await expect(task.getByRole('heading')).toHaveText('Priya works Sat night');
+  await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
   await expect(demo.locator('.sch-status')).toHaveText('All rules pass.');
 
   // Reset restores the scenario; the overtime pick is a warning, not a block.
@@ -116,4 +120,19 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   await expect(demo.locator('.sch-status')).toHaveText('1 warning.');
   await expect(demo.locator('.sch-issues')).toContainText('Jordan: 44h this week, 4h overtime.');
   await expect(demo.getByRole('rowheader', { name: /Jordan/ })).toContainText('44h · OT');
+});
+
+test('scheduler finds cover for a gap the visitor opens', async ({ page }) => {
+  const { demo, cell } = await open(page);
+  const task = demo.locator('.sch-task');
+  await task.getByRole('button', { name: 'Assign Priya' }).click();
+  await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
+
+  // Take Ines off Saturday night: the panel turns into a new open shift with ranked cover.
+  await cell(/^Ines, Saturday: Night/).click();
+  await expect(task).toContainText('New gap');
+  await expect(task.getByRole('heading')).toHaveText('Sat night, ICU — 3 of 4 RNs');
+  await expect(task.locator('.sch-cand strong').first()).toHaveText('Ines');
+  await task.getByRole('button', { name: 'Assign Ines' }).click();
+  await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
 });

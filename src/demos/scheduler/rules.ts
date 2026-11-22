@@ -191,13 +191,25 @@ export interface Candidate {
   warns: Issue[];
 }
 
-/** Nurses free on the open day, ranked: eligible, then eligible with overtime, then blocked. */
-export function rankCandidates(week: Shift[][]): Candidate[] {
+/** The first shift of the week that is short of its target, or null when all are covered. */
+export function findGap(week: Shift[][]): { day: number; shift: 'D' | 'N' } | null {
+  for (let c = 0; c < DAYS.length; c++)
+    for (const shift of ['D', 'N'] as const)
+      if (coverageOf(week, shift, c) < TARGET[shift]) return { day: c, shift };
+  return null;
+}
+
+/** Nurses free on `day`, ranked for `shift`: eligible, then eligible with overtime, then blocked. */
+export function rankCandidates(
+  week: Shift[][],
+  day: number = OPEN_DAY,
+  shift: 'D' | 'N' = OPEN_SHIFT,
+): Candidate[] {
   return NURSES.flatMap((_, r) => {
-    if (week[r][OPEN_DAY] !== 'O') return [];
+    if (week[r][day] !== 'O') return [];
     const before = new Set(nurseIssues(week, r).map((i) => i.key));
     const trial = cloneWeek(week);
-    trial[r][OPEN_DAY] = OPEN_SHIFT;
+    trial[r][day] = shift;
     const added = nurseIssues(trial, r).filter((i) => !before.has(i.key));
     return [
       {
