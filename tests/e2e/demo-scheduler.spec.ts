@@ -43,7 +43,7 @@ test('scheduler grid is keyboard operable', async ({ page }) => {
 
   // Coverage rows are part of the grid but read-only.
   await page.keyboard.press('Control+End');
-  await expect(cell(/^4\/4 RNs on the Sunday night shift/)).toBeFocused();
+  await expect(cell(/^4\/4 \+4 more: RNs on the Sunday night shift/)).toBeFocused();
 
   // Cells are locked until the open shift is filled.
   await cell(/^Priya, Monday/).focus();
