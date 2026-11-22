@@ -8,8 +8,6 @@ interface Props {
 }
 const { profile } = Astro.props;
 const external = (href: string) => /^https?:/.test(href);
-// Deterministic "barcode" from the name, purely decorative.
-const bars = [...`${profile.name}${profile.location}`].map((c) => (c.charCodeAt(0) % 4) + 1);
 ---
 
 <footer id="contact" class="ft ln-dark" aria-labelledby="contact-h">
@@ -40,11 +38,6 @@ const bars = [...`${profile.name}${profile.location}`].map((c) => (c.charCodeAt(
         <span>{profile.name}</span>
         <span>{profile.location}</span>
       </p>
-      <span class="ft-barcode" aria-hidden="true">
-        {bars.map((w) => (
-          <span style={`width:${w}px`} />
-        ))}
-      </span>
     </div>
   </div>
 </footer>
@@ -129,17 +122,6 @@ const bars = [...`${profile.name}${profile.location}`].map((c) => (c.charCodeAt(
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-1) var(--space-5);
-  }
-  .ft-barcode {
-    display: flex;
-    gap: 2px;
-    height: 34px;
-    padding: var(--space-1) 6px;
-    background: #f4ece1;
-    border-radius: var(--radius-1);
-  }
-  .ft-barcode span {
-    background: #1a1411;
   }
   @media (min-width: 900px) {
     .ft-grid {

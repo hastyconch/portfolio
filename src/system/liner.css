@@ -45,10 +45,9 @@
   --ln-gutter: clamp(1rem, 4vw, 2.5rem);
   --ln-header: 60px;
   --ln-hairline: 1px solid var(--ln-rule);
-  /* Signature cover gradient: art, identical in both schemes. */
-  --ln-cover:
-    radial-gradient(120% 90% at 85% 8%, #ffb37a 0, transparent 46%),
-    linear-gradient(168deg, #ff7a45 0%, #d2445a 34%, #6d1f5f 62%, #1c1340 100%);
+  /* Hero cover: two warm stops from the accent (#ff9b66 / #a63d17). Art, so it is the same in
+     both schemes. */
+  --ln-cover: linear-gradient(165deg, #ffab78 0%, #b8441c 100%);
   --ln-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -69,6 +68,13 @@ body.ln {
   background: var(--ln-bg);
   font-feature-settings: 'ss01';
   overflow-x: clip;
+  /* Short pages (404) keep the footer at the bottom, with no band of page colour under it. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+body.ln > main {
+  flex: 1 0 auto;
 }
 .ln-dark {
   color: var(--ln-ink);

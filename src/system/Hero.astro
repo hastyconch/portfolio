@@ -1,7 +1,7 @@
 ---
-// Hero: the album cover carries the <h1> (the site's one display moment, and the one place the
-// record theme and grain appear outside Music); the record slides out behind it once. Beside it,
-// what I do in plain words.
+// Hero: the album cover (the one place the record theme and grain appear outside Music; the
+// record slides out once) beside the name, set as the site's one display moment: Bricolage's
+// condensed width with tight tracking. Then what I do, in plain words.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -9,19 +9,16 @@ interface Props {
   profile: Profile;
 }
 const { profile } = Astro.props;
-const [first, ...rest] = profile.name.split(' ');
+const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
   <div class="ln-wrap hero-grid">
-    <div class="hero-sleeve">
-      <div class="hero-vinyl ln-vinyl" aria-hidden="true"></div>
+    <div class="hero-sleeve" aria-hidden="true">
+      <div class="hero-vinyl ln-vinyl"></div>
       <div class="hero-cover">
-        <span class="hero-sun" aria-hidden="true"></span>
-        <h1 id="hero-title" class="hero-name">
-          <span>{first}</span>
-          {rest.length > 0 && <span>{rest.join(' ')}</span>}
-        </h1>
+        <span class="hero-sun"></span>
+        <span class="hero-cover-name">{profile.name}</span>
       </div>
     </div>
 
@@ -30,8 +27,21 @@ const [first, ...rest] = profile.name.split(' ');
         {profile.roleLine}
         {profile.status === 'placeholder' && <Placeholder />}
       </p>
+      <h1 id="hero-title" class="hero-name">
+        {profile.name}
+      </h1>
       <p class="hero-headline">{profile.headline}</p>
       <p class="hero-intro">{profile.intro}</p>
+      <p class="hero-links">
+        <a class="ln-link" href="#resume">
+          Résumé
+        </a>
+        {email && (
+          <a class="ln-link" href={email.href}>
+            Email
+          </a>
+        )}
+      </p>
       <dl class="hero-facts">
         {profile.pillars.map((p) => (
           <div>
@@ -61,7 +71,7 @@ const [first, ...rest] = profile.name.split(' ');
   .hero-sleeve {
     position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 560px;
   }
   .hero-cover {
     position: relative;
@@ -69,9 +79,6 @@ const [first, ...rest] = profile.name.split(' ');
     width: 84%;
     aspect-ratio: 1;
     container-type: inline-size;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
     padding: 6cqi;
     border-radius: var(--radius-1);
     color: #fff4e8;
@@ -104,19 +111,14 @@ const [first, ...rest] = profile.name.split(' ');
     );
     mix-blend-mode: soft-light;
   }
-  body.ln .hero-name {
+  .hero-cover-name {
     position: relative;
     z-index: 1;
-    display: grid;
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-stretch: var(--stretch-display);
-    /* Sized to the cover, not the viewport: the name always fills the sleeve the same way. */
-    font-size: 29cqi;
-    line-height: var(--leading-display);
-    letter-spacing: var(--tracking-display);
-    color: #fff4e8;
-    text-shadow: 0 2px 30px rgb(28 19 64 / 0.35);
+    color: #2a0f1c;
+    font-size: var(--text-2xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
   }
 
   .hero-vinyl {
@@ -138,10 +140,10 @@ const [first, ...rest] = profile.name.split(' ');
     }
   }
 
-  /* What I do */
+  /* The name, then what I do */
   .hero-notes {
     display: grid;
-    gap: var(--space-5);
+    gap: var(--space-4);
     max-width: 38rem;
   }
   .hero-role {
@@ -150,17 +152,34 @@ const [first, ...rest] = profile.name.split(' ');
     align-items: center;
     gap: var(--space-2) var(--space-3);
   }
+  body.ln .hero-name {
+    font-size: var(--text-4xl);
+    font-weight: 800;
+    font-stretch: var(--stretch-display);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+  }
   .hero-headline {
     font-family: var(--ln-display);
-    font-size: var(--text-3xl);
-    font-weight: 700;
-    line-height: var(--leading-tight);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    line-height: var(--leading-snug);
     letter-spacing: var(--tracking-title);
     text-wrap: balance;
   }
   .hero-intro {
-    max-width: var(--measure);
+    max-width: 52ch;
     color: var(--ln-ink-2);
+  }
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+  }
+  .hero-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
   .hero-facts {
     margin: var(--space-2) 0 0;
@@ -185,7 +204,7 @@ const [first, ...rest] = profile.name.split(' ');
 
   @media (min-width: 1000px) {
     .hero-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
       gap: var(--space-8);
     }
   }
