@@ -13,7 +13,7 @@
 }
 @media (min-width: 60rem) {
   .bm {
-    grid-template-columns: minmax(0, 1fr) 18rem;
+    grid-template-columns: minmax(0, 1fr) 20rem;
     align-items: start;
   }
 }
@@ -36,14 +36,33 @@
 .bm-hud .bm-btn {
   margin-left: auto;
 }
+/* HUD readouts as small instrument chips, in the game's night palette. */
+.bm-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--dk-2);
+  padding: var(--dk-1) var(--dk-3);
+  border: 1px solid var(--bm-rule);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-sm);
+  color: var(--bm-paper);
+  background: var(--bm-panel);
+}
+.bm-stat strong {
+  font-size: var(--dk-fs-xl);
+  color: var(--bm-green);
+}
 
 .bm-stage {
   position: relative;
   width: 100%;
   aspect-ratio: 400 / 224;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--dk-r3);
   background: var(--bm-ink);
+  box-shadow:
+    0 0 0 1px var(--bm-rule),
+    var(--dk-shadow-2);
 }
 .bm-poster,
 .bm-canvas {
@@ -184,11 +203,17 @@
 
 .bm-info {
   min-width: 0;
+  padding: var(--dk-4) var(--dk-5);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: var(--dk-r3);
 }
 .bm-h {
-  margin: 0 0 0.4rem;
-  font-size: 1.125rem;
-  line-height: 1.3;
+  margin: 0 0 var(--dk-2);
+  font-size: var(--dk-fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--dk-track-label);
+  line-height: var(--dk-lh-snug);
+  text-transform: uppercase;
 }
 .bm-info p {
   margin: 0 0 1.25rem;
@@ -200,8 +225,24 @@
 }
 .bm-keys div {
   display: grid;
-  grid-template-columns: 8.5rem 1fr;
-  gap: 0.75rem;
+  grid-template-columns: 6.5rem 1fr;
+  gap: var(--dk-3);
+  padding: var(--dk-1) 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+/* Keys as keycaps: a raised edge in the text colour, so they hold in both schemes. */
+.bm-keys kbd {
+  display: inline-block;
+  min-width: 1.5rem;
+  padding: 0 var(--dk-1);
+  border: 1px solid currentColor;
+  border-bottom-width: 2px;
+  border-radius: var(--dk-r1);
+  font: inherit;
+  font-size: var(--dk-fs-sm);
+  font-weight: 700;
+  line-height: var(--dk-lh-normal);
+  text-align: center;
 }
 .bm-keys dt {
   font-weight: 700;
