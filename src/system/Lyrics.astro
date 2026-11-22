@@ -36,7 +36,7 @@ let lineNo = 0;
     <H class="ly-h" id={headingId}>
       Lyrics
     </H>
-    {d.lyrics.length > 0 && (
+    {notes > 0 && (
       <p class="ly-legend">
         <span class="ly-swatch" aria-hidden="true" />
         {notes} annotated {notes === 1 ? 'line' : 'lines'} — select one to read the note
@@ -85,10 +85,12 @@ let lineNo = 0;
       ))}
     </div>
     <div class="ly-gutter">
-      <p class="ly-gutter-hint">
-        <span class="ly-gutter-ico" aria-hidden="true"></span>
-        Highlighted lines carry notes from the studio. Select one and its annotation opens here.
-      </p>
+      {notes > 0 && (
+        <p class="ly-gutter-hint">
+          <span class="ly-gutter-ico" aria-hidden="true"></span>
+          Highlighted lines carry notes from the studio. Select one and its annotation opens here.
+        </p>
+      )}
     </div>
   </div>
 </div>
