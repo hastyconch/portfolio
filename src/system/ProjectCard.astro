@@ -1,6 +1,7 @@
 ---
-// ProjectCard: cover art generated from the project accent (the motif changes with category:
-// app, game or tool), then the copy. The whole card links to the case study.
+// ProjectCard: a flat swatch of the project's accent, then the copy. The title comes first so
+// titles line up across the rail whatever tags a card carries. The whole card links to the
+// case study.
 import type { Project } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -16,25 +17,21 @@ const stackHint = d.stack
 ---
 
 <li class="pc" style={`--art: ${d.accent}`}>
-  <div class:list={['pc-art', `pc-art-${d.category}`]} aria-hidden="true">
-    <span class="pc-art-word">{d.title}</span>
-  </div>
+  <div class="pc-art" aria-hidden="true"></div>
   <div class="pc-body">
-    <p class="pc-k">
-      <span class="pc-cat">{d.category}</span>
-      {d.featured && <span class="pc-feat">Featured</span>}
-      {d.status === 'placeholder' && <Placeholder />}
-    </p>
     <h3 class="pc-title">
       <a class="pc-link" href={`/projects/${project.id}/`}>
         {d.title}
       </a>
     </h3>
-    <p class="pc-tag">{d.tagline}</p>
-    <p class="pc-meta">
-      <span>{d.platforms.join(' · ')}</span>
+    <p class="pc-k">
+      <span class="pc-cat">{d.category}</span>
       <span class="ln-num">{d.year}</span>
+      {d.featured && <span class="pc-feat">Featured</span>}
+      {d.status === 'placeholder' && <Placeholder />}
     </p>
+    <p class="pc-tag">{d.tagline}</p>
+    <p class="pc-meta">{d.platforms.join(' · ')}</p>
     <p class="pc-stack">
       <span class="visually-hidden">Stack: </span>
       {stackHint}
@@ -46,9 +43,11 @@ const stackHint = d.stack
   .pc {
     position: relative;
     display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
     gap: var(--space-4);
     align-items: start;
+    /* rail cards stretch to the tallest; keep the extra space at the bottom so titles align */
+    align-content: start;
     padding: var(--space-4) 0;
     border-bottom: var(--ln-hairline);
     border-radius: var(--radius-1);
@@ -73,69 +72,20 @@ const stackHint = d.stack
   body.ln .pc-link:focus-visible {
     outline: none;
   }
-  .pc:hover .pc-link,
-  .pc:focus-within .pc-link {
+  .pc:is(:hover, :focus-within) .pc-link {
     text-decoration-color: currentColor;
   }
   .pc:active {
     background: var(--ln-hl);
   }
 
-  /* Cover art */
+  /* Cover: a flat swatch of the project's accent */
   .pc-art {
-    position: relative;
     aspect-ratio: 1;
     border-radius: var(--radius-1);
-    overflow: hidden;
-    container-type: inline-size;
-    color: #fff;
-    background:
-      radial-gradient(
-        90% 70% at 20% 10%,
-        color-mix(in oklab, var(--art) 55%, #fff) 0,
-        transparent 60%
-      ),
-      linear-gradient(160deg, var(--art), color-mix(in oklab, var(--art) 30%, #000));
+    background: var(--art);
     outline: 1px solid color-mix(in srgb, var(--ln-ink) 10%, transparent);
     outline-offset: -1px;
-  }
-  .pc-art::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    opacity: 0.45;
-    mix-blend-mode: soft-light;
-  }
-  .pc-art-app::before {
-    background: repeating-radial-gradient(circle at 100% 100%, #fff 0 1px, transparent 1.5px 9cqi);
-  }
-  .pc-art-game::before {
-    background:
-      linear-gradient(90deg, rgb(255 255 255 / 0.5) 1px, transparent 1px) 0 0 / 12.5cqi 12.5cqi,
-      linear-gradient(rgb(255 255 255 / 0.5) 1px, transparent 1px) 0 0 / 12.5cqi 12.5cqi;
-  }
-  .pc-art-tool::before {
-    background: repeating-linear-gradient(
-      -45deg,
-      rgb(255 255 255 / 0.55) 0 1px,
-      transparent 1px 7cqi
-    );
-  }
-  .pc-art-word {
-    position: absolute;
-    z-index: 1;
-    left: 8cqi;
-    right: 8cqi;
-    bottom: 8cqi;
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-stretch: var(--stretch-display);
-    /* cover art: sized to the cover */
-    font-size: 15cqi;
-    line-height: var(--leading-display);
-    letter-spacing: var(--tracking-display);
-    text-wrap: balance;
-    text-shadow: 0 2px 16px rgb(0 0 0 / 0.25);
   }
 
   /* Body */
@@ -143,6 +93,10 @@ const stackHint = d.stack
     display: grid;
     gap: var(--space-1);
     min-width: 0;
+  }
+  body.ln .pc-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
   }
   .pc-k {
     display: flex;
@@ -161,28 +115,18 @@ const stackHint = d.stack
     border-radius: var(--radius-full);
     color: var(--ln-ink-2);
   }
-  body.ln .pc-title {
-    font-size: var(--text-lg);
-    font-weight: 700;
-  }
   .pc-tag {
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
     color: var(--ln-ink-2);
   }
-  .pc-meta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--space-1) var(--space-4);
-    margin-top: var(--space-1);
+  .pc-meta,
+  .pc-stack {
     font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
   .pc-stack {
     display: none;
-    font-size: var(--text-xs);
-    color: var(--ln-ink-3);
   }
 
   /* Desktop: a card in the horizontal rail */
@@ -192,7 +136,7 @@ const stackHint = d.stack
       gap: var(--space-4);
       padding: 0;
       border-bottom: 0;
-      width: 280px;
+      width: 260px;
       flex: none;
       scroll-snap-align: start;
     }
@@ -200,10 +144,10 @@ const stackHint = d.stack
       background: none;
     }
     .pc-art {
+      aspect-ratio: 4 / 3;
       transition: translate var(--dur-base) var(--ease-out);
     }
-    .pc:hover .pc-art,
-    .pc:focus-within .pc-art {
+    .pc:is(:hover, :focus-within) .pc-art {
       translate: 0 calc(var(--move-sm) * -1);
     }
     .pc:active .pc-art {
