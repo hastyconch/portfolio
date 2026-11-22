@@ -1,12 +1,11 @@
 ---
 // Music: the one section where the record theme lives. It opens with the music story (from
 // src/content/music.json), then the songs as a tablist of sleeves; each song panel has art,
-// credits, a link to the song's own page, click-to-load players and the lyrics annotator.
-// SongArt, the players and Lyrics are shared with the /music/<id>/ pages.
+// credits, the first lines of the lyrics, a link to the song's page (full lyrics, annotations
+// and story) and click-to-load players. SongArt and Players are shared with the song pages.
 import type { Music, Song } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
-import Lyrics from './Lyrics.astro';
 import Players from './Players.astro';
 import { Image } from 'astro:assets';
 import { voice } from '../lib/music';
@@ -123,17 +122,25 @@ const [lead, ...story] = music.story.map(say);
                 <h4 class="label">About this song</h4>
                 <p>{say(d.meaning)}</p>
               </div>
+              {d.lyrics.length > 0 && (
+                <figure class="mu-excerpt">
+                  <figcaption class="label">Opening lines</figcaption>
+                  <blockquote>
+                    {d.lyrics.slice(0, 4).map((l) => (
+                      <p>{l.line}</p>
+                    ))}
+                  </blockquote>
+                </figure>
+              )}
               <p>
                 <a class="mu-page ln-link" href={`/music/${s.id}/`} data-song-link>
-                  Open the song page<span class="visually-hidden">: {d.title}</span>
+                  Lyrics and story<span class="visually-hidden">: {d.title}</span>
                   <span aria-hidden="true">&nbsp;→</span>
                 </a>
               </p>
               <Players song={s} />
             </div>
           </div>
-
-          <Lyrics song={s} level={4} say={say} />
         </div>
       );
     })}
@@ -337,7 +344,16 @@ const [lead, ...story] = music.story.map(say);
   .mu-head {
     display: grid;
     gap: var(--space-6);
-    margin-bottom: var(--space-7);
+  }
+  .mu-excerpt {
+    margin: var(--space-2) 0 0;
+  }
+  .mu-excerpt blockquote {
+    margin: var(--space-2) 0 0;
+    font-family: var(--ln-display);
+    font-size: var(--text-lg);
+    font-weight: 500;
+    line-height: var(--leading-normal);
   }
   .mu-info {
     display: grid;

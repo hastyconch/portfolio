@@ -33,30 +33,32 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
 
 <Shell title={`${d.title} · lyrics and liner notes`} description={say(d.meaning)}>
   <article class="sg ln-dark" style={colors(song)}>
-    <header class="sg-head">
-      <div class="ln-wrap sg-head-grid">
+    <div class="ln-wrap sg-layout">
+      <header class="sg-intro">
+        <p class="sg-back">
+          <a href="/#music">
+            <span aria-hidden="true">←</span> All songs
+          </a>
+        </p>
+        <p class="sg-k">
+          <span class="label">
+            Track {index + 1} · {d.year}
+          </span>
+          {d.status === 'placeholder' && <Placeholder />}
+        </p>
+        <h1 class="sg-title">{d.title}</h1>
+        <p class="sg-credits">{say(d.credits)}</p>
+        {d.release && <p class="sg-release">{d.release}</p>}
+      </header>
+
+      <!-- Cover and players: beside the lyrics (and sticky) on wide screens. -->
+      <div class="sg-side">
         <SongArt song={song} index={index} eager />
-        <div class="sg-intro">
-          <p class="sg-back">
-            <a href="/#music">
-              <span aria-hidden="true">←</span> All songs
-            </a>
-          </p>
-          <p class="sg-k">
-            <span class="label">
-              Track {index + 1} · {d.year}
-            </span>
-            {d.status === 'placeholder' && <Placeholder />}
-          </p>
-          <h1 class="sg-title">{d.title}</h1>
-          <p class="sg-credits">{say(d.credits)}</p>
-          {d.release && <p class="sg-release">{d.release}</p>}
+        <div class="sg-players">
           <Players song={song} />
         </div>
       </div>
-    </header>
 
-    <div class="ln-wrap sg-body">
       <section id="about" class="sg-sec sg-about" aria-labelledby="about-h">
         <h2 id="about-h" class="sg-h label">
           About this song
@@ -103,14 +105,18 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
     background-color: color-mix(in srgb, var(--c1) 12%, var(--ln-bg));
   }
 
-  .sg-head {
-    padding-block: var(--space-7) var(--space-8);
-    border-bottom: var(--ln-hairline);
-  }
-  .sg-head-grid {
+  /* Phones: one column (title, cover and players, about, lyrics). Wide screens: the lyrics in
+     one column with the cover and players sticky beside them. */
+  .sg-layout {
     display: grid;
     gap: var(--space-6);
-    align-items: start;
+    padding-block: var(--space-7) var(--space-8);
+  }
+  .sg-side {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+    min-width: 0;
   }
   .sg-intro {
     display: grid;
@@ -157,11 +163,6 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
     color: var(--ln-ink-2);
   }
 
-  .sg-body {
-    display: grid;
-    gap: var(--space-7);
-    padding-block: var(--space-7) var(--space-8);
-  }
   .sg-sec {
     scroll-margin-top: calc(var(--ln-header) + var(--space-4));
     min-width: 0;
@@ -228,9 +229,27 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
     }
   }
   @media (min-width: 900px) {
-    .sg-head-grid {
-      grid-template-columns: 360px minmax(0, 1fr);
-      gap: var(--space-8);
+    .sg-layout {
+      grid-template-columns: minmax(0, 1fr) 320px;
+      column-gap: var(--space-8);
+      row-gap: var(--space-7);
+      align-items: start;
+    }
+    .sg-intro,
+    .sg-sec {
+      grid-column: 1;
+    }
+    .sg-side {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      position: sticky;
+      top: calc(var(--ln-header) + var(--space-6));
+    }
+    .sg-side :global(.sa) {
+      width: 100%;
+    }
+    .sg-side :global(.pl) {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   .sg-release {

@@ -40,6 +40,15 @@ test.describe('music', () => {
     if (music.status === 'placeholder') await expect(story.locator('.ln-ph')).toBeVisible();
   });
 
+  test('home shows a lyrics excerpt per song, linking to the full lyrics', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#music details.ly-d')).toHaveCount(0);
+    const panel = page.locator('#music [role="tabpanel"]:visible');
+    const lines = panel.locator('.mu-excerpt blockquote p');
+    expect(await lines.count()).toBeLessThanOrEqual(4);
+    await expect(panel.getByRole('link', { name: /^Lyrics and story/ })).toBeVisible();
+  });
+
   test('section links every song to its page', async ({ page }) => {
     await page.goto('/');
     for (const id of songIds) {
@@ -51,9 +60,10 @@ test.describe('music', () => {
     await expect(page.locator('h1')).toBeVisible();
   });
 
-  test('annotator is keyboard operable', async ({ page }) => {
+  test('annotator is keyboard operable on song pages', async ({ page }) => {
     test.skip(annotated.length === 0, 'No song has annotated lyrics yet (owner content pending).');
-    for (const route of ['/', `/music/${annotated[0]}/`]) {
+    // The full lyrics and annotations live on the song pages; the home page shows an excerpt.
+    for (const route of annotated.map((id) => `/music/${id}/`)) {
       await page.goto(route);
       const line = page.locator('details.ly-d:visible').first();
       const summary = line.locator('summary');
