@@ -73,3 +73,19 @@ The website's copy never uses the em dash (U+2014). Write the sentence another w
 colon, parentheses, a full stop, or `·` in titles and labels. This covers everything a visitor
 can read or hear: content, component text, accessible names and page titles, including the
 demos. Enforced by `factory/stations/copylint.mjs` over `src/` and the built `dist/`.
+
+## Article 12 — UI craft
+
+The site follows the `ui-craft` skill (github.com/hastyconch/ui-craft). Concretely:
+
+- **Tokens only:** type, spacing, radius, elevation and motion come from `src/system/tokens.css`,
+  and colour from `src/system/liner.css`. A literal value outside them needs a reason.
+- **State parity:** every interactive element has hover, `:focus-visible` and `:active` states.
+- **Motion vocabulary:** one ease, short durations, close faster than open, no `transition: all`,
+  and nothing infinite without a reduced-motion guard.
+- **Effect budget:** no decorative glows or blur blobs; grain only on the hero art.
+- **Metaphor budget:** the record theme lives on the hero cover and the Music section only.
+  Everywhere else uses plain language.
+
+Enforced by `factory/stations/craftaudit.mjs` (vendored from ui-craft), with budgets in
+`.craftrc.json`, and by the `design-critic` agent's ui-craft checklist.
