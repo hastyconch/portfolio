@@ -1,0 +1,99 @@
+---
+// Section header shared by every side: a record-label badge, the side name and a count.
+interface Props {
+  /** short text on the label badge: A, B, +, … */
+  badge: string;
+  /** eyebrow above the title: "Side A", "Bonus tracks" … */
+  kicker: string;
+  title: string;
+  id: string;
+  meta?: string;
+}
+const { badge, kicker, title, id, meta } = Astro.props;
+---
+
+<header class="sh">
+  <span class="sh-badge" aria-hidden="true">
+    <span>{badge}</span>
+  </span>
+  <div class="sh-text">
+    <p class="ln-eyebrow sh-side">{kicker}</p>
+    <h2 id={id} class="sh-title">
+      {title}
+    </h2>
+  </div>
+  {meta && <p class="sh-meta ln-num">{meta}</p>}
+  <slot />
+</header>
+
+<style>
+  .sh {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: clamp(1rem, 3vw, 2rem);
+    row-gap: 0.75rem;
+    margin-bottom: clamp(2.25rem, 5vw, 4rem);
+  }
+  .sh-badge {
+    display: grid;
+    place-items: center;
+    width: clamp(64px, 9vw, 104px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle closest-side,
+        var(--ln-accent) 0 58%,
+        #0b0a09 58.5% 61%,
+        transparent 61.5% 92%,
+        rgb(255 255 255 / 0.12) 93%,
+        transparent 95%
+      ),
+      repeating-radial-gradient(circle, #151413 0 1px, #262321 1.5px 2.5px), #171615;
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.16),
+      0 10px 24px -8px rgb(0 0 0 / 0.5);
+    color: var(--ln-accent-ink);
+    font-family: var(--ln-display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(1.4rem, 2.8vw, 2.4rem);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .sh-badge span {
+    transform: translateY(0.04em);
+  }
+
+  .sh-side {
+    color: var(--ln-accent);
+    margin-bottom: 0.4rem;
+  }
+  body.ln .sh-title {
+    font-size: clamp(2.5rem, 7.5vw, 5.5rem);
+    font-weight: 800;
+    font-stretch: 78%;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+  }
+  .sh-meta {
+    grid-column: 1 / -1;
+    font-size: 0.9375rem;
+    color: var(--ln-ink-3);
+  }
+  @media (min-width: 760px) {
+    .sh {
+      grid-template-columns: auto 1fr auto;
+      align-items: end;
+    }
+    .sh-badge {
+      align-self: center;
+    }
+    .sh-meta {
+      grid-column: auto;
+      text-align: right;
+      padding-bottom: 0.4rem;
+    }
+  }
+</style>

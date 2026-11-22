@@ -1,0 +1,11 @@
+---
+// "Test pressing" marker: content that still needs the owner's real copy.
+interface Props {
+  label?: string;
+}
+const { label = 'Placeholder' } = Astro.props;
+---
+
+<span class="ln-ph" title="Placeholder content — owner input pending">
+  {label}
+</span>
