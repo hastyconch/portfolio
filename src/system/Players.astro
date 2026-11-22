@@ -7,12 +7,15 @@ import { spotifyEmbed, youtubeEmbed } from '../lib/music';
 
 interface Props {
   song: Song;
+  /** Hide services that have no link yet instead of showing their "Link coming" state. */
+  onlyAvailable?: boolean;
 }
-const d = Astro.props.song.data;
+const { song, onlyAvailable = false } = Astro.props;
+const d = song.data;
 const players = [
   { key: 'spotify', name: 'Spotify', url: d.spotify, embed: spotifyEmbed(d.spotify) },
   { key: 'youtube', name: 'YouTube', url: d.youtube, embed: youtubeEmbed(d.youtube) },
-];
+].filter((p) => !onlyAvailable || (p.url && p.embed));
 ---
 
 <ul class="pl" aria-label="Listen">

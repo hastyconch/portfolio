@@ -28,7 +28,8 @@ export async function getSiteContent() {
     resume: resume.data,
     work: work.sort(byOrder),
     projects: projects.sort(byOrder),
-    songs: songs.sort(byOrder),
+    songs: songs.filter((s) => !s.data.feature).sort(byOrder),
+    features: songs.filter((s) => s.data.feature).sort(byOrder),
   };
 }
 

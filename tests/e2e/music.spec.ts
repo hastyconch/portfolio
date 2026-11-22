@@ -11,6 +11,8 @@ const [music] = JSON.parse(readFileSync(join(CONTENT, 'music.json'), 'utf8')) as
 }[];
 const songIds = readdirSync(join(CONTENT, 'songs'))
   .filter((f) => f.endsWith('.md'))
+  // Features ("Appears on") have no song page.
+  .filter((f) => !/^feature: true$/m.test(readFileSync(join(CONTENT, 'songs', f), 'utf8')))
   .map((f) => f.replace(/\.md$/, ''))
   .sort();
 const THIRD_PARTY = /spotify|youtube/i;
@@ -112,4 +114,15 @@ test.describe('music', () => {
     await expect(page.locator(`iframe[title="${title}"]`)).toBeVisible();
     await expect.poll(() => requests.length).toBeGreaterThan(0);
   });
+});
+
+test('music lists features under Appears on, with a player and no page', async ({ page }) => {
+  await page.goto('/');
+  const feat = page.locator('#music .mu-feat');
+  await expect(feat.getByRole('heading', { name: 'Appears on' })).toBeVisible();
+  await expect(feat).toContainText('Lonely');
+  await expect(feat.locator('button.pl-play')).not.toHaveCount(0);
+  await expect(page.locator('#music a[href="/music/lonely/"]')).toHaveCount(0);
+  const res = await page.request.get('/music/lonely/');
+  expect(res.status()).toBe(404);
 });
