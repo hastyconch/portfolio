@@ -78,3 +78,32 @@ test('grocer demo is keyboard operable', async ({ page, isMobile }) => {
   await expect(demo.getByRole('checkbox', { name: 'Greek yogurt' })).toBeVisible();
   await expect(demo.getByRole('checkbox', { name: 'Berries' })).toBeVisible();
 });
+
+test('grocer checkout earns points and unlocks the reward', async ({ page }) => {
+  await page.goto('/demos/grocer/');
+  await page.waitForSelector('astro-island:not([ssr])');
+  const demo = page.getByRole('group', { name: /grocer loyalty app/i });
+  const live = demo.locator('[aria-live="polite"]');
+  const tab = (name: string) => demo.getByRole('tab', { name });
+
+  // Load every offer still available.
+  await tab('Offers').click();
+  for (const name of ['cereal', 'Greek yogurts', 'berries']) {
+    await demo.getByRole('button', { name: new RegExp(`Load offer: .*${name}`, 'i') }).click();
+  }
+  // The recipe adds yogurt and berries to the list.
+  await tab('Recipes').click();
+  await demo.getByRole('button', { name: 'Add ingredients to list' }).click();
+
+  // Put everything in the basket and check out.
+  await tab('Lists').click();
+  for (const box of await demo.getByRole('checkbox').all()) {
+    if (!(await box.isChecked())) await box.check();
+  }
+  await demo.getByRole('button', { name: /^Check out/ }).click();
+  await expect(live).toContainText('Reward unlocked');
+
+  await tab('Home').click();
+  await expect(demo.getByText('Reward ready')).toBeVisible();
+  await expect(demo.getByText('All 4 offers earned this week')).toBeVisible();
+});

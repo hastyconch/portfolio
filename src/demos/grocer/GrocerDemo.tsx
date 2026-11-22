@@ -12,10 +12,14 @@ type Item = { id: string; name: string; done: boolean; offer?: string };
 const member = {
   first: 'Sam',
   card: '•••• 7316',
-  points: 3_450,
+  points: 4_650,
   rewardAt: 5_000,
   reward: '$10 off your shop',
 };
+// Base earn for every item bought, on top of any loaded offer.
+const PER_ITEM = 10;
+
+type Shop = { items: number; base: number; bonus: { title: string; points: number }[] };
 
 const offers: Offer[] = [
   { id: 'cereal', title: 'Buy any cereal', points: 50, ends: 'Sun' },
@@ -51,6 +55,9 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 export default function GrocerDemo() {
   const [tab, setTab] = useState<Tab>('home');
   const [loaded, setLoaded] = useState<string[]>(['coffee']);
+  const [used, setUsed] = useState<string[]>([]);
+  const [points, setPoints] = useState(member.points);
+  const [lastShop, setLastShop] = useState<Shop | null>(null);
   const [list, setList] = useState<Item[]>(startList);
   const [announce, setAnnounce] = useState('');
   const base = useId();
@@ -67,8 +74,10 @@ export default function GrocerDemo() {
     recipes: null,
   });
 
-  const progress = member.points / member.rewardAt;
+  const progress = Math.min(points / member.rewardAt, 1);
+  const rewardReady = points >= member.rewardAt;
   const left = list.filter((i) => !i.done).length;
+  const inBasket = list.filter((i) => i.done);
   const onList = (name: string) => list.some((i) => same(i.name, name));
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>, i: number) {
@@ -90,13 +99,42 @@ export default function GrocerDemo() {
     refs.current[next]?.focus();
   }
 
+  function checkout() {
+    if (!inBasket.length) {
+      setAnnounce('Tick the items in your basket first, then check out.');
+      return;
+    }
+    const bonus = offers
+      .filter((o) => loaded.includes(o.id) && inBasket.some((i) => i.offer === o.id))
+      .map((o) => ({ title: o.title, points: o.points }));
+    const base = inBasket.length * PER_ITEM;
+    const earned = base + bonus.reduce((n, b) => n + b.points, 0);
+    const total = points + earned;
+    const usedIds = offers.filter((o) => bonus.some((b) => b.title === o.title)).map((o) => o.id);
+    setPoints(total);
+    setUsed((u) => [...u, ...usedIds]);
+    setLoaded((l) => l.filter((id) => !usedIds.includes(id)));
+    setList((l) => l.filter((i) => !i.done));
+    setLastShop({ items: inBasket.length, base, bonus });
+    setAnnounce(
+      `Checked out ${inBasket.length} ${inBasket.length === 1 ? 'item' : 'items'}: plus ${earned} points` +
+        (bonus.length
+          ? `, including ${bonus.length} ${bonus.length === 1 ? 'offer' : 'offers'}`
+          : '') +
+        `. Balance ${fmt(total)}.` +
+        (total >= member.rewardAt && points < member.rewardAt
+          ? ` Reward unlocked: ${member.reward}.`
+          : ''),
+    );
+  }
+
   function toggleOffer(o: Offer) {
     const isLoaded = loaded.includes(o.id);
     const next = isLoaded ? loaded.filter((id) => id !== o.id) : [...loaded, o.id];
     setLoaded(next);
     setAnnounce(
       `${isLoaded ? 'Removed' : 'Loaded'} offer: ${o.title}, plus ${o.points} points. ` +
-        `${next.length} of ${offers.length} offers loaded.`,
+        `${next.length} of ${offers.length - used.length} offers loaded.`,
     );
   }
 
@@ -156,7 +194,7 @@ export default function GrocerDemo() {
             <p className="gro-hello">Hi {member.first}, happy shopping</p>
             <section className="gro-card gro-balance" aria-label="Points balance">
               <span className="gro-label">Pantry Points</span>
-              <strong className="gro-points">{fmt(member.points)}</strong>
+              <strong className="gro-points">{fmt(points)}</strong>
               <span className="gro-sub">Card {member.card} · linked to your account</span>
             </section>
             <section className="gro-card" aria-label="Progress to your next reward">
@@ -174,16 +212,44 @@ export default function GrocerDemo() {
                 <span style={{ width: `${progress * 100}%` }} />
               </div>
               <span className="gro-sub">
-                {fmt(member.rewardAt - member.points)} pts to go · rewards at {fmt(member.rewardAt)}
+                {rewardReady
+                  ? 'Reward ready · applies at your next checkout'
+                  : `${fmt(member.rewardAt - points)} pts to go · rewards at ${fmt(member.rewardAt)}`}
               </span>
             </section>
+            {lastShop && (
+              <section className="gro-card" aria-label="Your last shop">
+                <span className="gro-label">Last shop</span>
+                <ul className="gro-earned">
+                  <li>
+                    <span>
+                      {lastShop.items} {lastShop.items === 1 ? 'item' : 'items'} × {PER_ITEM} pts
+                    </span>
+                    <span>+{lastShop.base}</span>
+                  </li>
+                  {lastShop.bonus.map((b) => (
+                    <li key={b.title}>
+                      <span>Offer: {b.title}</span>
+                      <span>+{b.points}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             <section className="gro-card gro-row" aria-label="Your offers">
-              <span>
-                <strong>
-                  {loaded.length} of {offers.length}
-                </strong>{' '}
-                offers loaded
-              </span>
+              {used.length === offers.length ? (
+                <span>
+                  <strong>All {offers.length}</strong> offers earned this week
+                </span>
+              ) : (
+                <span>
+                  <strong>
+                    {loaded.length} of {offers.length - used.length}
+                  </strong>{' '}
+                  offers loaded
+                  {used.length > 0 && ` · ${used.length} earned`}
+                </span>
+              )}
               <button type="button" className="gro-link" onClick={() => setTab('offers')}>
                 See offers
               </button>
@@ -193,10 +259,13 @@ export default function GrocerDemo() {
 
         {tab === 'offers' && (
           <>
-            <p className="gro-intro">Picked for you. Load an offer, then buy to earn.</p>
+            <p className="gro-intro">
+              Picked for you. Load an offer, then buy the item to earn the bonus.
+            </p>
             <ul className="gro-stack" aria-label="Personalized offers">
               {offers.map((o) => {
                 const on = loaded.includes(o.id);
+                const done = used.includes(o.id);
                 return (
                   <li key={o.id} className={`gro-card gro-offer${on ? ' is-on' : ''}`}>
                     <span className="gro-pts" aria-hidden="true">
@@ -208,21 +277,27 @@ export default function GrocerDemo() {
                       </strong>
                       <span className="gro-sub">Ends {o.ends}</span>
                     </div>
-                    <button
-                      type="button"
-                      className="gro-load"
-                      aria-pressed={on}
-                      onClick={() => toggleOffer(o)}
-                    >
-                      {on ? (
-                        <>
-                          <span aria-hidden="true">✓ </span>Loaded
-                        </>
-                      ) : (
-                        'Load'
-                      )}
-                      <span className="gro-sr"> offer: {o.title}</span>
-                    </button>
+                    {done ? (
+                      <span className="gro-earned-chip">
+                        <span aria-hidden="true">✓ </span>Earned
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="gro-load"
+                        aria-pressed={on}
+                        onClick={() => toggleOffer(o)}
+                      >
+                        {on ? (
+                          <>
+                            <span aria-hidden="true">✓ </span>Loaded
+                          </>
+                        ) : (
+                          'Load'
+                        )}
+                        <span className="gro-sr"> offer: {o.title}</span>
+                      </button>
+                    )}
                   </li>
                 );
               })}
@@ -238,6 +313,7 @@ export default function GrocerDemo() {
                 {left} of {list.length} left
               </span>
             </div>
+            <p className="gro-sub gro-hint">Tick items as they go in your basket.</p>
             <ul className="gro-list">
               {list.map((i) => {
                 const o = offerById(i.offer);
@@ -256,13 +332,21 @@ export default function GrocerDemo() {
                     {o && (
                       <span id={flagId} className="gro-flag">
                         Offer +{o.points} pts
-                        {loaded.includes(o.id) ? ' · loaded' : ' · not loaded'}
+                        {used.includes(o.id)
+                          ? ' · earned'
+                          : loaded.includes(o.id)
+                            ? ' · loaded'
+                            : ' · not loaded'}
                       </span>
                     )}
                   </li>
                 );
               })}
             </ul>
+            {list.length === 0 && <p className="gro-sub">Your list is empty.</p>}
+            <button type="button" className="gro-cta" onClick={checkout}>
+              Check out {inBasket.length > 0 && `(${inBasket.length})`}
+            </button>
           </section>
         )}
 

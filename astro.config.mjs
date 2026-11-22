@@ -7,6 +7,8 @@ export default defineConfig({
   site: 'https://nakuliyer.pages.dev', // replaced by the custom domain in Phase 6
   output: 'static',
   integrations: [react()],
+  // The dev toolbar floats over the bottom of the page and blocks the demos' tab bars.
+  devToolbar: { enabled: false },
   build: { inlineStylesheets: 'auto' },
   vite: { build: { sourcemap: false } },
 });

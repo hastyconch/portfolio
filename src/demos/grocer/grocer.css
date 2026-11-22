@@ -1,5 +1,7 @@
 /* Invented "Pantry Lane" brand — deliberately not any real grocer's palette. */
 .gro-app {
+  /* The app has its own light UI: keep native controls light even on a dark page. */
+  color-scheme: light;
   --gro-ink: #17201d;
   --gro-teal: #134e4a;
   --gro-beet: #9d174d;
@@ -306,4 +308,38 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+.gro-hint {
+  margin: 0.15rem 0 0.35rem;
+}
+.gro-list + .gro-cta,
+.gro-list ~ .gro-cta {
+  margin-top: 0.85rem;
+  width: 100%;
+}
+.gro-earned {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+.gro-earned li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.gro-earned li span:last-child {
+  font-weight: 700;
+  color: var(--gro-teal);
+  font-variant-numeric: tabular-nums;
+}
+.gro-earned-chip {
+  flex: none;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--gro-teal);
+  padding: 0.35rem 0.6rem;
 }
