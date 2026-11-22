@@ -1,0 +1,35 @@
+---
+// Direction C — one PRD-style case study per project.
+import type { GetStaticPaths } from 'astro';
+import { getSiteContent } from '../../../lib/content';
+import Shell from '../../../directions/c/Shell.astro';
+import CaseStudyLayout from '../../../directions/c/CaseStudyLayout.astro';
+import { prdSections } from '../../../directions/c/util';
+
+export const getStaticPaths = (async () => {
+  const { projects } = await getSiteContent();
+  return projects.map((p, i) => ({
+    params: { slug: p.id },
+    props: { index: i },
+  }));
+}) satisfies GetStaticPaths;
+
+const { index } = Astro.props;
+const content = await getSiteContent();
+const { projects } = content;
+const project = projects[index];
+---
+
+<Shell
+  title={`${project.data.title} — spec · ${content.profile.name}`}
+  description={project.data.tagline}
+  content={content}
+  toc={prdSections.map((s) => ({ href: `#${s.id}`, label: s.label }))}
+>
+  <CaseStudyLayout
+    project={project}
+    n={index + 1}
+    prev={projects[index - 1]}
+    next={projects[index + 1]}
+  />
+</Shell>

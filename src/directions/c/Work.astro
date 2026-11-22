@@ -1,0 +1,165 @@
+---
+// Professional work as a ticket board. The entry with a live demo is the featured ticket,
+// its phone prototype sitting on a canvas beside the spec.
+import type { SiteContent } from '../../lib/content';
+import AirlineDemo from '../../demos/airline/AirlineDemo';
+import SectionHead from './SectionHead.astro';
+import Ticket from './Ticket.astro';
+import DemoFrame from './DemoFrame.astro';
+import Pill from './Pill.astro';
+
+interface Props {
+  content: SiteContent;
+}
+const { work } = Astro.props.content;
+const live = work.filter((w) => w.data.demo === 'airline');
+const rest = work.filter((w) => w.data.demo !== 'airline');
+const num = new Map(work.map((w, i) => [w.id, i + 1]));
+const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+const pendingLabel = (demo: string, frame: string) =>
+  `${cap(demo)} ${frame === 'diagram' ? 'flow diagram' : frame === 'desktop' ? 'desktop prototype' : 'app prototype'}`;
+---
+
+<section id="work" class="dc-section" aria-labelledby="work-h">
+  <div class="dc-wrap">
+    <SectionHead
+      index="02"
+      kicker="Work"
+      title="Professional work"
+      id="work-h"
+      count={`${work.length} tickets`}
+    >
+      <p class="legend">
+        <span>
+          <Pill tone="ok" label="Delivered" /> final copy
+        </span>
+        <span>
+          <Pill tone="ph" label="Placeholder" /> copy still to come
+        </span>
+        <span>
+          <Pill tone="progress" label="Demo coming" /> prototype in build
+        </span>
+      </p>
+    </SectionHead>
+
+    {live.map((w) => (
+      <Ticket entry={w} n={num.get(w.id) ?? 0} featured>
+        <div slot="foot" class="try">
+          <span class="try__k">Try it</span>
+          <p>
+            The prototype is live: switch tabs, check tier status, then redeem a reward flight with
+            the mock points balance.
+          </p>
+        </div>
+        <div class="canvas">
+          <span class="canvas__tag" aria-hidden="true">
+            Prototype
+          </span>
+          <DemoFrame kind="phone" label="Live prototype · mock data">
+            <AirlineDemo client:visible />
+          </DemoFrame>
+        </div>
+      </Ticket>
+    ))}
+
+    <div class="grid">
+      {rest.map((w) => (
+        <Ticket entry={w} n={num.get(w.id) ?? 0}>
+          {w.data.demo !== 'none' && (
+            <DemoFrame
+              kind={w.data.demoFrame}
+              label={pendingLabel(w.data.demo, w.data.demoFrame)}
+              pending
+            />
+          )}
+        </Ticket>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .try {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    margin-top: 24px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    background: var(--accent-soft);
+  }
+  .try__k {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .canvas {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 56px 16px 40px;
+    border-top: 1px solid var(--line);
+    background-color: var(--sunken);
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1.2px);
+    background-size: 18px 18px;
+  }
+  .canvas__tag {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    padding: 3px 8px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+  }
+  .grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  @media (min-width: 760px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .grid > :global(:last-child:nth-child(odd)) {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 1024px) {
+    .try {
+      margin-top: auto;
+    }
+    .grid {
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .canvas {
+      border-top: 0;
+      border-left: 1px solid var(--line);
+      padding: 64px 32px 40px;
+    }
+  }
+</style>
