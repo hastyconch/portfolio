@@ -1,21 +1,20 @@
 ---
-// Nav slot: a "now playing" bar. Mobile: mini player + menu (details/summary, works without JS).
-// Desktop: brand, now-playing readout and side links. The readout follows the section in view.
+// Site header: the name with a small disc mark, plain section links and a reading-progress bar.
+// Phones get a menu (details/summary, works without JS).
 import type { Profile } from '../lib/content';
 
 interface Props {
   profile: Profile;
   home: boolean;
-  nowPlaying: string;
 }
-const { profile, home, nowPlaying } = Astro.props;
+const { profile, home } = Astro.props;
 const base = home ? '' : '/';
 const links = [
-  { href: `${base}#work`, side: 'A', label: 'Work' },
-  { href: `${base}#projects`, side: 'B', label: 'Projects' },
-  { href: `${base}#music`, side: 'Bonus', label: 'Music' },
-  { href: `${base}#resume`, side: 'Notes', label: 'Résumé' },
-  { href: `${base}#contact`, side: 'Outro', label: 'Contact' },
+  { href: `${base}#work`, label: 'Work' },
+  { href: `${base}#projects`, label: 'Projects' },
+  { href: `${base}#music`, label: 'Music' },
+  { href: `${base}#resume`, label: 'Résumé' },
+  { href: `${base}#contact`, label: 'Contact' },
 ];
 ---
 
@@ -23,26 +22,14 @@ const links = [
   <div class="np-bar">
     <a class="np-brand" href={`${base}#hero`}>
       <span class="np-disc" aria-hidden="true"></span>
-      <span class="np-name">{profile.name}</span>
+      <span>{profile.name}</span>
     </a>
-
-    <p class="np-now" aria-hidden="true">
-      <span class="np-now-k">Now playing</span>
-      <span class="np-now-v" data-np-label>
-        {nowPlaying}
-      </span>
-    </p>
 
     <nav class="np-nav" aria-label="Sections">
       <ul class="np-links">
         {links.map((l) => (
           <li>
-            <a href={l.href}>
-              <span class="np-side" aria-hidden="true">
-                {l.side}
-              </span>
-              {l.label}
-            </a>
+            <a href={l.href}>{l.label}</a>
           </li>
         ))}
       </ul>
@@ -57,10 +44,7 @@ const links = [
         <ul class="np-menu-list">
           {links.map((l) => (
             <li>
-              <a href={l.href}>
-                <span class="np-side">{l.side}</span>
-                <span class="np-menu-label">{l.label}</span>
-              </a>
+              <a href={l.href}>{l.label}</a>
             </li>
           ))}
         </ul>
@@ -73,20 +57,7 @@ const links = [
 </header>
 
 <script>
-  // Now-playing readout follows the section in view; menu closes after a jump.
-  const label = document.querySelector<HTMLElement>('[data-np-label]');
-  const sections = [...document.querySelectorAll<HTMLElement>('[data-np]')];
-  if (label && sections.length && 'IntersectionObserver' in window) {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) label.textContent = (e.target as HTMLElement).dataset.np ?? '';
-        }
-      },
-      { rootMargin: '-45% 0px -50% 0px' },
-    );
-    sections.forEach((s) => io.observe(s));
-  }
+  // The menu closes after a jump, and on Escape.
   const menu = document.querySelector<HTMLDetailsElement>('.np-menu');
   menu?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('a')) menu.open = false;
@@ -104,15 +75,16 @@ const links = [
     position: sticky;
     top: 0;
     z-index: 50;
-    background: color-mix(in srgb, var(--ln-bg) 86%, transparent);
-    backdrop-filter: blur(14px) saturate(1.2);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    border-bottom: 1px solid var(--ln-rule);
+    background: color-mix(in srgb, var(--ln-bg) 94%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: var(--ln-hairline);
   }
   .np-bar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: space-between;
+    gap: var(--space-3);
     max-width: var(--ln-max);
     min-height: var(--ln-header);
     margin-inline: auto;
@@ -121,18 +93,17 @@ const links = [
   .np-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-3);
     min-height: 44px;
     text-decoration: none;
     font-family: var(--ln-display);
     font-weight: 700;
-    font-size: 1.05rem;
-    letter-spacing: -0.01em;
-    flex: none;
+    font-size: var(--text-md);
+    letter-spacing: var(--tracking-title);
   }
   .np-disc {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     flex: none;
     background:
@@ -140,66 +111,54 @@ const links = [
       radial-gradient(circle, #ff7a45 0 30%, transparent 31%),
       repeating-radial-gradient(circle, #151312 0 1px, #24211f 1.5px 2.5px), #151312;
     box-shadow: 0 0 0 1px var(--ln-rule);
+    transition: scale var(--dur-quick) var(--ease-out);
   }
-  /* Calm motion (owner pick): the disc turns once when the brand is hovered or focused. */
+  /* The disc turns once when the name is hovered or focused (a full turn, so there is no
+     visible return on leave). */
   @media (prefers-reduced-motion: no-preference) {
-    .np-disc {
-      transition: transform 1.2s cubic-bezier(0.3, 0.7, 0.2, 1);
-    }
     .np-brand:hover .np-disc,
     .np-brand:focus-visible .np-disc {
-      transform: rotate(1turn);
+      animation: np-turn var(--dur-reveal) var(--ease-out);
     }
   }
-  .np-name {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+  @keyframes np-turn {
+    to {
+      rotate: 1turn;
+    }
   }
-  .np-now {
-    display: grid;
-    min-width: 0;
-    flex: 1;
-    line-height: 1.2;
+  .np-brand:active .np-disc {
+    scale: var(--press-scale);
   }
-  .np-now-k {
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ln-accent);
-  }
-  .np-now-v {
-    font-family: var(--ln-display);
-    font-weight: 600;
-    font-size: 0.95rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+
+  /* Phone menu */
   .np-links {
     display: none;
   }
-
-  /* Mobile menu */
   .np-menu summary {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     min-height: 44px;
-    padding: 0 0.9rem;
-    border: 1px solid var(--ln-rule);
-    border-radius: 999px;
+    padding: 0 var(--space-4);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-2);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--text-sm);
     cursor: pointer;
     list-style: none;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
   }
   .np-menu summary::-webkit-details-marker {
     display: none;
+  }
+  .np-menu summary:hover,
+  .np-menu summary:focus-visible {
+    background: var(--ln-hl);
+  }
+  .np-menu summary:active {
+    scale: var(--press-scale);
   }
   .np-burger {
     display: grid;
@@ -208,7 +167,7 @@ const links = [
   }
   .np-burger span {
     height: 2px;
-    border-radius: 2px;
+    border-radius: var(--radius-1);
     background: currentColor;
   }
   .np-menu[open] summary {
@@ -221,39 +180,36 @@ const links = [
     right: 0;
     top: 100%;
     margin: 0;
-    padding: 0.5rem var(--ln-gutter) 1.25rem;
+    padding: var(--space-2) var(--ln-gutter) var(--space-5);
     list-style: none;
     background: var(--ln-bg);
-    border-bottom: 1px solid var(--ln-rule);
-    box-shadow: 0 24px 40px rgb(0 0 0 / 0.25);
+    border-bottom: var(--ln-hairline);
+    box-shadow: var(--shadow-2);
   }
   .np-menu-list a {
     display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    padding: 0.85rem 0;
-    border-bottom: 1px solid var(--ln-rule);
+    align-items: center;
+    min-height: 52px;
+    border-bottom: var(--ln-hairline);
+    font-family: var(--ln-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: var(--tracking-title);
     text-decoration: none;
+    transition: color var(--dur-quick) var(--ease-out);
   }
   .np-menu-list li:last-child a {
     border-bottom: 0;
   }
-  .np-menu-list .np-side {
-    width: 3.5rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ln-ink-3);
+  .np-menu-list a:hover,
+  .np-menu-list a:focus-visible {
+    color: var(--ln-accent);
   }
-  .np-menu-label {
-    font-family: var(--ln-display);
-    font-size: 1.75rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    font-stretch: 85%;
+  .np-menu-list a:active {
+    background: var(--ln-hl);
   }
 
+  /* Reading progress */
   .np-progress {
     position: absolute;
     left: 0;
@@ -284,52 +240,40 @@ const links = [
   }
 
   @media (min-width: 900px) {
-    .np-name {
-      position: static;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      clip: auto;
-    }
-    .np-now {
-      flex: 0 1 auto;
-      margin-left: 1.5rem;
-      padding-left: 1.5rem;
-      border-left: 1px solid var(--ln-rule);
-    }
-    .np-nav {
-      margin-left: auto;
-    }
     .np-menu {
       display: none;
     }
     .np-links {
       display: flex;
-      gap: 0.25rem;
+      gap: var(--space-1);
       margin: 0;
       padding: 0;
       list-style: none;
     }
     .np-links a {
       display: inline-flex;
-      align-items: baseline;
-      gap: 0.4rem;
-      min-height: 40px;
-      padding: 0.55rem 0.8rem;
-      border-radius: 999px;
-      text-decoration: none;
+      align-items: center;
+      min-height: 44px;
+      padding-inline: var(--space-3);
+      border-radius: var(--radius-2);
+      font-size: var(--text-sm);
       font-weight: 600;
-      font-size: 0.9375rem;
+      color: var(--ln-ink-2);
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.45em;
+      transition:
+        color var(--dur-quick) var(--ease-out),
+        text-decoration-color var(--dur-quick) var(--ease-out);
     }
-    .np-links a:hover {
+    .np-links a:hover,
+    .np-links a:focus-visible {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
+    .np-links a:active {
       background: var(--ln-hl);
-    }
-    .np-side {
-      font-size: 0.625rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ln-ink-3);
     }
   }
 </style>

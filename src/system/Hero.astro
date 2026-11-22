@@ -1,38 +1,22 @@
 ---
-// Hero slot: the album front. The cover carries the <h1>; the record slides out behind it.
-// The right-hand "back cover" lists the sides as a tracklist index.
+// Hero: the album cover carries the <h1> (the site's one display moment, and the one place the
+// record theme and grain appear outside Music); the record slides out behind it once. Beside it,
+// what I do in plain words.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
 interface Props {
   profile: Profile;
-  counts: { work: number; projects: number; songs: number };
 }
-const { profile, counts } = Astro.props;
+const { profile } = Astro.props;
 const [first, ...rest] = profile.name.split(' ');
-const sides = [
-  { href: '#work', side: 'A', title: 'Professional work', n: counts.work },
-  { href: '#projects', side: 'B', title: 'Personal projects', n: counts.projects },
-  { href: '#music', side: 'Bonus', title: 'Music', n: counts.songs },
-];
-const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 ---
 
-<section id="hero" class="hero" data-np="Intro" aria-labelledby="hero-title">
+<section id="hero" class="hero" aria-labelledby="hero-title">
   <div class="ln-wrap hero-grid">
     <div class="hero-sleeve">
-      <div class="hero-vinyl ln-vinyl" aria-hidden="true">
-        <span class="hero-vinyl-label">
-          <span>{first}</span>
-          <span>33⅓</span>
-        </span>
-      </div>
+      <div class="hero-vinyl ln-vinyl" aria-hidden="true"></div>
       <div class="hero-cover">
-        <ul class="hero-cover-top" aria-hidden="true">
-          {profile.pillars.map((p) => (
-            <li>{p.title}</li>
-          ))}
-        </ul>
         <span class="hero-sun" aria-hidden="true"></span>
         <h1 id="hero-title" class="hero-name">
           <span>{first}</span>
@@ -42,63 +26,42 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
     </div>
 
     <div class="hero-notes">
-      <p class="ln-eyebrow hero-role">
+      <p class="label hero-role">
         {profile.roleLine}
         {profile.status === 'placeholder' && <Placeholder />}
       </p>
       <p class="hero-headline">{profile.headline}</p>
       <p class="hero-intro">{profile.intro}</p>
-      <nav class="hero-index" aria-label="On this record">
-        <ol>
-          {sides.map((s) => (
-            <li>
-              <a href={s.href}>
-                <span class="hero-index-side">{s.side}</span>
-                <span class="hero-index-title">{s.title}</span>
-                <span class="hero-index-n ln-num">
-                  {s.n} {s.n === 1 ? 'track' : 'tracks'}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <dl class="hero-facts">
+        {profile.pillars.map((p) => (
+          <div>
+            <dt>{p.title}</dt>
+            <dd>{p.body}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
-  </div>
-
-  <div class="ln-wrap">
-    <dl class="hero-pillars">
-      {profile.pillars.map((p, i) => (
-        <div class="hero-pillar">
-          <dt>
-            <span class="hero-pillar-n" aria-hidden="true">
-              {roman[i]}
-            </span>
-            {p.title}
-          </dt>
-          <dd>{p.body}</dd>
-        </div>
-      ))}
-    </dl>
   </div>
 </section>
 
 <style>
   .hero {
-    padding-block: clamp(2rem, 6vw, 5.5rem) clamp(3.5rem, 8vw, 6.5rem);
+    /* the record's rotated box can poke past the viewport while it slides in */
+    overflow-x: clip;
+    padding-block: var(--space-7) var(--space-8);
     scroll-margin-top: var(--ln-header);
   }
   .hero-grid {
     display: grid;
-    gap: clamp(2.25rem, 5vw, 5rem);
+    gap: var(--space-7);
     align-items: center;
   }
 
-  /* Sleeve + record */
+  /* Sleeve and record */
   .hero-sleeve {
     position: relative;
     width: 100%;
-    max-width: 640px;
+    max-width: 600px;
   }
   .hero-cover {
     position: relative;
@@ -108,15 +71,14 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
     container-type: inline-size;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: 6cqi;
-    border-radius: 6px;
+    border-radius: var(--radius-1);
     color: #fff4e8;
     background: var(--ln-grain), var(--ln-cover);
     box-shadow:
       0 1px 0 rgb(255 255 255 / 0.25) inset,
-      0 30px 60px -20px rgb(0 0 0 / 0.55),
-      0 8px 18px rgb(0 0 0 / 0.25);
+      var(--shadow-3);
     overflow: hidden;
   }
   .hero-cover::after {
@@ -127,20 +89,6 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
     border-radius: 50%;
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
     pointer-events: none;
-  }
-  .hero-cover-top {
-    position: relative;
-    z-index: 1;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-family: var(--ln-body);
-    font-size: max(0.625rem, 3.1cqi);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    line-height: 1.5;
-    color: #2a0f1c;
   }
   .hero-sun {
     position: absolute;
@@ -156,23 +104,19 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
     );
     mix-blend-mode: soft-light;
   }
-  .hero-name {
+  body.ln .hero-name {
     position: relative;
     z-index: 1;
     display: grid;
     font-family: var(--ln-display);
     font-weight: 800;
-    font-stretch: 75%;
+    font-stretch: var(--stretch-display);
+    /* Sized to the cover, not the viewport: the name always fills the sleeve the same way. */
     font-size: 29cqi;
-    line-height: 0.82;
-    letter-spacing: -0.035em;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
     color: #fff4e8;
     text-shadow: 0 2px 30px rgb(28 19 64 / 0.35);
-  }
-  body.ln .hero-name {
-    font-weight: 800;
-    line-height: 0.82;
-    letter-spacing: -0.035em;
   }
 
   .hero-vinyl {
@@ -182,25 +126,10 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
     width: 76%;
     --ln-label: #ff9b66;
   }
-  .hero-vinyl-label {
-    position: absolute;
-    inset: 33%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18% 0;
-    z-index: 1;
-    font-family: var(--ln-display);
-    font-size: clamp(0.55rem, 1.4vw, 0.8rem);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #2a0f1c;
-  }
+  /* The signature moment: one slow slide, once, so it gets twice the reveal time. */
   @media (prefers-reduced-motion: no-preference) {
     .hero-vinyl {
-      animation: hero-slide 1.4s cubic-bezier(0.2, 0.7, 0.1, 1) 0.15s both;
+      animation: hero-slide calc(var(--dur-reveal) * 2) var(--ease-out) var(--dur-quick) both;
     }
   }
   @keyframes hero-slide {
@@ -209,111 +138,55 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
     }
   }
 
-  /* Back cover */
+  /* What I do */
   .hero-notes {
     display: grid;
-    gap: 1.5rem;
+    gap: var(--space-5);
     max-width: 38rem;
   }
   .hero-role {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2) var(--space-3);
   }
   .hero-headline {
     font-family: var(--ln-display);
-    font-size: clamp(2rem, 4.6vw, 3.5rem);
-    font-weight: 600;
-    font-stretch: 88%;
-    line-height: 1;
-    letter-spacing: -0.025em;
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-title);
     text-wrap: balance;
   }
   .hero-intro {
-    font-size: 1.0625rem;
+    max-width: var(--measure);
     color: var(--ln-ink-2);
-    max-width: 34em;
   }
-  .hero-index ol {
-    margin: 0.5rem 0 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--ln-rule);
+  .hero-facts {
+    margin: var(--space-2) 0 0;
+    border-top: var(--ln-hairline);
   }
-  .hero-index a {
+  .hero-facts div {
     display: grid;
-    grid-template-columns: 3.4rem 1fr auto;
-    align-items: baseline;
-    gap: 0.75rem;
-    min-height: 48px;
-    padding: 0.85rem 0.25rem;
-    border-bottom: 1px solid var(--ln-rule);
-    text-decoration: none;
+    gap: var(--space-1);
+    padding-block: var(--space-4);
+    border-bottom: var(--ln-hairline);
   }
-  .hero-index-side {
-    font-size: 0.6875rem;
+  .hero-facts dt {
     font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ln-accent);
+    line-height: var(--leading-snug);
   }
-  .hero-index-title {
-    font-family: var(--ln-display);
-    font-size: 1.3rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .hero-index-n {
-    font-size: 0.875rem;
-    color: var(--ln-ink-3);
-  }
-  .hero-index a:hover .hero-index-title {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
+  .hero-facts dd {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--ln-ink-2);
   }
 
-  /* Pillars, set like a back-cover credit block */
-  .hero-pillars {
-    display: grid;
-    gap: 2rem;
-    margin: clamp(3.5rem, 7vw, 6rem) 0 0;
-    padding-top: 2rem;
-    border-top: 1px solid var(--ln-rule);
-  }
-  .hero-pillar dt {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    font-family: var(--ln-display);
-    font-size: 1.45rem;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.1;
-  }
-  .hero-pillar-n {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--ln-accent);
-    min-width: 1.75rem;
-  }
-  .hero-pillar dd {
-    margin: 0.6rem 0 0 2.5rem;
-    color: var(--ln-ink-2);
-    font-size: 1rem;
-  }
-
-  @media (min-width: 760px) {
-    .hero-pillars {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 3rem;
-    }
-  }
   @media (min-width: 1000px) {
     .hero-grid {
-      grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--space-8);
     }
   }
 </style>

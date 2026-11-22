@@ -5,25 +5,34 @@
     "headline": "I lead products with AI, and build them too.",
     "roleLine": "Product, Deloitte Digital · since 2019",
     "location": "Toronto, Canada",
-    "intro": "For seven years I've led large-scale digital delivery (loyalty platforms, data transformations, consent, and healthcare workforce systems) from discovery to launch. As AI reshaped how software gets made, I became a builder too: I prototype, design and ship my own products, and help clients rewire their delivery lifecycle around AI.",
+    "intro": "For seven years I've led product on large client programs, from discovery to launch: loyalty apps for a national airline and a national grocer, a retail data transformation, consent capture, and nurse scheduling for a hospital network. As AI changed how software gets made, I started building too. I design and ship my own apps and games, and I help client teams choose the AI tools and ways of working they plan, build and test with.",
     "pillars": [
       {
-        "title": "Product leadership",
-        "body": "Discovery, prioritization and agile delivery across design, security, engineering, testing and strategy, turning what clients want into what they can ship."
+        "title": "Product lead on client programs",
+        "body": "Discovery, requirements and release planning with design, engineering, security and testing teams, for clients in travel, retail, privacy and healthcare."
       },
       {
-        "title": "AI-enabled delivery",
-        "body": "AI SDLC transformation: choosing the tools and processes that let teams adopt AI safely and measurably."
+        "title": "AI in how teams build software",
+        "body": "I look at where AI changes a client's delivery, choose the tools, define new ways of working and pilot them with the teams."
       },
       {
-        "title": "Builder",
-        "body": "Prototypes, designs and production apps (web, iOS and games) built with AI and understood down to the stack."
+        "title": "Apps and games I build myself",
+        "body": "Web apps, iOS apps and games, designed and shipped with AI. I can explain every layer of the stack."
       }
     ],
     "links": [
-      { "label": "GitHub", "href": "https://github.com/hastyconch" },
-      { "label": "LinkedIn", "href": "#contact" },
-      { "label": "Email", "href": "#contact" }
+      {
+        "label": "GitHub",
+        "href": "https://github.com/hastyconch"
+      },
+      {
+        "label": "LinkedIn",
+        "href": "#contact"
+      },
+      {
+        "label": "Email",
+        "href": "#contact"
+      }
     ],
     "status": "placeholder"
   }

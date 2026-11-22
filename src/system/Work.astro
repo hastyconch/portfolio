@@ -1,8 +1,7 @@
 ---
-// Work: Side A. Organisation from direction A (owner pick): every engagement is open, with a
-// sector / company / role column beside the story. Demo frame from direction D: the live demo
-// sits inline beside its engagement (after the summary on phones) so nobody scrolls past
-// text to reach it. Styled in the Liner Notes system.
+// Work: every engagement is open, with a sector / company / role column beside the story
+// (direction A's organisation, owner pick). The live demo sits inline beside its engagement
+// (after the summary on phones) so nobody scrolls past text to reach it.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -17,25 +16,20 @@ interface Props {
 }
 const { work } = Astro.props;
 const companies = [...new Set(work.map((w) => w.data.years))];
-const meta = `${work.length} engagements · ${companies.join(' / ')}`;
+const lead = `Client engagements at ${companies.join(' and ')}. Where one has a demo beside it, the demo is playable, built on an invented brand and mock data.`;
 // Demos that are built. Others with a demo show the "coming soon" plate.
 const LIVE = new Set(['airline', 'grocer', 'pipeline', 'scheduler']);
 // Wide demos (desktop window, diagram) sit full-width under the summary on desktop.
 const isWide = (frame: string) => frame === 'desktop' || frame === 'diagram';
-const caption = 'Playable · invented brand, mock data';
+const caption = 'Playable. Invented brand, mock data.';
 ---
 
-<section
-  id="work"
-  class="ln-side work"
-  data-np="Side A · Professional work"
-  aria-labelledby="work-h"
->
+<section id="work" class="ln-sec work" aria-labelledby="work-h">
   <div class="ln-wrap">
-    <SideHead badge="A" kicker="Side A" title="Professional work" id="work-h" meta={meta} />
+    <SideHead title="Work" id="work-h" lead={lead} layout="aside" />
 
     <ol class="wk-list">
-      {work.map((w, i) => {
+      {work.map((w) => {
         const d = w.data;
         const hid = `work-${w.id}`;
         const live = LIVE.has(d.demo);
@@ -43,9 +37,8 @@ const caption = 'Playable · invented brand, mock data';
         const wide = live && isWide(d.demoFrame);
         return (
           <li class:list={['wk', live && 'wk-live', wide && 'wk-wide', !hasDemo && 'wk-nodemo']}>
-            <article aria-labelledby={hid}>
+            <article class="reveal" aria-labelledby={hid}>
               <div class="wk-meta">
-                <span class="wk-n ln-num">A{i + 1}</span>
                 <dl class="wk-dl">
                   <div>
                     <dt>Sector</dt>
@@ -86,7 +79,7 @@ const caption = 'Playable · invented brand, mock data';
                   {d.demo === 'pipeline' && (
                     <DemoFrame
                       frame={d.demoFrame}
-                      caption="Interactive · invented project, mock data"
+                      caption="Interactive. Invented project, mock data."
                     >
                       <PipelineDemo client:visible />
                     </DemoFrame>
@@ -94,7 +87,7 @@ const caption = 'Playable · invented brand, mock data';
                   {d.demo === 'scheduler' && (
                     <DemoFrame
                       frame={d.demoFrame}
-                      caption="Interactive · invented unit and staff, mock data"
+                      caption="Interactive. Invented unit and staff, mock data."
                     >
                       <SchedulerDemo client:visible />
                     </DemoFrame>
@@ -104,7 +97,7 @@ const caption = 'Playable · invented brand, mock data';
               )}
 
               <div class="wk-details">
-                <h4 class="wk-h">What I did</h4>
+                <h4 class="wk-h label">What I did</h4>
                 <ul class="wk-ul">
                   {d.contributions.map((c) => (
                     <li>{c}</li>
@@ -112,7 +105,7 @@ const caption = 'Playable · invented brand, mock data';
                 </ul>
                 {d.outcomes.length > 0 && (
                   <>
-                    <h4 class="wk-h">Outcomes</h4>
+                    <h4 class="wk-h label">Outcomes</h4>
                     <ul class="wk-ul wk-outcomes">
                       {d.outcomes.map((o) => (
                         <li>{o}</li>
@@ -140,119 +133,99 @@ const caption = 'Playable · invented brand, mock data';
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--ln-rule);
+    border-top: var(--ln-hairline);
   }
   .wk {
-    border-bottom: 1px solid var(--ln-rule);
+    border-bottom: var(--ln-hairline);
   }
   .wk article {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'meta' 'head' 'demo' 'details' 'skills';
-    padding-block: clamp(2.25rem, 5vw, 3.75rem);
+    padding-block: var(--space-7);
   }
   .wk-head,
   .wk-demo,
   .wk-details,
   .wk-skills {
-    margin-top: 1.5rem;
+    margin-top: var(--space-5);
   }
 
-  /* Meta column: number, sector / company / role */
+  /* Meta column: sector / company / role */
   .wk-meta {
     grid-area: meta;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 1rem;
-  }
-  .wk-n {
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-stretch: 80%;
-    font-size: 1.125rem;
-    color: var(--ln-accent);
+    gap: var(--space-2) var(--space-4);
   }
   .wk-dl {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+    width: 100%;
     margin: 0;
   }
   .wk-dl dt {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  .wk-dl dd {
-    margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--text-2xs);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--ln-ink-3);
+  }
+  .wk-dl dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: var(--leading-snug);
   }
 
   /* Story */
   .wk-head {
     grid-area: head;
-    max-width: 40em;
+    max-width: var(--measure);
   }
   body.ln .wk-title {
-    font-size: clamp(1.9rem, 4.2vw, 3rem);
-    font-weight: 800;
-    font-stretch: 82%;
-    line-height: 0.98;
-    letter-spacing: -0.03em;
+    font-size: var(--text-xl);
+    font-weight: 700;
   }
   .wk-kicker {
-    margin-top: 0.75rem;
-    font-family: var(--ln-display);
-    font-size: clamp(1.15rem, 1.8vw, 1.375rem);
-    font-weight: 500;
-    line-height: 1.3;
+    margin-top: var(--space-1);
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
     color: var(--ln-ink-2);
   }
   .wk-summary {
-    margin-top: 1.25rem;
+    margin-top: var(--space-4);
   }
   .wk-details {
     grid-area: details;
-    max-width: 40em;
+    max-width: var(--measure);
   }
   body.ln .wk-h {
-    margin: 1.5rem 0 0;
-    font-family: var(--ln-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ln-accent);
+    margin: var(--space-5) 0 0;
   }
   body.ln .wk-h:first-child {
     margin-top: 0;
   }
   .wk-ul {
     display: grid;
-    gap: 0.5rem;
-    margin: 0.6rem 0 0;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
     padding: 0;
     list-style: none;
   }
   .wk-ul li {
     position: relative;
-    padding-left: 1.4rem;
+    padding-left: var(--space-5);
     color: var(--ln-ink-2);
   }
   .wk-ul li::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 0.75em;
-    width: 0.7rem;
+    top: 0.8em;
+    width: var(--space-3);
     height: 1px;
     background: var(--ln-ink-3);
   }
@@ -276,21 +249,21 @@ const caption = 'Playable · invented brand, mock data';
     max-width: 150px;
   }
 
-  /* Skills */
+  /* Skills: tags on phones, a quiet list beside the story on wider screens */
   .wk-skills {
     grid-area: skills;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
+    gap: var(--space-2);
+    margin: var(--space-5) 0 0;
     padding: 0;
     list-style: none;
   }
   .wk-skills li {
-    padding: 0.3rem 0.75rem;
-    border: 1px solid var(--ln-rule);
-    border-radius: 999px;
-    font-size: 0.8125rem;
+    padding: var(--space-1) var(--space-3);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
     color: var(--ln-ink-2);
   }
 
@@ -310,63 +283,34 @@ const caption = 'Playable · invented brand, mock data';
     }
     .wk-demo,
     .wk-details {
-      margin-top: 2rem;
+      margin-top: var(--space-6);
     }
     .wk-nodemo .wk-details {
       grid-row: 2 / 4;
     }
     .wk-skills {
-      margin-top: 2rem;
+      margin-top: var(--space-6);
     }
     .wk-meta {
       flex-direction: column;
       align-items: flex-start;
-      gap: 1rem;
-    }
-    .wk-n {
-      font-size: clamp(2.25rem, 4vw, 3rem);
-      line-height: 0.85;
+      padding-top: var(--space-1);
     }
     .wk-dl {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .wk-dl dt {
-      position: static;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      clip: auto;
-      font-size: 0.6875rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--ln-ink-3);
+      grid-template-columns: minmax(0, 1fr);
     }
     .wk-dl dd {
-      margin-top: 0.15rem;
-      font-family: var(--ln-display);
-      font-size: 1.0625rem;
-      font-weight: 600;
-      letter-spacing: -0.005em;
-      text-transform: none;
-      color: var(--ln-ink);
-      line-height: 1.2;
+      font-size: var(--text-md);
     }
     .wk-skills {
       align-self: start;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: var(--space-1);
     }
     .wk-skills li {
       padding: 0;
       border: 0;
-      font-size: 0.9375rem;
-    }
-    .wk-skills li::before {
-      content: '•';
-      margin-right: 0.5em;
-      color: var(--ln-accent);
+      font-size: var(--text-sm);
     }
   }
 
@@ -406,7 +350,7 @@ const caption = 'Playable · invented brand, mock data';
       grid-template-rows: auto auto 1fr;
     }
     .wk-wide .wk-demo {
-      margin-top: 2rem;
+      margin-top: var(--space-6);
     }
   }
 </style>

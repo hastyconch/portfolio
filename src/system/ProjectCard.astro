@@ -1,14 +1,13 @@
 ---
-// ProjectCard slot: a record in the crate. Album art is generated from the project accent;
-// the motif changes with category (app · game · tool). Whole card links to the case study.
+// ProjectCard: cover art generated from the project accent (the motif changes with category:
+// app, game or tool), then the copy. The whole card links to the case study.
 import type { Project } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
 interface Props {
   project: Project;
-  n: string;
 }
-const { project, n } = Astro.props;
+const { project } = Astro.props;
 const d = project.data;
 const stackHint = d.stack
   .slice(0, 3)
@@ -18,14 +17,11 @@ const stackHint = d.stack
 
 <li class="pc" style={`--art: ${d.accent}`}>
   <div class:list={['pc-art', `pc-art-${d.category}`]} aria-hidden="true">
-    <span class="pc-art-disc ln-vinyl"></span>
-    <span class="pc-art-n">{n}</span>
     <span class="pc-art-word">{d.title}</span>
   </div>
   <div class="pc-body">
     <p class="pc-k">
-      <span class="ln-num">{n}</span>
-      <span>{d.category}</span>
+      <span class="pc-cat">{d.category}</span>
       {d.featured && <span class="pc-feat">Featured</span>}
       {d.status === 'placeholder' && <Placeholder />}
     </p>
@@ -51,18 +47,23 @@ const stackHint = d.stack
     position: relative;
     display: grid;
     grid-template-columns: 96px minmax(0, 1fr);
-    gap: 1rem;
+    gap: var(--space-4);
     align-items: start;
-    padding: 1.1rem 0;
-    border-bottom: 1px solid var(--ln-rule);
+    padding: var(--space-4) 0;
+    border-bottom: var(--ln-hairline);
+    border-radius: var(--radius-1);
+    transition: background-color var(--dur-quick) var(--ease-out);
   }
   .pc:has(.pc-link:focus-visible) {
-    outline: 3px solid var(--ln-accent);
-    outline-offset: 4px;
-    border-radius: 8px;
+    outline: var(--focus-width) solid var(--ln-accent);
+    outline-offset: var(--focus-offset);
   }
   .pc-link {
-    text-decoration: none;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color var(--dur-quick) var(--ease-out);
   }
   .pc-link::after {
     content: '';
@@ -72,31 +73,31 @@ const stackHint = d.stack
   body.ln .pc-link:focus-visible {
     outline: none;
   }
-  .pc:hover .pc-link {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
+  .pc:hover .pc-link,
+  .pc:focus-within .pc-link {
+    text-decoration-color: currentColor;
+  }
+  .pc:active {
+    background: var(--ln-hl);
   }
 
-  /* Album art */
+  /* Cover art */
   .pc-art {
     position: relative;
     aspect-ratio: 1;
-    border-radius: 4px;
+    border-radius: var(--radius-1);
     overflow: hidden;
     container-type: inline-size;
     color: #fff;
     background:
-      var(--ln-grain),
       radial-gradient(
         90% 70% at 20% 10%,
         color-mix(in oklab, var(--art) 55%, #fff) 0,
         transparent 60%
       ),
       linear-gradient(160deg, var(--art), color-mix(in oklab, var(--art) 30%, #000));
-    box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.2) inset,
-      0 14px 30px -14px rgb(0 0 0 / 0.6);
+    outline: 1px solid color-mix(in srgb, var(--ln-ink) 10%, transparent);
+    outline-offset: -1px;
   }
   .pc-art::before {
     content: '';
@@ -120,34 +121,19 @@ const stackHint = d.stack
       transparent 1px 7cqi
     );
   }
-  .pc-art-disc {
-    position: absolute;
-    width: 62%;
-    right: -24%;
-    bottom: -24%;
-    --ln-label: color-mix(in oklab, var(--art) 60%, #fff);
-  }
-  .pc-art-n {
-    position: absolute;
-    top: 7cqi;
-    left: 8cqi;
-    font-family: var(--ln-display);
-    font-size: max(0.625rem, 7cqi);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
   .pc-art-word {
     position: absolute;
     z-index: 1;
-    left: 7cqi;
-    right: 30cqi;
-    bottom: 9cqi;
+    left: 8cqi;
+    right: 8cqi;
+    bottom: 8cqi;
     font-family: var(--ln-display);
     font-weight: 800;
-    font-stretch: 75%;
+    font-stretch: var(--stretch-display);
+    /* cover art: sized to the cover */
     font-size: 15cqi;
-    line-height: 0.85;
-    letter-spacing: -0.03em;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
     text-wrap: balance;
     text-shadow: 0 2px 16px rgb(0 0 0 / 0.25);
   }
@@ -155,93 +141,83 @@ const stackHint = d.stack
   /* Body */
   .pc-body {
     display: grid;
-    gap: 0.3rem;
+    gap: var(--space-1);
     min-width: 0;
   }
   .pc-k {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    min-height: 1.4rem;
-
-    gap: 0.3rem 0.6rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    gap: var(--space-1) var(--space-2);
+    font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
+  .pc-cat {
+    text-transform: capitalize;
+  }
   .pc-feat {
-    padding: 0.1em 0.55em;
-    border-radius: 999px;
-    background: var(--ln-accent);
-    color: var(--ln-accent-ink);
-    letter-spacing: 0.08em;
+    padding: 0 var(--space-2);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-full);
+    color: var(--ln-ink-2);
   }
   body.ln .pc-title {
-    font-size: 1.35rem;
+    font-size: var(--text-lg);
     font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
   }
   .pc-tag {
-    font-size: 0.9375rem;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
     color: var(--ln-ink-2);
-    line-height: 1.45;
   }
   .pc-meta {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 0.25rem 1rem;
-    margin-top: 0.35rem;
-    font-size: 0.8125rem;
+    gap: var(--space-1) var(--space-4);
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
   .pc-stack {
     display: none;
-    font-size: 0.8125rem;
+    font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
 
-  /* Desktop: a sleeve in the horizontal rail */
+  /* Desktop: a card in the horizontal rail */
   @media (min-width: 900px) {
     .pc {
       grid-template-columns: 1fr;
-      gap: 1.1rem;
+      gap: var(--space-4);
       padding: 0;
       border-bottom: 0;
-      width: 300px;
+      width: 280px;
       flex: none;
       scroll-snap-align: start;
     }
-    .pc-art {
-      border-radius: 6px;
+    .pc:active {
+      background: none;
     }
-    @media (prefers-reduced-motion: no-preference) {
-      .pc-art {
-        transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.1, 1);
-      }
-      .pc-art-disc {
-        transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.1, 1);
-      }
-      .pc:hover .pc-art,
-      .pc:focus-within .pc-art {
-        transform: translateY(-6px);
-      }
-      .pc:hover .pc-art-disc,
-      .pc:focus-within .pc-art-disc {
-        transform: translate(-14%, -14%) rotate(40deg);
-      }
+    .pc-art {
+      transition: translate var(--dur-base) var(--ease-out);
+    }
+    .pc:hover .pc-art,
+    .pc:focus-within .pc-art {
+      translate: 0 calc(var(--move-sm) * -1);
+    }
+    .pc:active .pc-art {
+      translate: 0;
+      transition-duration: var(--dur-quick);
     }
     body.ln .pc-title {
-      font-size: 1.5rem;
+      font-size: var(--text-xl);
     }
     .pc-stack {
       display: block;
-      padding-top: 0.6rem;
-      margin-top: 0.35rem;
-      border-top: 1px solid var(--ln-rule);
+      padding-top: var(--space-2);
+      margin-top: var(--space-1);
+      border-top: var(--ln-hairline);
     }
   }
 </style>

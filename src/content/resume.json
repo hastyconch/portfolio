@@ -1,21 +1,21 @@
 [
   {
     "id": "resume",
-    "summary": "Product leader at Deloitte Digital with seven years of large-scale digital delivery across loyalty, retail data, consent and healthcare, now focused on AI-enabled product development and AI SDLC transformation.",
+    "summary": "Product lead at Deloitte Digital since 2019. I've taken client programs in loyalty, retail data, consent and healthcare from discovery to launch. Now I also build products with AI, and help client teams bring AI into how they plan, build and test software.",
     "experience": [
       {
         "org": "Deloitte Digital",
-        "title": "Product, large-scale digital delivery",
+        "title": "Product, client delivery programs",
         "start": "Jan 2019",
         "end": "Present",
         "bullets": [
           "Delivered loyalty platforms for a national airline and a national grocer, from discovery through launch.",
-          "Led product on a grocer data transformation and on consent strategy and capture mechanisms aligned to Canadian privacy and anti-spam law.",
+          "Led product on a grocer's data transformation, and on consent capture that meets Canadian privacy and anti-spam law.",
           "Product lead on a healthcare workforce-management transformation used by schedulers across a hospital network.",
           "Technical program manager for internal real-estate software, using AI to turn meetings into executive updates and to drive follow-ups, delivering every initiative on time.",
-          "Leads AI SDLC transformation work: selecting AI tooling and processes and helping clients adopt them.",
-          "Supports the sales cycle: identifies opportunities, shapes proposals and maintains client relationships that secure follow-on work.",
-          "Co-authored the practice's product delivery and product strategy materials used to onboard other practitioners."
+          "Helps clients bring AI into software delivery: finding where it changes the work, choosing the tools and piloting new ways of working with their teams.",
+          "Finds new opportunities with clients, writes proposals and keeps the relationships that lead to follow-on work.",
+          "Co-wrote the practice's product delivery and product strategy guides, used to onboard other practitioners."
         ]
       },
       {
@@ -24,7 +24,7 @@
         "start": "2018",
         "end": "2018",
         "bullets": [
-          "Built a reusable use-case library for IoT, blockchain and RPA from the firm's engagement repository, with teaching materials so practitioners could apply proven patterns on future work."
+          "Built a library of IoT, blockchain and RPA use cases from the firm's past engagements, with teaching materials so practitioners could reuse them on new work."
         ]
       },
       {
@@ -59,7 +59,7 @@
       {
         "group": "AI",
         "items": [
-          "AI SDLC transformation",
+          "AI in software delivery",
           "Prototyping with AI",
           "LLM product design",
           "Agentic workflows"
@@ -87,7 +87,10 @@
       }
     ],
     "education": [
-      { "school": "Placeholder", "detail": "Degree and years to come from the owner." }
+      {
+        "school": "Placeholder",
+        "detail": "Degree and years to come from the owner."
+      }
     ],
     "status": "placeholder"
   }
