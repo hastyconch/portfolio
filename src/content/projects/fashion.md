@@ -1,14 +1,14 @@
 ---
 title: Fashion Companion
-tagline: What should I wear today — from the clothes I already own?
+tagline: What should I wear today, from the clothes I already own?
 category: app
 year: '2026'
 platforms: [Web (installable)]
 problem: I own a lot of clothes and still stand in front of the closet with no idea what to wear. This app knows my wardrobe, the weather and where I'm going, and suggests outfits in my style.
 features:
-  - Photograph clothes one at a time or in a batch "closet session"; AI tags each piece — category, colours, formality, warmth, season, style.
+  - Photograph clothes one at a time or in a batch "closet session"; AI tags each piece by category, colours, formality, warmth, season, style.
   - Duplicate detection that asks before adding the same shirt twice.
-  - Three outfits a day per occasion — Easy, Balanced and Stretch — for everyday, work, evening, date, active or travel.
+  - Three outfits a day per occasion (Easy, Balanced and Stretch) for everyday, work, evening, date, active or travel.
   - Suggestions use the live forecast for your city.
   - An eight-question style quiz and an editable AI-written style brief keep suggestions in your style; thumbs up/down feedback teaches it further.
   - Swap a piece without another AI call; log what you wore.
@@ -28,7 +28,7 @@ stack:
   - {
       layer: Weather,
       tech: 'Open-Meteo',
-      why: 'Free, keyless forecasts and geocoding — no API key to leak.',
+      why: 'Free, keyless forecasts and geocoding, with no API key to leak.',
     }
   - {
       layer: Data & storage,

@@ -1,5 +1,5 @@
 ---
-// Lyrics — a Genius-style annotator, shared by the home Music section and the song pages.
+// Lyrics: a Genius-style annotator, shared by the home Music section and the song pages.
 // Annotated lines are <details>/<summary>: native keyboard support and they still open with no JS.
 // The script adds focus management (the note receives focus; Esc or Close returns it to the line)
 // and, on desktop, keeps a note that opens in the side gutter inside the lyrics block. On mobile
@@ -39,7 +39,7 @@ let lineNo = 0;
     {notes > 0 && (
       <p class="ly-legend">
         <span class="ly-swatch" aria-hidden="true" />
-        {notes} annotated {notes === 1 ? 'line' : 'lines'} — select one to read the note
+        {notes} annotated {notes === 1 ? 'line' : 'lines'}. Select one to read the note.
       </p>
     )}
   </div>
@@ -57,7 +57,7 @@ let lineNo = 0;
               <details class="ly-d" name={`notes-${song.id}`}>
                 <summary class="ly-s">
                   <span class="ly-hl">{l.line}</span>
-                  <span class="visually-hidden"> — annotated line</span>
+                  <span class="visually-hidden"> (annotated line)</span>
                 </summary>
                 <div
                   class="ly-note"

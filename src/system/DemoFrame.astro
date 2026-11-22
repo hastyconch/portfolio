@@ -1,5 +1,5 @@
 ---
-// DemoFrame slot: chrome around demos — phone, desktop window or diagram plate.
+// DemoFrame slot: chrome around demos: phone, desktop window or diagram plate.
 // With `coming`, renders a "still in the studio" state instead of slotted content.
 interface Props {
   frame: 'phone' | 'desktop' | 'diagram' | 'none';
@@ -30,7 +30,7 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
         <div class="df-soon">
           <span class="df-soon-disc ln-vinyl" aria-hidden="true" />
           <span class="df-soon-k">{label}</span>
-          <span class="df-soon-t">In the studio — coming soon</span>
+          <span class="df-soon-t">In the studio, coming soon</span>
         </div>
       ) : (
         <slot />

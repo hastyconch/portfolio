@@ -363,7 +363,7 @@ export default function SchedulerDemo() {
               <>
                 <p className="sch-kicker">{taskDone ? 'New gap' : 'Open shift'}</p>
                 <h4 id={`${id}-task`}>
-                  {gapWord(gap)}, ICU — {gapHave} of {TARGET[gap.shift]} RNs
+                  {gapWord(gap)}, ICU: {gapHave} of {TARGET[gap.shift]} RNs
                 </h4>
                 <p>Choose a nurse. Candidates are ranked by the unit’s rules.</p>
                 <ol className="sch-cands">

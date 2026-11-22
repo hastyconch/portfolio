@@ -1,10 +1,10 @@
 ---
 title: Parking Registrar
-tagline: One tap to register a guest's car — instead of a ten-field form and a CAPTCHA.
+tagline: One tap to register a guest's car, instead of a ten-field form and a CAPTCHA.
 category: tool
 year: '2026'
 platforms: [iOS, Web]
-problem: My building's visitor-parking portal is old, slow and painful on a phone — every registration means retyping codes and solving a CAPTCHA. I built a personal app that does it in one tap.
+problem: "My building's visitor-parking portal is old, slow and painful on a phone: every registration means retyping codes and solving a CAPTCHA. I built a personal app that does it in one tap."
 features:
   - Saved visitors with one-tap registration, plus quick one-off registration for any plate.
   - A monthly usage meter per visitor, so I never run out of passes by surprise.
@@ -15,7 +15,7 @@ stack:
   - {
       layer: iOS,
       tech: 'SwiftUI (personal build, installed with a developer account)',
-      why: 'The nicest experience on the phone I actually use — and a private app that never needed the App Store.',
+      why: 'The nicest experience on the phone I actually use, and a private app that never needed the App Store.',
     }
   - {
       layer: Backend,
@@ -36,7 +36,7 @@ stack:
 engineering:
   - {
       title: 'What failed first',
-      body: 'Version one chained OCR services and kept failing — the verification image is tied to the browser session. Version two keeps one real browser session from the image to the submit.',
+      body: 'Version one chained OCR services and kept failing: the verification image is tied to the browser session. Version two keeps one real browser session from the image to the submit.',
     }
   - {
       title: 'Retries that know why',

@@ -4,7 +4,7 @@ tagline: Learn and play Bridge and Hong Kong Mahjong.
 category: game
 year: '2026'
 platforms: [Web]
-problem: My dad plays Mahjong with his friends all the time. I built a place to learn it — and Bridge — properly, then practise against computer opponents that actually play well.
+problem: My dad plays Mahjong with his friends all the time. I built a place to learn it (and Bridge) properly, then practise against computer opponents that actually play well.
 features:
   - Seven interactive lessons per game, from "meet the tiles" to reading the table.
   - Play a full table against three computer opponents at three difficulty levels, with coach hints.

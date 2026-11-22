@@ -1,5 +1,5 @@
 ---
-// Projects — Side B. Mobile: a vertical tracklist. Desktop: a horizontal rail of sleeves
+// Projects: Side B. Mobile: a vertical tracklist. Desktop: a horizontal rail of sleeves
 // (scroll-snap; arrow buttons scroll it, and it scrolls natively with keyboard/trackpad).
 import type { Project } from '../lib/content';
 import ProjectCard from './ProjectCard.astro';
@@ -30,7 +30,7 @@ const years = [...new Set(projects.map((p) => p.data.year))].join(' – ');
   <div class="rail-wrap">
     <div class="ln-wrap rail-ctrl">
       <p class="rail-hint">
-        Pick a sleeve to read its liner notes — the problem, the features and the stack.
+        Pick a sleeve to read its liner notes: the problem, the features and the stack.
       </p>
       <div class="rail-btns">
         <button type="button" class="rail-btn" data-rail="-1" aria-controls="rail">

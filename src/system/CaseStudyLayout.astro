@@ -1,5 +1,5 @@
 ---
-// CaseStudyLayout slot — a project's liner notes: sleeve front, the problem, features as a
+// CaseStudyLayout slot: a project's liner notes: sleeve front, the problem, features as a
 // tracklist, the roadmap (clearly "On the roadmap"), the stack as credits, producer's notes.
 import type { Project } from '../lib/content';
 import Shell from './Shell.astro';
@@ -28,7 +28,7 @@ const contents = [
 ];
 ---
 
-<Shell title={`${d.title} — case study`} description={d.tagline} nowPlaying={`${n} · ${d.title}`}>
+<Shell title={`${d.title} · case study`} description={d.tagline} nowPlaying={`${n} · ${d.title}`}>
   <article class="cs" style={`--art: ${d.accent}`}>
     <header class="cs-head" data-np={`${n} · ${d.title}`}>
       <div class="ln-wrap cs-head-grid">
@@ -178,7 +178,7 @@ const contents = [
             aria-labelledby="roadmap-h"
           >
             <h2 id="roadmap-h" class="cs-h">
-              On the roadmap <span>planned — not shipped yet</span>
+              On the roadmap <span>planned, not shipped yet</span>
             </h2>
             <ul class="cs-planned">
               {d.planned.map((p) => (
