@@ -24,6 +24,7 @@ export default [
       sourceType: 'commonjs',
       globals: { module: 'writable', require: 'readonly' },
     },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     files: ['factory/**/*.mjs', '*.config.*', 'lighthouserc.cjs'],

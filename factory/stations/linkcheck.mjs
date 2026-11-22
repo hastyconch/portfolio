@@ -33,7 +33,8 @@ for (const file of html(DIST)) {
   const src = readFileSync(file, 'utf8');
   for (const m of src.matchAll(/\s(?:href|src)="([^"]+)"/g)) {
     const url = m[1];
-    if (/^(https?:|mailto:|tel:|data:|javascript:|#)/i.test(url) || url.startsWith('//')) continue;
+    if (/^(https?:|mailto:|tel:|data:|javascript:|about:|#)/i.test(url) || url.startsWith('//'))
+      continue;
     count++;
     if (!resolves(file, url)) bad.push(`${relative(DIST, file)} → ${url}`);
   }
