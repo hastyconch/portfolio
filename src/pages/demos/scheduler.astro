@@ -1,7 +1,9 @@
 ---
-// Test harness for the nurse scheduler demo (WO-012): full width, then in a 360px column.
+// Test harness for the nurse scheduler demo (WO-012, WO-016): first in a laptop pane
+// (1200 × 560, the size the Work section gives it at 1440 × 900), then in a 360px column.
 import Base from '../../layouts/Base.astro';
 import SchedulerDemo from '../../demos/scheduler/SchedulerDemo.tsx';
+import '../../system/tokens.css';
 ---
 
 <Base
@@ -14,9 +16,9 @@ import SchedulerDemo from '../../demos/scheduler/SchedulerDemo.tsx';
     <p>Test harness. Mock data only: the unit, staff and rules are invented.</p>
 
     <section aria-labelledby="full-width">
-      <h2 id="full-width">Full width</h2>
+      <h2 id="full-width">Laptop pane, 1200 × 560</h2>
       <h3 class="visually-hidden">Roster</h3>
-      <div class="frame">
+      <div class="frame pane" data-pane="1200x560">
         <SchedulerDemo client:visible />
       </div>
     </section>
@@ -33,7 +35,7 @@ import SchedulerDemo from '../../demos/scheduler/SchedulerDemo.tsx';
 
 <style>
   .harness {
-    max-width: 960px;
+    max-width: 1232px;
     margin: 0 auto;
     padding: 1rem;
   }
@@ -42,6 +44,17 @@ import SchedulerDemo from '../../demos/scheduler/SchedulerDemo.tsx';
   }
   .frame {
     border: 1px solid GrayText;
+  }
+  .pane {
+    width: 1200px;
+    max-width: 100%;
+  }
+  /* The pane only has a fixed height where it is full size; narrower, it grows with its content. */
+  @media (min-width: 1232px) {
+    .pane {
+      height: 560px;
+      overflow: auto;
+    }
   }
   .narrow {
     width: 100%;
