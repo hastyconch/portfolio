@@ -110,6 +110,7 @@ const songs = defineCollection({
       art: image().optional(), // album art; the artColors gradient stands in until it arrives
       artAlt: z.string().optional(),
       credits: z.string(),
+      release: z.string().optional(), // e.g. 'Single · Aug 2020 · later on the Misfits EP'
       spotify: z.string().url().optional(),
       youtube: z.string().url().optional(),
       artColors: z.tuple([z.string(), z.string()]), // gradient stand-in until album art arrives

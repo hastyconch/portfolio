@@ -5,8 +5,17 @@
       "In 2020, with the world on pause, my friend Sergei and I started writing and producing songs together.",
       "We released them on Spotify and YouTube. Below are the songs, with the lyrics and the stories behind the lines."
     ],
-    "collaborator": { "name": "Sergei", "named": true },
-    "links": [],
-    "status": "placeholder"
+    "collaborator": {
+      "name": "Sergei",
+      "named": true
+    },
+    "links": [
+      {
+        "label": "Nakul on Spotify",
+        "href": "https://open.spotify.com/artist/2sTDK2NjZFsAcq0DRSiJRd"
+      }
+    ],
+    "status": "placeholder",
+    "releasedAs": "Nakul"
   }
 ]

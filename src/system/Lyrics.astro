@@ -36,12 +36,17 @@ let lineNo = 0;
     <H class="ly-h" id={headingId}>
       Lyrics
     </H>
-    <p class="ly-legend">
-      <span class="ly-swatch" aria-hidden="true"></span>
-      {notes} annotated {notes === 1 ? 'line' : 'lines'} — select one to read the note
-    </p>
+    {d.lyrics.length > 0 && (
+      <p class="ly-legend">
+        <span class="ly-swatch" aria-hidden="true" />
+        {notes} annotated {notes === 1 ? 'line' : 'lines'} — select one to read the note
+      </p>
+    )}
   </div>
-  <div class="ly-grid" data-lyrics>
+  {d.lyrics.length === 0 && (
+    <p class="ly-empty">Lyrics and the stories behind the lines are on their way.</p>
+  )}
+  <div class="ly-grid" data-lyrics hidden={d.lyrics.length === 0}>
     <div class="ly-col">
       {stanzas(d.lyrics).map((st) => (
         <div class="ly-stanza">
@@ -351,5 +356,12 @@ let lineNo = 0;
       width: 3.4rem;
       border-top: 1px dashed var(--ln-accent);
     }
+  }
+  .ly-grid[hidden] {
+    display: none;
+  }
+  .ly-empty {
+    margin-top: 1rem;
+    color: var(--ln-ink-2);
   }
 </style>

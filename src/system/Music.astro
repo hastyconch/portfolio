@@ -40,7 +40,7 @@ const [lead, ...story] = music.story.map(say);
       kicker="Bonus tracks"
       title="Music"
       id="music-h"
-      meta={`${songs.length} songs · ${years.join(' – ')}`}
+      meta={`${songs.length} songs · ${years.length > 1 ? `${years[0]}–${years.at(-1)}` : years[0]}`}
     />
 
     <div class="mu-story" data-story>
@@ -116,6 +116,7 @@ const [lead, ...story] = music.story.map(say);
               </p>
               <h3 class="mu-title">{d.title}</h3>
               <p class="mu-credits">{say(d.credits)}</p>
+              {d.release && <p class="mu-release">{d.release}</p>}
               <div class="mu-about">
                 <h4 class="mu-h">About this song</h4>
                 <p>{say(d.meaning)}</p>
@@ -398,5 +399,10 @@ const [lead, ...story] = music.story.map(say);
     .mu-tab-t {
       font-size: 1.15rem;
     }
+  }
+  .mu-release {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--ln-ink-3);
   }
 </style>
