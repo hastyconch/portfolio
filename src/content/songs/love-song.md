@@ -30,7 +30,7 @@ lyrics:
   - { 'line': 'And she’s promiscuous' }
   - { 'line': 'Both wanted to stay but in the end of it' }
   - { 'line': 'Don’t expect a love song, I’ll just get the words wrong' }
-  - { 'section': 'Verse 2', 'line': 'She they type you find her message in a bottle' }
+  - { 'section': 'Verse 2', 'line': 'She the type you find her message in a bottle' }
   - { 'line': 'Didn’t see her today it’ll be a better tomorrow' }
   - { 'line': 'She never need a callout, more following than followed' }
   - { 'line': 'Confident in sweats and a smile to wipe away sorrow' }
