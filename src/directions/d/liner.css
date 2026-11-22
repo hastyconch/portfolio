@@ -1,0 +1,233 @@
+/* Direction D — Liner Notes. A record sleeve: dark vinyl by default, a cream paper sleeve in
+   light mode. `.ln-dark` re-scopes the dark palette for surfaces that are "the record itself"
+   (hero cover, music, outro) and stay dark in both schemes. */
+
+:root,
+.ln-dark {
+  color-scheme: dark;
+  --ln-bg: #0f0d0c;
+  --ln-bg-2: #171412;
+  --ln-bg-3: #221e1a;
+  --ln-rule: #3b342e;
+  --ln-ink: #f4ece1;
+  --ln-ink-2: #cfc2b2;
+  --ln-ink-3: #a39584;
+  --ln-accent: #ff9b66;
+  --ln-accent-ink: #1a0f08;
+  --ln-hl: rgb(255 255 255 / 0.11);
+  --ln-hl-hover: rgb(255 155 102 / 0.24);
+  --ln-groove: rgb(255 255 255 / 0.06);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --ln-bg: #f2ebdf;
+    --ln-bg-2: #eae1d2;
+    --ln-bg-3: #e0d5c3;
+    --ln-rule: #c9bba5;
+    --ln-ink: #1a1411;
+    --ln-ink-2: #41372f;
+    --ln-ink-3: #5c4f44;
+    --ln-accent: #a63d17;
+    --ln-accent-ink: #fff8f0;
+    --ln-hl: rgb(26 20 17 / 0.08);
+    --ln-hl-hover: rgb(166 61 23 / 0.16);
+    --ln-groove: rgb(26 20 17 / 0.06);
+  }
+}
+
+:root {
+  --ln-display: 'Bricolage Grotesque Variable', 'Arial Narrow', system-ui, sans-serif;
+  --ln-body: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ln-max: 1240px;
+  --ln-gutter: clamp(1rem, 4vw, 2.5rem);
+  --ln-header: 60px;
+  /* Signature cover gradient — art, identical in both schemes. */
+  --ln-cover:
+    radial-gradient(120% 90% at 85% 8%, #ffb37a 0, transparent 46%),
+    linear-gradient(168deg, #ff7a45 0%, #d2445a 34%, #6d1f5f 62%, #1c1340 100%);
+  --ln-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html {
+  scroll-padding-top: calc(var(--ln-header) + 12px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body.ln {
+  font-family: var(--ln-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ln-ink);
+  background: var(--ln-bg);
+  font-feature-settings: 'ss01';
+  overflow-x: clip;
+}
+.ln-dark {
+  color: var(--ln-ink);
+  background-color: var(--ln-bg);
+}
+
+body.ln :focus-visible {
+  outline: 3px solid var(--ln-accent);
+  outline-offset: 3px;
+}
+body.ln .skip-link {
+  background: var(--ln-accent);
+  color: var(--ln-accent-ink);
+  outline-color: var(--ln-ink);
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+body.ln a {
+  color: inherit;
+}
+body.ln h1,
+body.ln h2,
+body.ln h3,
+body.ln h4 {
+  font-family: var(--ln-display);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+body.ln p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* Shared bits */
+.ln-wrap {
+  width: 100%;
+  max-width: var(--ln-max);
+  margin-inline: auto;
+  padding-inline: var(--ln-gutter);
+}
+.ln-eyebrow {
+  font-family: var(--ln-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ln-ink-3);
+}
+.ln-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* "Test pressing" marker for placeholder content. */
+.ln-ph {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.18em 0.6em 0.2em;
+  border: 1px dashed currentColor;
+  border-radius: 999px;
+  font-family: var(--ln-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--ln-ink-2);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.ln-ph::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+/* Section scaffold: every section is a side of the record. */
+.ln-side {
+  padding-block: clamp(4.5rem, 10vw, 8.5rem);
+  scroll-margin-top: var(--ln-header);
+}
+.ln-side + .ln-side:not(.ln-dark) {
+  border-top: 1px solid var(--ln-rule);
+}
+
+/* Vinyl disc used across the direction (decorative). */
+.ln-vinyl {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle closest-side,
+      var(--ln-label, #ff9b66) 0 33%,
+      #0b0a09 33.5% 35%,
+      transparent 35.5% 93%,
+      rgb(255 255 255 / 0.1) 94%,
+      transparent 95.5%
+    ),
+    repeating-radial-gradient(circle, #151413 0 1px, #232120 1.5px 2.6px, #181716 3px 3.6px),
+    #171615;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.16),
+    0 0 0 1px rgb(0 0 0 / 0.5),
+    0 18px 40px rgb(0 0 0 / 0.35);
+
+  position: relative;
+}
+.ln-vinyl::before {
+  /* sheen */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 30deg,
+    transparent 0 8%,
+    rgb(255 255 255 / 0.16) 12%,
+    transparent 18% 50%,
+    rgb(255 255 255 / 0.12) 62%,
+    transparent 68%
+  );
+}
+.ln-vinyl::after {
+  /* spindle hole */
+  content: '';
+  position: absolute;
+  inset: 48.6%;
+  border-radius: 50%;
+  background: #0b0a09;
+}
+
+@media print {
+  :root,
+  .ln-dark {
+    color-scheme: light;
+    --ln-bg: #fff;
+    --ln-bg-2: #fff;
+    --ln-bg-3: #fff;
+    --ln-rule: #bbb;
+    --ln-ink: #000;
+    --ln-ink-2: #222;
+    --ln-ink-3: #444;
+    --ln-accent: #000;
+  }
+  body.ln .np,
+  body.ln .skip-link {
+    display: none;
+  }
+  .ln-print-cv main > :not(#resume),
+  .ln-print-cv body > footer {
+    display: none;
+  }
+  .ln-print-cv #resume {
+    padding-block: 0;
+  }
+}

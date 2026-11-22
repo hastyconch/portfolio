@@ -1,0 +1,141 @@
+---
+// Projects — Side B. Mobile: a vertical tracklist. Desktop: a horizontal rail of sleeves
+// (scroll-snap; arrow buttons scroll it, and it scrolls natively with keyboard/trackpad).
+import type { Project } from '../../lib/content';
+import ProjectCard from './ProjectCard.astro';
+import SideHead from './SideHead.astro';
+
+interface Props {
+  projects: Project[];
+}
+const { projects } = Astro.props;
+const years = [...new Set(projects.map((p) => p.data.year))].join(' – ');
+---
+
+<section
+  id="projects"
+  class="ln-side projects"
+  data-np="Side B · Personal projects"
+  aria-labelledby="projects-h"
+>
+  <div class="ln-wrap">
+    <SideHead
+      badge="B"
+      kicker="Side B"
+      title="Personal projects"
+      id="projects-h"
+      meta={`${projects.length} tracks · ${years}`}
+    />
+  </div>
+  <div class="rail-wrap">
+    <div class="ln-wrap rail-ctrl">
+      <p class="rail-hint">
+        Pick a sleeve to read its liner notes — the problem, the features and the stack.
+      </p>
+      <div class="rail-btns">
+        <button type="button" class="rail-btn" data-rail="-1" aria-controls="rail">
+          <span aria-hidden="true">←</span>
+          <span class="visually-hidden">Scroll projects back</span>
+        </button>
+        <button type="button" class="rail-btn" data-rail="1" aria-controls="rail">
+          <span aria-hidden="true">→</span>
+          <span class="visually-hidden">Scroll projects forward</span>
+        </button>
+      </div>
+    </div>
+    <ol class="rail" id="rail" aria-label="Projects">
+      {projects.map((p, i) => (
+        <ProjectCard project={p} n={`B${i + 1}`} />
+      ))}
+    </ol>
+  </div>
+</section>
+
+<script>
+  const rail = document.getElementById('rail');
+  const btns = document.querySelectorAll<HTMLButtonElement>('[data-rail]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  function sync() {
+    if (!rail) return;
+    const max = rail.scrollWidth - rail.clientWidth - 2;
+    btns.forEach((b) => {
+      const dir = Number(b.dataset.rail);
+      b.disabled = dir < 0 ? rail.scrollLeft <= 2 : rail.scrollLeft >= max;
+    });
+  }
+  btns.forEach((b) =>
+    b.addEventListener('click', () => {
+      if (!rail) return;
+      const step = Math.max(320, rail.clientWidth * 0.8) * Number(b.dataset.rail);
+      rail.scrollBy({ left: step, behavior: reduce.matches ? 'auto' : 'smooth' });
+    }),
+  );
+  rail?.addEventListener('scroll', sync, { passive: true });
+  addEventListener('resize', sync);
+  sync();
+</script>
+
+<style>
+  .rail-ctrl {
+    display: none;
+  }
+  .rail {
+    margin: 0 auto;
+    padding: 0 var(--ln-gutter);
+    max-width: var(--ln-max);
+    list-style: none;
+    border-top: 1px solid var(--ln-rule);
+  }
+  .rail-hint {
+    color: var(--ln-ink-2);
+    max-width: 34em;
+  }
+
+  @media (min-width: 900px) {
+    .rail-ctrl {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    .rail-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .rail-btn {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--ln-rule);
+      background: transparent;
+      color: var(--ln-ink);
+      font: inherit;
+      font-size: 1.15rem;
+      cursor: pointer;
+    }
+    .rail-btn:hover:not(:disabled) {
+      background: var(--ln-ink);
+      color: var(--ln-bg);
+    }
+    .rail-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .rail {
+      display: flex;
+      gap: 2rem;
+      max-width: none;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: max(var(--ln-gutter), (100vw - var(--ln-max)) / 2 + var(--ln-gutter));
+      padding: 0.75rem max(var(--ln-gutter), (100vw - var(--ln-max)) / 2 + var(--ln-gutter)) 2rem;
+      border-top: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--ln-rule) transparent;
+    }
+  }
+</style>
