@@ -1,0 +1,139 @@
+---
+// SongArt — a song's sleeve with the record peeking out. Uses the song's `art` image when the
+// owner has supplied it; otherwise the `artColors` gradient sleeve (number, title, year) stands in.
+// Shared by the home Music section and the /music/<id>/ pages.
+import type { Song } from '../lib/content';
+import { Image } from 'astro:assets';
+
+interface Props {
+  song: Song;
+  /** zero-based position in the tracklist */
+  index: number;
+  /** true when the sleeve is above the fold (song pages), so the image isn't lazy */
+  eager?: boolean;
+}
+const { song, index, eager = false } = Astro.props;
+const d = song.data;
+const pad = (n: number) => String(n).padStart(2, '0');
+// Without alt text the art is decorative: the title is always printed beside it.
+const decorative = !d.art || !d.artAlt;
+---
+
+<div
+  class="sa"
+  aria-hidden={decorative ? 'true' : undefined}
+  style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
+>
+  <span class="sa-vinyl ln-vinyl" aria-hidden="true"></span>
+  {d.art ? (
+    <div class="sa-art sa-art-img">
+      <Image
+        src={d.art}
+        alt={d.artAlt ?? ''}
+        widths={[300, 600]}
+        sizes="(min-width: 900px) 300px, 70vw"
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+        decoding="async"
+      />
+    </div>
+  ) : (
+    <div class="sa-art">
+      <span class="sa-n ln-num">{pad(index + 1)}</span>
+      <span class="sa-t">{d.title}</span>
+      <span class="sa-y ln-num">{d.year}</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .sa {
+    position: relative;
+    width: min(100%, 340px);
+  }
+  .sa-vinyl {
+    position: absolute;
+    top: 5%;
+    right: -2%;
+    width: 80%;
+    --ln-label: var(--c2);
+  }
+  .sa-art {
+    position: relative;
+    width: 82%;
+    aspect-ratio: 1;
+    container-type: inline-size;
+    border-radius: 4px;
+    overflow: hidden;
+    color: #fff;
+    background:
+      var(--ln-grain),
+      repeating-linear-gradient(var(--c1) 0 12%, transparent 12% 26%) 0 52% / 100% 22% no-repeat,
+      radial-gradient(circle at 64% 40%, var(--c2) 0 25%, transparent 25.4%),
+      radial-gradient(
+        circle at 64% 40%,
+        color-mix(in srgb, var(--c2) 45%, transparent) 0,
+        transparent 48%
+      ),
+      linear-gradient(
+        172deg,
+        color-mix(in oklab, var(--c1) 88%, #fff) 0%,
+        var(--c1) 42%,
+        color-mix(in oklab, var(--c1) 45%, #000) 100%
+      );
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.2) inset,
+      0 30px 60px -24px rgb(0 0 0 / 0.7);
+  }
+  .sa-art-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .sa-n {
+    position: absolute;
+    top: 7cqi;
+    left: 8cqi;
+    font-family: var(--ln-display);
+    font-weight: 800;
+    font-size: 11cqi;
+    line-height: 1;
+  }
+  .sa-t {
+    position: absolute;
+    left: 8cqi;
+    right: 8cqi;
+    bottom: 13cqi;
+    font-family: var(--ln-display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: 15cqi;
+    line-height: 0.88;
+    letter-spacing: -0.02em;
+  }
+  .sa-y {
+    position: absolute;
+    left: 8cqi;
+    bottom: 6cqi;
+    font-size: 4.5cqi;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+  }
+  /* The record slides out of the sleeve; it replays whenever a hidden tab panel is shown. */
+  @media (prefers-reduced-motion: no-preference) {
+    .sa-vinyl {
+      animation: sa-out 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+    }
+  }
+  @keyframes sa-out {
+    from {
+      transform: translateX(-18%) rotate(-60deg);
+    }
+  }
+  @media (min-width: 900px) {
+    .sa {
+      width: 360px;
+    }
+  }
+</style>
