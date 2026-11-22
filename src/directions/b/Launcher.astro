@@ -1,0 +1,28 @@
+---
+// Project "apps": desktop icons on the right edge (desktop) / home-screen grid (phone).
+// Each icon launches the project's case-study window.
+import type { Project } from '../../lib/content';
+import AppIcon from './AppIcon.astro';
+import { LAB_BASE, projectIcon } from './apps';
+
+interface Props {
+  projects: Project[];
+}
+const { projects } = Astro.props;
+---
+
+<nav class="launcher" aria-labelledby="launcher-h" data-bg>
+  <h2 id="launcher-h" class="launcher-h">
+    Apps
+  </h2>
+  <ul class="launcher-grid">
+    {projects.map((p) => (
+      <li>
+        <a class="launcher-app" href={`${LAB_BASE}${p.id}/`}>
+          <AppIcon icon={projectIcon(p.data.demo)} color={p.data.accent} size="lg" />
+          <span class="launcher-label">{p.data.title}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

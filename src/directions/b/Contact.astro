@@ -1,0 +1,38 @@
+---
+// Footer/contact slot: a small contact-card window (id "contact") with profile.links.
+import type { Profile } from '../../lib/content';
+import Window from './Window.astro';
+import Icon from './Icon.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  profile: Profile;
+}
+const { profile } = Astro.props;
+const initials = profile.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .join('')
+  .slice(0, 2);
+---
+
+<Window id="contact" class="win--small" meta={profile.location} bodyLabel="Contact">
+  <div class="card">
+    <span class="card-avatar" aria-hidden="true">
+      {initials}
+    </span>
+    <p class="card-name">{profile.name}</p>
+    <p class="card-role">{profile.roleLine}</p>
+    <ul class="card-links">
+      {profile.links.map((l) => (
+        <li>
+          <a class="card-link" href={l.href}>
+            <span>{l.label}</span>
+            <Icon name="arrow" size={18} stroke={2} />
+          </a>
+        </li>
+      ))}
+    </ul>
+    <Placeholder status={profile.status} label="Placeholder links" />
+  </div>
+</Window>
