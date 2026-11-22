@@ -1,0 +1,118 @@
+---
+// Slot: Footer/contact — the back page: an ink band with the contact links set large,
+// and a colophon.
+import type { Profile } from '../../lib/content';
+import ChapterHead from './ChapterHead.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  profile: Profile;
+}
+const { profile } = Astro.props;
+const external = (href: string) => /^https?:/.test(href);
+---
+
+<footer class="back">
+  <section id="contact" aria-labelledby="contact-h">
+    <ChapterHead num="05" label="Correspondence" title="Contact" headingId="contact-h" tone="ink" />
+    <div class="wrap">
+      <ul class="links">
+        {profile.links.map((l) => (
+          <li>
+            <a href={l.href} rel={external(l.href) ? 'me noopener' : undefined}>
+              <span class="l-label">{l.label}</span>
+              <span class="l-arrow" aria-hidden="true">
+                {external(l.href) ? '↗' : '→'}
+              </span>
+              {external(l.href) && <span class="visually-hidden"> (opens external site)</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div class="colophon">
+        {profile.status === 'placeholder' && <Placeholder label="Links pending" />}
+        <p class="sig">
+          {profile.name} · {profile.location}
+        </p>
+        <p>Set in Fraunces and Inter. Built with Astro.</p>
+      </div>
+    </div>
+  </section>
+</footer>
+
+<style>
+  .back {
+    margin-top: clamp(5rem, 12vw, 10rem);
+    padding-bottom: 2.5rem;
+    color: var(--spread-ink);
+    background: var(--spread);
+  }
+  .back :global(.ph) {
+    color: var(--spread-muted);
+  }
+  .back :global(.ph .dot) {
+    background: var(--spread-ink);
+  }
+  .back :global(h2) {
+    color: var(--spread-ink);
+  }
+  .back :global(.chapter .num) {
+    color: var(--spread-muted);
+  }
+  .sig {
+    margin-right: auto;
+  }
+  .links {
+    list-style: none;
+    margin: clamp(2rem, 5vw, 3.5rem) 0 0;
+    padding: 0;
+    border-top: 1px solid var(--spread-rule);
+  }
+  .links li {
+    border-bottom: 1px solid var(--spread-rule);
+  }
+  .links a {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    font-family: var(--serif);
+    font-size: var(--step-3);
+    font-weight: 350;
+    font-variation-settings: 'opsz' 96;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-decoration: none;
+    color: var(--spread-ink);
+    transition: padding 0.3s cubic-bezier(0.2, 0.7, 0.1, 1);
+  }
+  .links a:hover {
+    padding-left: 0.75rem;
+  }
+  .links a:hover .l-label {
+    font-style: italic;
+  }
+  .links a:focus-visible {
+    outline-color: var(--spread-ink);
+  }
+  .l-arrow {
+    font-family: var(--sans);
+    font-size: 0.6em;
+    color: var(--spread-muted);
+  }
+  .colophon {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 2rem;
+    margin-top: clamp(3rem, 7vw, 5rem);
+    font-size: 0.875rem;
+    color: var(--spread-muted);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .links a:hover {
+      padding-left: 0;
+    }
+  }
+</style>

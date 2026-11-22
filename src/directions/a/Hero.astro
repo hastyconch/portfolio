@@ -1,0 +1,231 @@
+---
+// Slot: Hero — a magazine cover. Nameplate rule, cover line (h1), standfirst with drop cap,
+// byline, and the three pillars as numbered "departments".
+import type { Profile } from '../../lib/content';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  profile: Profile;
+}
+const { profile } = Astro.props;
+const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+const contents = [
+  { href: '#work', title: 'Selected work', label: 'Professional work' },
+  { href: '#projects', title: 'Projects', label: "Things I've built" },
+  { href: '#music', title: 'Music', label: 'Side project' },
+  { href: '#resume', title: 'Résumé', label: 'Curriculum vitae' },
+  { href: '#contact', title: 'Contact', label: 'Correspondence' },
+];
+---
+
+<section id="hero" class="hero" aria-labelledby="hero-h">
+  <div class="wrap">
+    <div class="plate">
+      <hr class="rule-double" />
+      <div class="plate-row">
+        <span class="eyebrow">Portfolio</span>
+        <span class="eyebrow loc">{profile.location}</span>
+        {profile.status === 'placeholder' && <Placeholder />}
+      </div>
+    </div>
+
+    <div class="cover-grid">
+      <h1 id="hero-h" class="cover">
+        <span class="name">{profile.name}</span>
+        <span class="line">{profile.headline}</span>
+      </h1>
+      <nav class="contents" aria-label="In this issue">
+        <p class="eyebrow">In this issue</p>
+        <ol>
+          {contents.map((c, i) => (
+            <li>
+              <a href={c.href}>
+                <span class="c-no" aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span class="c-t">{c.title}</span>
+                <span class="c-l">{c.label}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
+
+    <div class="lede">
+      <p class="byline">
+        <span class="eyebrow">By {profile.name}</span>
+        <span class="role">{profile.roleLine}</span>
+      </p>
+      <p class="standfirst dropcap intro">{profile.intro}</p>
+    </div>
+
+    <ol class="pillars" aria-label="What I do">
+      {profile.pillars.map((p, i) => (
+        <li class="reveal">
+          <span class="roman" aria-hidden="true">
+            {roman[i] ?? i + 1}.
+          </span>
+          <h2 class="p-title">{p.title}</h2>
+          <p>{p.body}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-top: clamp(1.5rem, 4vw, 3rem);
+  }
+  .plate-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    padding-top: 0.7rem;
+  }
+  .loc {
+    margin-right: auto;
+  }
+  .cover-grid {
+    display: grid;
+    gap: 2rem;
+    align-items: end;
+    margin-top: clamp(2.5rem, 7vw, 6rem);
+  }
+  .cover {
+    margin: 0;
+  }
+  .contents {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .cover-grid {
+      grid-template-columns: minmax(0, 9fr) minmax(0, 3fr);
+    }
+    .contents {
+      display: block;
+      padding-bottom: 0.6rem;
+    }
+  }
+  .contents ol {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
+  .contents li {
+    border-bottom: 1px solid var(--rule);
+  }
+  .contents a {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    grid-template-areas: 'no t' 'no l';
+    column-gap: 0.5rem;
+    padding: 0.6rem 0;
+    text-decoration: none;
+  }
+  .c-no {
+    grid-area: no;
+    padding-top: 0.2rem;
+    font-family: var(--serif);
+    font-size: 0.9375rem;
+    font-style: italic;
+    color: var(--accent);
+  }
+  .c-t {
+    grid-area: t;
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    font-variation-settings: 'opsz' 36;
+    line-height: 1.25;
+  }
+  .c-l {
+    grid-area: l;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .contents a:hover .c-t {
+    font-style: italic;
+  }
+  .name {
+    display: block;
+    margin-bottom: clamp(0.75rem, 2vw, 1.5rem);
+    font-size: var(--step-2);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: 'opsz' 48;
+    letter-spacing: -0.01em;
+    color: var(--accent);
+  }
+  .line {
+    display: block;
+    max-width: 13ch;
+    font-size: var(--step-5);
+    font-weight: 360;
+    font-variation-settings: 'opsz' 144;
+    line-height: 0.94;
+    letter-spacing: -0.035em;
+  }
+  .lede {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: clamp(2.5rem, 6vw, 5rem);
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+  }
+  .byline {
+    display: grid;
+    gap: 0.35rem;
+    align-content: start;
+  }
+  .role {
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+  }
+  .intro {
+    max-width: 40rem;
+    font-size: var(--step-1);
+  }
+  .pillars {
+    list-style: none;
+    display: grid;
+    gap: 2.25rem;
+    margin: clamp(3.5rem, 8vw, 6.5rem) 0 0;
+    padding: 0;
+  }
+  .pillars li {
+    padding-top: 1rem;
+    border-top: 2px solid var(--rule-strong);
+  }
+  .roman {
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    font-style: italic;
+    font-variation-settings: 'opsz' 24;
+    color: var(--accent);
+  }
+  .p-title {
+    margin: 0.35rem 0 0.6rem;
+    font-size: var(--step-2);
+    font-weight: 420;
+    font-variation-settings: 'opsz' 72;
+  }
+  .pillars p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  @media (min-width: 56rem) {
+    .lede {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+      gap: 2rem;
+    }
+    .pillars {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2rem;
+    }
+  }
+</style>

@@ -1,0 +1,87 @@
+---
+// Projects section: featured builds as magazine cards, the rest as a contents list.
+import type { Project } from '../../lib/content';
+import ChapterHead from './ChapterHead.astro';
+import ProjectCard from './ProjectCard.astro';
+
+interface Props {
+  projects: Project[];
+}
+const { projects } = Astro.props;
+const featured = projects.filter((p) => p.data.featured);
+const rest = projects.filter((p) => !p.data.featured);
+---
+
+<section id="projects" class="projects" aria-labelledby="projects-h">
+  <ChapterHead num="02" label="Things I've built" title="Projects" headingId="projects-h" />
+
+  <div class="wrap">
+    <ul class="featured" aria-label="Featured projects">
+      {featured.map((p, i) => (
+        <li>
+          <ProjectCard project={p} variant="feature" num={i + 1} />
+        </li>
+      ))}
+    </ul>
+
+    {rest.length > 0 && (
+      <div class="index">
+        <div class="index-head">
+          <h3 class="eyebrow">Also in this issue</h3>
+        </div>
+        <ul aria-label="More projects">
+          {rest.map((p, i) => (
+            <li>
+              <ProjectCard project={p} variant="index" num={featured.length + i + 1} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  .featured,
+  .index ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .featured {
+    display: grid;
+    gap: 3.5rem;
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .index {
+    margin-top: clamp(4rem, 9vw, 7rem);
+  }
+  .index-head {
+    padding-bottom: 0.85rem;
+    border-bottom: 2px solid var(--rule-strong);
+  }
+  .index-head h3 {
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+  }
+  .index li:first-child :global(.row) {
+    border-top: 0;
+  }
+  .index li:last-child :global(.row) {
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 48rem) {
+    .featured {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 3rem 2rem;
+    }
+  }
+  @media (min-width: 72rem) {
+    .featured {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -1,0 +1,84 @@
+---
+// Chapter opener: double rule, running head, oversized italic numeral, title and deck.
+interface Props {
+  num: string;
+  label: string;
+  title: string;
+  headingId: string;
+  /** Use on dark spreads. */
+  tone?: 'paper' | 'ink';
+}
+const { num, label, title, headingId, tone = 'paper' } = Astro.props;
+---
+
+<header class:list={['chapter', 'wrap', tone]}>
+  <hr class="rule-double" />
+  <div class="running">
+    <span class="eyebrow">Chapter {num}</span>
+    <span class="eyebrow">{label}</span>
+  </div>
+  <div class="grid">
+    <span class="num reveal" aria-hidden="true">
+      {num}
+    </span>
+    <div class="titles">
+      <h2 id={headingId}>{title}</h2>
+      {Astro.slots.has('default') && (
+        <div class="deck standfirst">
+          <slot />
+        </div>
+      )}
+    </div>
+  </div>
+</header>
+
+<style>
+  .chapter {
+    padding-top: clamp(4rem, 10vw, 9rem);
+  }
+  .running {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0 0;
+  }
+  .grid {
+    display: grid;
+    gap: 0.25rem 2rem;
+    padding-top: clamp(1.5rem, 4vw, 3rem);
+  }
+  .num {
+    font-family: var(--serif);
+    font-size: clamp(5rem, 3rem + 10vw, 11rem);
+    font-style: italic;
+    font-weight: 250;
+    font-variation-settings: 'opsz' 144;
+    line-height: 0.78;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+  }
+  h2 {
+    font-size: var(--step-4);
+    font-weight: 380;
+    font-variation-settings: 'opsz' 144;
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+  }
+  .deck {
+    max-width: 34rem;
+    margin-top: 1.25rem;
+  }
+  @media (min-width: 56rem) {
+    .grid {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+      align-items: end;
+    }
+  }
+  .ink .eyebrow {
+    color: var(--spread-muted);
+  }
+  .ink .rule-double,
+  .ink .rule-double::after {
+    border-color: var(--spread-ink);
+  }
+</style>
