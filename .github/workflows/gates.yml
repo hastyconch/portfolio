@@ -41,6 +41,8 @@ jobs:
         run: npx astro build
       - name: anonymize (src + dist)
         run: npm run -s anonymize
+      - name: copy lint (no em dashes, art. 11)
+        run: npm run -s copylint
       - name: internal links
         run: npm run -s links
       - name: external links

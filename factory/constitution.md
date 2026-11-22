@@ -66,3 +66,10 @@ block for the latter).
 Every work order lists acceptance criteria that each name the gate or test that proves them,
 and a `touches` list of paths. Agents stay inside `touches`; anything else is escalated.
 After 3 failed gate loops, stop and escalate to the owner.
+
+## Article 11 — No em dashes in site copy
+
+The website's copy never uses the em dash (U+2014). Write the sentence another way: a comma,
+colon, parentheses, a full stop, or `·` in titles and labels. This covers everything a visitor
+can read or hear: content, component text, accessible names and page titles, including the
+demos. Enforced by `factory/stations/copylint.mjs` over `src/` and the built `dist/`.

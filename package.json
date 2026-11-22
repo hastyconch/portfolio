@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "anonymize": "node factory/stations/anonymize.mjs",
+    "copylint": "node factory/stations/copylint.mjs",
     "speclint": "node factory/stations/speclint.mjs",
     "links": "node factory/stations/linkcheck.mjs",
     "e2e": "playwright test",
