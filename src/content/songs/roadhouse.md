@@ -11,11 +11,11 @@ meaning: 'The story behind this song is on its way.'
 lyrics:
   - { 'section': 'Verse 1', 'line': 'Why don’t you tell me bout your dreams' }
   - { 'line': 'Nothing you say would be too bold' }
-  - { 'line': 'Your futures so damn promising' }
+  - { 'line': 'Your future’s so damn promising' }
   - { 'line': 'And I can help you with your road' }
   - { 'stanza': true, 'line': 'Got to learn how to love yourself' }
   - { 'line': 'Don’t just do what you have been told' }
-  - { 'line': 'Your struggles only with your best' }
+  - { 'line': 'Your struggle’s only with your best' }
   - { 'line': 'Don’t let her own you till they’re old' }
   - { 'section': 'Chorus', 'line': 'Roadblocks, rooftops, sitting on a sidewalk' }
   - { 'line': 'Long thoughts, have nots, negativity talk' }
