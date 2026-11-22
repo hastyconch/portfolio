@@ -1,0 +1,79 @@
+---
+// Test harness for the Billable. mini-room (WO-011). Not linked from the site; noindex.
+import Base from '../../layouts/Base.astro';
+import BillableMini from '../../demos/billable/BillableMini.tsx';
+---
+
+<Base
+  title="Billable. mini-room — demo harness"
+  description="One playable room from Billable., a satirical pixel-art platformer about consulting."
+  noindex
+  bodyClass="bh"
+>
+  <div class="bh-wrap">
+    <header class="bh-head">
+      <p class="bh-kicker">Demo harness</p>
+      <h1>
+        Billable. <span class="bh-sub">mini-room</span>
+      </h1>
+      <p class="bh-lede">
+        One room from my satirical platformer about life in consulting. The game engine loads only
+        when you press Play.
+      </p>
+    </header>
+    <BillableMini client:visible />
+  </div>
+</Base>
+
+<style is:global>
+  body.bh {
+    --bh-bg: #f6f4ef;
+    --bh-ink: #16141c;
+    --bh-ink-2: #45404f;
+    --bh-accent: #3f6f12;
+    color: var(--bh-ink);
+    background: var(--bh-bg);
+  }
+  @media (prefers-color-scheme: dark) {
+    body.bh {
+      --bh-bg: #0d0b12;
+      --bh-ink: #f2f4f7;
+      --bh-ink-2: #c3c7d0;
+      --bh-accent: #8cc63f;
+    }
+  }
+</style>
+
+<style>
+  .bh-wrap {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+  }
+  .bh-head {
+    margin-bottom: 1.5rem;
+  }
+  .bh-kicker {
+    margin: 0 0 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bh-accent);
+  }
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.1;
+    color: var(--bh-ink);
+  }
+  .bh-sub {
+    font-weight: 400;
+    color: var(--bh-ink-2);
+  }
+  .bh-lede {
+    max-width: 40rem;
+    margin: 0;
+    color: var(--bh-ink-2);
+  }
+</style>

@@ -1,0 +1,211 @@
+/* Billable. mini-room. The stage and its overlays are the game's own night palette in both
+   colour schemes; the text around it inherits the page's colours. */
+
+.bm {
+  --bm-ink: #0d0b12;
+  --bm-paper: #f2f4f7;
+  --bm-green: #8cc63f;
+  --bm-panel: #2a2740;
+  --bm-rule: #4b5260;
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+@media (min-width: 60rem) {
+  .bm {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    align-items: start;
+  }
+}
+
+.bm-main {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.bm-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  min-height: 2.75rem;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.bm-hud .bm-btn {
+  margin-left: auto;
+}
+
+.bm-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 400 / 224;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--bm-ink);
+}
+.bm-poster,
+.bm-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.bm-canvas:focus {
+  outline: 3px solid var(--bm-green);
+  outline-offset: -3px;
+}
+
+.bm-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--bm-paper);
+  background: rgb(13 11 18 / 0.88);
+}
+.bm-overlay p {
+  margin: 0;
+}
+.bm-overlay-clear {
+  background: transparent;
+}
+.bm-overlay-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.bm-chip {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgb(13 11 18 / 0.9);
+}
+
+.bm-btn {
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: 2px solid var(--bm-ink);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--bm-ink);
+  background: var(--bm-green);
+  cursor: pointer;
+}
+.bm-btn:hover {
+  background: #a3d65f;
+}
+.bm-btn:focus-visible,
+.bm-pad-btn:focus-visible {
+  outline: 3px solid var(--bm-paper);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px var(--bm-ink);
+}
+.bm-btn-play {
+  min-width: 9rem;
+  min-height: 3.25rem;
+  font-size: 1.25rem;
+  box-shadow: 0 6px 0 var(--bm-ink);
+}
+.bm-btn-small {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.9rem;
+}
+
+/* On-screen controls: phones and other coarse pointers. */
+.bm-pad {
+  display: none;
+  grid-template-columns: repeat(3, 3.25rem) 1fr repeat(2, 4rem);
+  grid-template-areas: 'left down right . attack jump';
+  gap: 0.5rem;
+  align-items: center;
+}
+@media (pointer: coarse), (max-width: 47.99rem) {
+  .bm-pad {
+    display: grid;
+  }
+}
+.bm-pad-btn {
+  min-height: 3.25rem;
+  border: 1px solid var(--bm-rule);
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--bm-paper);
+  background: var(--bm-panel);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.bm-pad-btn:active {
+  background: #3f3a5e;
+}
+.bm-pad-btn:disabled {
+  opacity: 0.5;
+}
+.bm-pad-left {
+  grid-area: left;
+}
+.bm-pad-down {
+  grid-area: down;
+}
+.bm-pad-right {
+  grid-area: right;
+}
+.bm-pad-attack {
+  grid-area: attack;
+  min-height: 4rem;
+  border-radius: 50%;
+  background: #9c2236;
+}
+.bm-pad-jump {
+  grid-area: jump;
+  min-height: 4rem;
+  border-radius: 50%;
+  background: #3d6b17;
+}
+
+.bm-info {
+  min-width: 0;
+}
+.bm-h {
+  margin: 0 0 0.4rem;
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+.bm-info p {
+  margin: 0 0 1.25rem;
+}
+.bm-keys {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+.bm-keys div {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0.75rem;
+}
+.bm-keys dt {
+  font-weight: 700;
+}
+.bm-keys dd {
+  margin: 0;
+}
+
+.bm-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
