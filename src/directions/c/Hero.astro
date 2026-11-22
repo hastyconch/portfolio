@@ -1,0 +1,353 @@
+---
+// Overview: the profile as a workspace header — title, intro, a properties panel and
+// three pillars styled as the quarter's objectives.
+import type { SiteContent } from '../../lib/content';
+import Pill from './Pill.astro';
+import { LAB } from './util';
+
+interface Props {
+  content: SiteContent;
+}
+const { profile, work, projects, songs } = Astro.props.content;
+const pad = (n: number) => String(n).padStart(2, '0');
+const featured = projects.find((p) => p.data.featured) ?? projects[0];
+const stats = [
+  { n: pad(work.length), label: 'Engagements', href: '#work' },
+  { n: pad(projects.length), label: 'Products built', href: '#projects' },
+  { n: pad(songs.length), label: 'Songs released', href: '#music' },
+];
+---
+
+<section id="hero" class="hero" aria-labelledby="hero-h">
+  <div class="hero__canvas" aria-hidden="true"></div>
+  <div class="dc-wrap">
+    <div class="hero__crumbs">
+      <span class="crumb">Workspace</span>
+      <span class="crumb__sep" aria-hidden="true">
+        /
+      </span>
+      <span class="crumb crumb--here">Overview</span>
+      {profile.status === 'placeholder' && <Pill tone="ph" label="Placeholder copy" />}
+    </div>
+
+    <div class="hero__grid">
+      <div class="hero__main">
+        <h1 id="hero-h">
+          <span class="hero__name">{profile.name}</span>
+          <span class="visually-hidden"> — </span>
+          <span class="hero__headline">{profile.headline}</span>
+        </h1>
+        <p class="hero__intro">{profile.intro}</p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="#work">
+            See the work
+          </a>
+          <a class="btn" href={`${LAB}${featured.id}/`}>
+            Read a product spec<span class="visually-hidden">: {featured.data.title}</span>
+          </a>
+        </div>
+      </div>
+
+      <aside class="hero__props card" aria-labelledby="props-h">
+        <div class="props-head">
+          <h2 id="props-h" class="props-title">
+            Properties
+          </h2>
+          <span class="props-id" aria-hidden="true">
+            PROFILE
+          </span>
+        </div>
+        <dl class="props">
+          <dt>Role</dt>
+          <dd>{profile.roleLine}</dd>
+          <dt>Location</dt>
+          <dd>{profile.location}</dd>
+          <dt>Focus</dt>
+          <dd>
+            <ul class="tags">
+              {profile.pillars.map((p) => (
+                <li class="tag">{p.title}</li>
+              ))}
+            </ul>
+          </dd>
+        </dl>
+        <ul class="stats" role="list">
+          {stats.map((s) => (
+            <li>
+              <a href={s.href}>
+                <strong>{s.n}</strong>
+                <span>{s.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+
+    <ol class="pillars" role="list" aria-label="Pillars">
+      {profile.pillars.map((p, i) => (
+        <li class="pillar card">
+          <div class="pillar__top">
+            <span class="tid">OBJ-{i + 1}</span>
+            <span class="pillar__rule" aria-hidden="true" />
+          </div>
+          <h2 class="pillar__title">{p.title}</h2>
+          <p class="pillar__body">{p.body}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding: 28px 0 56px;
+    overflow: hidden;
+  }
+  .hero__canvas {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 560px;
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1.2px);
+    background-size: 20px 20px;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+    pointer-events: none;
+  }
+  .hero .dc-wrap {
+    position: relative;
+  }
+  .hero__crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .crumb--here {
+    color: var(--ink);
+  }
+  .crumb__sep {
+    color: var(--line-strong);
+  }
+  .hero__crumbs :global(.pill) {
+    margin-left: 6px;
+  }
+
+  .hero__grid {
+    display: grid;
+    gap: 36px;
+    margin-top: 36px;
+  }
+  h1 {
+    display: grid;
+    gap: 14px;
+  }
+  .hero__name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--accent);
+  }
+  .hero__name::before {
+    content: '';
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+  .hero__headline {
+    font-size: clamp(2.35rem, 5.4vw, 4rem);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+  .hero__intro {
+    max-width: 60ch;
+    margin-top: 22px;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--ink-2);
+  }
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+  .btn:hover {
+    border-color: var(--ink);
+  }
+  .btn--primary {
+    border-color: var(--ink);
+    color: var(--bg);
+    background: var(--ink);
+  }
+  .btn--primary::after {
+    content: '↓';
+    margin-left: 10px;
+    font-weight: 400;
+  }
+  .btn--primary:hover {
+    background: var(--ink-2);
+  }
+
+  .hero__props {
+    align-self: start;
+    padding: 18px 20px 20px;
+  }
+  .props-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .props-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  .props-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .hero__props .props {
+    grid-template-columns: 76px 1fr;
+    row-gap: 12px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .stats li + li {
+    border-left: 1px solid var(--line);
+  }
+  .stats a {
+    display: grid;
+    gap: 2px;
+    padding: 12px 12px 11px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .stats a:hover {
+    background: var(--sunken);
+  }
+  .stats strong {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .stats span {
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--muted);
+  }
+
+  .pillars {
+    display: grid;
+    gap: 12px;
+    margin-top: 40px;
+    padding: 0;
+    list-style: none;
+  }
+  .pillar {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 18px 20px 20px;
+  }
+  .pillar__top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .pillar__rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--line-strong), transparent);
+  }
+  .pillar__title {
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .pillar__body {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* phones: the three objectives read as one stacked card */
+  @media (max-width: 719px) {
+    .pillars {
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .pillar {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: none;
+    }
+    .pillar + .pillar {
+      border-top: 1px solid var(--line);
+    }
+  }
+  @media (min-width: 720px) {
+    .pillars {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (min-width: 1024px) {
+    .hero {
+      padding: 36px 0 88px;
+    }
+    .hero__grid {
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 56px;
+      margin-top: 64px;
+    }
+    .pillars {
+      margin-top: 64px;
+      gap: 16px;
+    }
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+// Page shell for direction C: Base + fonts + tokens + rail nav + contact footer.
+import Base from '../../layouts/Base.astro';
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+import type { SiteContent } from '../../lib/content';
+import { LAB } from './util';
+import '@fontsource-variable/ibm-plex-sans';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import './styles.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  content: SiteContent;
+  toc?: { href: string; label: string }[];
+  /** true on the one-page home: nav links are in-page fragments */
+  home?: boolean;
+}
+const { title, description, content, toc, home = false } = Astro.props;
+const { profile, work, projects, songs } = content;
+const base = home ? '' : LAB;
+const pad = (n: number) => String(n).padStart(2, '0');
+const items = [
+  { href: `${base}#hero`, label: 'Overview' },
+  { href: `${base}#work`, label: 'Work', meta: pad(work.length) },
+  { href: `${base}#projects`, label: 'Projects', meta: pad(projects.length) },
+  { href: `${base}#music`, label: 'Music', meta: pad(songs.length) },
+  { href: `${base}#resume`, label: 'Résumé' },
+  { href: `${base}#contact`, label: 'Contact' },
+];
+---
+
+<Base title={title} description={description} noindex bodyClass="dc">
+  <Nav slot="header" profile={profile} items={items} toc={toc} />
+  <slot />
+  <Footer slot="footer" profile={profile} />
+</Base>

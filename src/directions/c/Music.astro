@@ -1,0 +1,717 @@
+---
+// Music as a release tracker: each song is a drawer holding its meaning, an annotated lyric
+// sheet and click-to-load players. Annotations open in a side panel (desktop) or inline under
+// the selected line (phone); focus moves to the note and returns to the line on close.
+import type { SiteContent } from '../../lib/content';
+import SectionHead from './SectionHead.astro';
+import Pill from './Pill.astro';
+import { ticketId, isPlaceholder } from './util';
+
+interface Props {
+  content: SiteContent;
+}
+const { songs } = Astro.props.content;
+
+const years = songs.map((s) => s.data.year).sort();
+const credits = [...new Set(songs.map((s) => s.data.credits))];
+const anyLink = songs.some((s) => s.data.spotify || s.data.youtube);
+
+const spotifyEmbed = (u?: string) =>
+  u ? u.replace('open.spotify.com/', 'open.spotify.com/embed/') : '';
+const youtubeEmbed = (u?: string) => {
+  if (!u) return '';
+  const id = u.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/)?.[1];
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : '';
+};
+
+type Line = SiteContent['songs'][number]['data']['lyrics'][number];
+const stanzasOf = (lyrics: Line[]) => {
+  const out: { section?: string; lines: (Line & { ref?: number })[] }[] = [];
+  let ref = 0;
+  for (const l of lyrics) {
+    if (l.section || out.length === 0) out.push({ section: l.section, lines: [] });
+    out[out.length - 1].lines.push(l.note ? { ...l, ref: ++ref } : l);
+  }
+  return out;
+};
+---
+
+<section id="music" class="dc-section" aria-labelledby="music-h">
+  <div class="dc-wrap">
+    <SectionHead
+      index="04"
+      kicker="Music"
+      title="Songs & lyric notes"
+      id="music-h"
+      count={`${songs.length} releases`}
+    />
+
+    <dl class="mstrip">
+      <div>
+        <dt>Since</dt>
+        <dd>{years[0]}</dd>
+      </div>
+      <div>
+        <dt>Credits</dt>
+        <dd>{credits.join(' · ')}</dd>
+      </div>
+      <div>
+        <dt>Released on</dt>
+        <dd>
+          {anyLink ? 'Streaming platforms' : <span class="is-ph">streaming links pending</span>}
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tracks">
+      {songs.map((song, i) => {
+        const d = song.data;
+        const panelId = `note-${song.id}`;
+        const stanzas = stanzasOf(d.lyrics);
+        const notes = d.lyrics.filter((l) => l.note).length;
+        const embeds = [
+          { svc: 'Spotify', url: d.spotify, src: spotifyEmbed(d.spotify) },
+          { svc: 'YouTube', url: d.youtube, src: youtubeEmbed(d.youtube) },
+        ];
+        return (
+          <details class="track" open={i === 0}>
+            <summary class="track__row">
+              <span
+                class="track__art"
+                style={`background:linear-gradient(135deg, ${d.artColors[0]}, ${d.artColors[1]})`}
+                aria-hidden="true"
+              />
+              <span class="track__id tid">{ticketId('S', i + 1)}</span>
+              <span class="track__title">{d.title}</span>
+              <span class="track__year">{d.year}</span>
+              <span class="track__notes">{notes} notes</span>
+              <span class="track__status">
+                {d.status === 'placeholder' && <Pill tone="ph" label="Placeholder" />}
+              </span>
+              <span class="track__chev" aria-hidden="true" />
+            </summary>
+
+            <div class="track__body" data-annot>
+              <div class="track__sheet">
+                <h3 class="mini-h">
+                  Meaning<span class="visually-hidden"> of {d.title}</span>
+                </h3>
+                <p class:list={['track__meaning', { 'is-ph': isPlaceholder(d.meaning) }]}>
+                  {d.meaning}
+                </p>
+                <p class="track__credits">{d.credits}</p>
+
+                <h3 class="mini-h mini-h--lyrics">
+                  Lyrics<span class="visually-hidden"> of {d.title}</span>
+                  <span class="mini-h__hint">Select a numbered line to read its note</span>
+                </h3>
+                <div class="lyrics">
+                  {stanzas.map((st) => (
+                    <div class="stanza">
+                      {st.section && <p class="stanza__label">{st.section}</p>}
+                      <ol class="stanza__lines" role="list">
+                        {st.lines.map((l) => (
+                          <li>
+                            {l.note ? (
+                              <button
+                                type="button"
+                                class="lyric lyric--note"
+                                aria-expanded="false"
+                                aria-controls={panelId}
+                                data-note={l.note}
+                                data-ref={l.ref}
+                                data-section={st.section ?? ''}
+                              >
+                                <span class="lyric__txt">{l.line}</span>
+                                <span class="lyric__ref" aria-hidden="true">
+                                  {l.ref}
+                                </span>
+                                <span class="visually-hidden">(annotated)</span>
+                              </button>
+                            ) : (
+                              <span class="lyric">{l.line}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div class="track__side">
+                <div class="note-dock" data-dock>
+                  <div
+                    class="note"
+                    id={panelId}
+                    role="region"
+                    aria-label={`Annotation — ${d.title}`}
+                    tabindex="-1"
+                    data-panel
+                  >
+                    <div class="note__empty" data-empty>
+                      <span class="note__icon" aria-hidden="true">
+                        ¶
+                      </span>
+                      <p>
+                        {notes} annotated {notes === 1 ? 'line' : 'lines'}. Select one to read the
+                        note here.
+                      </p>
+                    </div>
+                    <div class="note__full" data-full hidden>
+                      <p class="note__ref">
+                        Note <span data-ref /> <span data-sec />
+                      </p>
+                      <blockquote class="note__line" data-line />
+                      <p class="note__text" data-text />
+                      <button type="button" class="note__close" data-close>
+                        Close note
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="listen">
+                  <p class="mini-h">Listen</p>
+                  {embeds.map((e) => (
+                    <div
+                      class="embed"
+                      data-embed
+                      data-src={e.src}
+                      data-title={`${d.title} on ${e.svc}`}
+                    >
+                      <button type="button" class="embed__btn">
+                        <span class="embed__play" aria-hidden="true" />
+                        <span class="embed__txt">
+                          <strong>Load {e.svc} player</strong>
+                          <span>Loads a third-party embed on click</span>
+                        </span>
+                      </button>
+                      <p class="embed__alt">
+                        {e.url ? (
+                          <a href={e.url}>Open on {e.svc} ↗</a>
+                        ) : (
+                          <span class="is-ph">{e.svc} link pending</span>
+                        )}
+                      </p>
+                      <p class="embed__msg" aria-live="polite" data-msg />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script>
+  const phone = window.matchMedia('(max-width: 899px)');
+
+  document.querySelectorAll<HTMLElement>('[data-annot]').forEach((root) => {
+    const panel = root.querySelector<HTMLElement>('[data-panel]')!;
+    const dock = root.querySelector<HTMLElement>('[data-dock]')!;
+    const empty = panel.querySelector<HTMLElement>('[data-empty]')!;
+    const full = panel.querySelector<HTMLElement>('[data-full]')!;
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('button.lyric--note')];
+    let current: HTMLButtonElement | null = null;
+
+    const close = (restoreFocus: boolean) => {
+      const was = current;
+      current = null;
+      buttons.forEach((b) => b.setAttribute('aria-expanded', 'false'));
+      full.hidden = true;
+      empty.hidden = false;
+      panel.classList.remove('is-open');
+      if (panel.parentElement !== dock) dock.append(panel);
+      if (restoreFocus && was) was.focus();
+    };
+
+    const open = (btn: HTMLButtonElement) => {
+      current = btn;
+      buttons.forEach((b) => b.setAttribute('aria-expanded', String(b === btn)));
+      full.querySelector('[data-ref]')!.textContent = btn.dataset.ref ?? '';
+      full.querySelector('[data-sec]')!.textContent = btn.dataset.section
+        ? `· ${btn.dataset.section}`
+        : '';
+      full.querySelector('[data-line]')!.textContent =
+        btn.querySelector('.lyric__txt')?.textContent ?? '';
+      full.querySelector('[data-text]')!.textContent = btn.dataset.note ?? '';
+      empty.hidden = true;
+      full.hidden = false;
+      panel.classList.add('is-open');
+      // Phones: the note opens as a sheet right under the line; desktop keeps the side panel.
+      if (phone.matches) btn.closest('li')!.append(panel);
+      else if (panel.parentElement !== dock) dock.append(panel);
+      panel.focus();
+    };
+
+    buttons.forEach((b) =>
+      b.addEventListener('click', () => (current === b ? close(true) : open(b))),
+    );
+    full.querySelector('[data-close]')!.addEventListener('click', () => close(true));
+    panel.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && current) {
+        e.preventDefault();
+        close(true);
+      }
+    });
+    phone.addEventListener('change', () => current && open(current));
+  });
+
+  // Click-to-load players: nothing third-party is requested until the visitor asks.
+  document.querySelectorAll<HTMLElement>('[data-embed]').forEach((box) => {
+    const btn = box.querySelector('button')!;
+    const msg = box.querySelector<HTMLElement>('[data-msg]')!;
+    btn.addEventListener('click', () => {
+      const src = box.dataset.src;
+      if (!src) {
+        msg.textContent = 'No link has been added for this song yet.';
+        return;
+      }
+      const f = document.createElement('iframe');
+      f.src = src;
+      f.title = box.dataset.title ?? 'Music player';
+      f.loading = 'lazy';
+      f.allow = 'encrypted-media; picture-in-picture';
+      f.className = 'embed__frame';
+      btn.replaceWith(f);
+    });
+  });
+</script>
+
+<style>
+  .mstrip {
+    display: grid;
+    gap: 1px;
+    margin: 0 0 24px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--line);
+  }
+  .mstrip {
+    grid-template-columns: auto 1fr;
+  }
+  .mstrip div:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .mstrip div {
+    display: grid;
+    gap: 2px;
+    padding: 12px 16px;
+    background: var(--surface);
+  }
+  .mstrip dt {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .mstrip dd {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .tracks {
+    display: grid;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .track + .track {
+    border-top: 1px solid var(--line);
+  }
+  .track__row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'art title chev'
+      'art meta chev';
+    align-items: center;
+    column-gap: 14px;
+    padding: 12px 16px;
+    list-style: none;
+    cursor: pointer;
+  }
+  .track__row::-webkit-details-marker {
+    display: none;
+  }
+  .track__row:hover {
+    background: var(--surface-2);
+  }
+  .track__art {
+    grid-area: art;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1);
+  }
+  .track__id {
+    display: none;
+  }
+  .track__title {
+    grid-area: title;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .track__year,
+  .track__notes {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .track__year {
+    grid-area: meta;
+  }
+  .track__notes {
+    display: none;
+  }
+  .track__status {
+    grid-area: meta;
+    justify-self: start;
+    margin-left: 44px;
+  }
+  .track__chev {
+    grid-area: chev;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-right: 1.5px solid var(--muted);
+    border-bottom: 1.5px solid var(--muted);
+    transform: rotate(45deg);
+    transition: transform 0.18s ease;
+  }
+  .track[open] .track__chev {
+    transform: rotate(-135deg);
+  }
+
+  .track__body {
+    display: grid;
+    gap: 28px;
+    padding: 8px 16px 24px;
+  }
+  .mini-h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin: 0 0 8px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mini-h--lyrics {
+    margin-top: 28px;
+  }
+  .mini-h__hint {
+    font-family: var(--sans);
+    font-size: 12.5px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .track__meaning {
+    max-width: 60ch;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .track__meaning.is-ph {
+    color: var(--ph);
+  }
+  .track__credits {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .lyrics {
+    display: grid;
+    gap: 18px;
+    padding: 18px 0 4px 16px;
+    border-left: 2px solid var(--line);
+  }
+  .stanza__label {
+    margin-bottom: 4px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .stanza__lines {
+    display: grid;
+    gap: 2px;
+    padding: 0;
+    list-style: none;
+  }
+  .lyric {
+    display: inline-block;
+    padding: 3px 0;
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .lyric--note {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 32px;
+    margin: 0 0 0 -8px;
+    padding: 3px 8px;
+    border: 0;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 17px;
+    text-align: left;
+    color: var(--ink);
+    background: transparent;
+    cursor: pointer;
+  }
+  .lyric--note .lyric__txt {
+    background: linear-gradient(transparent 62%, var(--accent-soft) 62%);
+    text-decoration: underline dotted 1.5px var(--accent);
+    text-underline-offset: 5px;
+  }
+  .lyric__ref {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 5px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--accent);
+    border: 1px solid currentColor;
+    transform: translateY(-2px);
+  }
+  .lyric--note:hover {
+    background: var(--sunken);
+  }
+  .lyric--note[aria-expanded='true'] {
+    background: var(--accent-soft);
+  }
+  .lyric--note[aria-expanded='true'] .lyric__ref {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* annotation panel */
+  .note {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-2);
+  }
+  .note:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .note__empty {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .note__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    font-family: var(--mono);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .note__full {
+    display: grid;
+    gap: 10px;
+    padding: 16px 18px 18px 20px;
+  }
+  .note__full[hidden],
+  .note__empty[hidden] {
+    display: none;
+  }
+  .note.is-open {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+    box-shadow: inset 3px 0 0 var(--accent);
+    background: var(--surface);
+  }
+  .note__ref {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .note__line {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+  .note__text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .note__close {
+    justify-self: start;
+    min-height: 36px;
+    margin-top: 4px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .note__close:hover {
+    border-color: var(--ink);
+  }
+  /* phones: the panel only appears once a line is chosen, as an inline sheet */
+  @media (max-width: 899px) {
+    .note-dock .note:not(.is-open) .note__empty {
+      padding: 12px 14px;
+    }
+    .stanza__lines .note {
+      margin: 6px 0 10px;
+      box-shadow: var(--shadow-lift);
+    }
+  }
+
+  /* listen */
+  .listen {
+    margin-top: 20px;
+  }
+  .embed + .embed {
+    margin-top: 8px;
+  }
+  .embed__btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 10px 14px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 10px;
+    font: inherit;
+    text-align: left;
+    color: var(--ink);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .embed__btn:hover {
+    border-color: var(--ink);
+    border-style: solid;
+  }
+  .embed__play {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  .embed__play::after {
+    content: '';
+    margin-left: 3px;
+    border-left: 9px solid var(--bg);
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+  }
+  .embed__txt {
+    display: grid;
+    line-height: 1.35;
+  }
+  .embed__txt strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .embed__txt span {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .embed__alt {
+    margin-top: 4px;
+    font-size: 12.5px;
+  }
+  .embed__msg {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .embed__msg:empty {
+    display: none;
+  }
+  .embed :global(.embed__frame) {
+    width: 100%;
+    height: 152px;
+    border: 0;
+    border-radius: 12px;
+  }
+
+  @media (min-width: 720px) {
+    .mstrip {
+      grid-template-columns: auto auto 1fr;
+    }
+    .mstrip div:nth-child(3) {
+      grid-column: auto;
+    }
+    .track__row {
+      grid-template-columns: 48px 52px minmax(0, 1fr) 64px 72px 120px 16px;
+      grid-template-areas: none;
+      padding: 12px 20px;
+    }
+    .track__row > * {
+      grid-area: auto !important;
+    }
+    .track__art {
+      width: 48px;
+      height: 48px;
+    }
+    .track__id,
+    .track__notes {
+      display: block;
+    }
+    .track__status {
+      margin-left: 0;
+      justify-self: end;
+    }
+    .track__body {
+      padding: 12px 20px 32px 84px;
+    }
+  }
+  @media (min-width: 900px) {
+    .track__body {
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 40px;
+      padding-right: 24px;
+    }
+    .note-dock {
+      position: sticky;
+      top: 24px;
+    }
+    .track__side {
+      padding-top: 26px;
+    }
+    .listen {
+      margin-top: 24px;
+    }
+  }
+</style>

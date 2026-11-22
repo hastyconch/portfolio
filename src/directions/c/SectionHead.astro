@@ -1,0 +1,22 @@
+---
+// "02 · WORK" kicker, title and a mono count — the header every workspace view shares.
+interface Props {
+  index: string;
+  kicker: string;
+  title: string;
+  id: string;
+  count?: string;
+}
+const { index, kicker, title, id, count } = Astro.props;
+---
+
+<header class="sec-head">
+  <p class="sec-kicker">
+    <b>{index}</b> · {kicker}
+  </p>
+  <div class="sec-head__row">
+    <h2 id={id}>{title}</h2>
+    {count && <span class="sec-count">{count}</span>}
+  </div>
+  <slot />
+</header>
