@@ -1,0 +1,31 @@
+---
+// Direction A — Editorial: one case-study page per project (WO-003).
+import type { GetStaticPaths } from 'astro';
+import { getSiteContent, type Project } from '../../../lib/content';
+import Shell from '../../../directions/a/Shell.astro';
+import CaseStudyLayout from '../../../directions/a/CaseStudyLayout.astro';
+
+export const getStaticPaths = (async () => {
+  const { projects } = await getSiteContent();
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, next: projects[(i + 1) % projects.length] },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  project: Project;
+  next: Project;
+}
+const { project, next } = Astro.props;
+const { profile } = await getSiteContent();
+---
+
+<Shell
+  title={`${project.data.title} — case study · ${profile.name}`}
+  description={project.data.tagline}
+  profile={profile}
+  base="/lab/a/"
+>
+  <CaseStudyLayout project={project} next={next} />
+</Shell>

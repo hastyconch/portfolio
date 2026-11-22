@@ -1,0 +1,511 @@
+---
+// Slot: CaseStudyLayout — a project told as a long-read: cover, problem with drop cap,
+// numbered features, "On the roadmap" box, stack table, engineering sidebars, next story.
+import type { Project } from '../../lib/content';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  project: Project;
+  next?: Project;
+}
+const { project, next } = Astro.props;
+const p = project.data;
+const cat = { app: 'App', game: 'Game', tool: 'Tool' }[p.category];
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<article class="cs" style={`--acc: ${p.accent}`} aria-labelledby="cs-h">
+  <header class="cover wrap">
+    <a class="back" href="/lab/a/#projects">
+      <span aria-hidden="true">←</span> All projects
+    </a>
+    <hr class="rule-double" />
+    <div class="running">
+      <span class="eyebrow">Case study</span>
+      <span class="eyebrow">
+        {cat} · {p.year}
+      </span>
+      {p.status === 'placeholder' && <Placeholder />}
+    </div>
+  </header>
+
+  <div class="plate">
+    <div class="wrap plate-inner">
+      <span class="plate-mark" aria-hidden="true">
+        {p.title.charAt(0)}
+      </span>
+      <h1 id="cs-h">{p.title}</h1>
+      <p class="tagline">{p.tagline}</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <dl class="facts">
+      <div>
+        <dt>Type</dt>
+        <dd>{cat}</dd>
+      </div>
+      <div>
+        <dt>Year</dt>
+        <dd>{p.year}</dd>
+      </div>
+      <div>
+        <dt>Platforms</dt>
+        <dd>{p.platforms.join(' · ')}</dd>
+      </div>
+      <div>
+        <dt>Core stack</dt>
+        <dd>{p.stack[0]?.tech}</dd>
+      </div>
+    </dl>
+
+    <section class="part" aria-labelledby="cs-problem">
+      <h2 id="cs-problem">
+        <span class="pn" aria-hidden="true">
+          01
+        </span>{' '}
+        The problem
+      </h2>
+      <div class="part-body">
+        <p class="standfirst dropcap problem">{p.problem}</p>
+      </div>
+    </section>
+
+    <section class="part" aria-labelledby="cs-features">
+      <h2 id="cs-features">
+        <span class="pn" aria-hidden="true">
+          02
+        </span>{' '}
+        What it does
+      </h2>
+      <div class="part-body">
+        <ol class="features">
+          {p.features.map((f, i) => (
+            <li>
+              <span class="fn" aria-hidden="true">
+                {pad(i + 1)}
+              </span>
+              <span>{f}</span>
+            </li>
+          ))}
+        </ol>
+        {p.planned.length > 0 && (
+          <aside class="roadmap" aria-labelledby="cs-roadmap">
+            <h3 id="cs-roadmap">
+              <span class="chip">Planned</span> On the roadmap
+            </h3>
+            <ul class="dash-list">
+              {p.planned.map((x) => (
+                <li>{x}</li>
+              ))}
+            </ul>
+            <p class="roadmap-note">Not shipped yet — listed so nothing here overclaims.</p>
+          </aside>
+        )}
+      </div>
+    </section>
+
+    <section class="part" aria-labelledby="cs-stack">
+      <h2 id="cs-stack">
+        <span class="pn" aria-hidden="true">
+          03
+        </span>{' '}
+        The stack
+      </h2>
+      <div class="part-body">
+        <table class="stack" role="table" aria-labelledby="cs-stack">
+          <thead role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">
+                Layer
+              </th>
+              <th scope="col" role="columnheader">
+                Tech
+              </th>
+              <th scope="col" role="columnheader">
+                Why
+              </th>
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            {p.stack.map((s) => (
+              <tr role="row">
+                <th scope="row" role="rowheader">
+                  {s.layer}
+                </th>
+                <td role="cell" class="tech">
+                  {s.tech}
+                </td>
+                <td role="cell" class="why">
+                  {s.why}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {p.engineering.length > 0 && (
+      <section class="part" aria-labelledby="cs-eng">
+        <h2 id="cs-eng">
+          <span class="pn" aria-hidden="true">
+            04
+          </span>{' '}
+          Engineering notes
+        </h2>
+        <div class="part-body eng">
+          {p.engineering.map((e) => (
+            <div class="eng-note">
+              <h3>{e.title}</h3>
+              <p>{e.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {next && (
+      <nav class="next" aria-label="Next case study">
+        <a href={`/lab/a/${next.id}/`}>
+          <span class="eyebrow">Next story</span>
+          <span class="next-title">
+            {next.data.title} <span aria-hidden="true">→</span>
+          </span>
+          <span class="next-tag">{next.data.tagline}</span>
+        </a>
+      </nav>
+    )}
+  </div>
+</article>
+
+<style>
+  .cover {
+    padding-top: clamp(1.5rem, 4vw, 3rem);
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+  }
+  .back:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+  }
+  .running {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    padding-top: 0.7rem;
+  }
+  .running .eyebrow:nth-child(2) {
+    margin-right: auto;
+  }
+  .plate {
+    margin-top: clamp(1.75rem, 4vw, 3rem);
+    color: #fff;
+    background:
+      repeating-linear-gradient(-60deg, rgb(255 255 255 / 0.045) 0 1px, transparent 1px 16px),
+      radial-gradient(circle at 85% 10%, rgb(255 255 255 / 0.1), transparent 40%),
+      linear-gradient(160deg, var(--acc), color-mix(in srgb, var(--acc) 45%, #000));
+  }
+  .plate-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: clamp(20rem, 42vw, 36rem);
+    padding-block: clamp(2rem, 5vw, 4rem);
+    overflow: hidden;
+  }
+  .plate-mark {
+    position: absolute;
+    top: -0.18em;
+    right: calc(var(--gutter) - 0.05em);
+    font-family: var(--serif);
+    font-size: clamp(14rem, 8rem + 26vw, 34rem);
+    font-style: italic;
+    font-weight: 200;
+    font-variation-settings: 'opsz' 144;
+    line-height: 1;
+    color: rgb(255 255 255 / 0.09);
+    pointer-events: none;
+  }
+  h1 {
+    position: relative;
+    max-width: 12ch;
+    font-size: var(--step-5);
+    font-weight: 340;
+    font-variation-settings: 'opsz' 144;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    color: #fff;
+  }
+  .tagline {
+    position: relative;
+    max-width: 34rem;
+    margin-top: 1.25rem;
+    font-family: var(--serif);
+    font-size: var(--step-2);
+    font-style: italic;
+    font-weight: 330;
+    font-variation-settings: 'opsz' 72;
+    line-height: 1.25;
+    color: #fff;
+  }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1.5rem;
+    margin: 0;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .facts dt {
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .facts dd {
+    margin: 0.25rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    font-variation-settings: 'opsz' 24;
+  }
+  .part {
+    display: grid;
+    gap: 1.5rem;
+    padding-top: clamp(3rem, 7vw, 5.5rem);
+  }
+  .part h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-top: 0.9rem;
+    border-top: 2px solid var(--rule-strong);
+    font-size: var(--step-3);
+    font-weight: 380;
+    font-variation-settings: 'opsz' 96;
+    letter-spacing: -0.02em;
+  }
+  .pn {
+    font-size: 0.5em;
+    font-style: italic;
+    color: var(--accent);
+  }
+  .part-body {
+    max-width: 46rem;
+  }
+  .problem {
+    font-size: var(--step-1);
+  }
+  .features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: f;
+  }
+  .features li {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--rule);
+  }
+  .features li:first-child {
+    border-top: 0;
+    padding-top: 0.25rem;
+  }
+  .fn {
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    font-style: italic;
+    color: var(--accent);
+  }
+  .roadmap {
+    margin-top: 2rem;
+    padding: 1.25rem 1.35rem 1.35rem;
+    border: 1px dashed var(--ink-2);
+    background: var(--paper-2);
+  }
+  .roadmap h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+    font-size: var(--step-1);
+    font-weight: 420;
+  }
+  .chip {
+    padding: 0.2em 0.7em;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+  }
+  .roadmap-note {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .stack {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+  .stack thead th {
+    padding: 0 0 0.6rem;
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--rule-strong);
+  }
+  .stack tbody tr {
+    border-bottom: 1px solid var(--rule);
+  }
+  .stack tbody th,
+  .stack td {
+    padding: 1rem 1.25rem 1rem 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  .stack tbody th {
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: 'opsz' 24;
+    white-space: nowrap;
+  }
+  .tech {
+    font-weight: 600;
+  }
+  .why {
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  @media (max-width: 47.99rem) {
+    .stack thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .stack,
+    .stack tbody,
+    .stack tr,
+    .stack th,
+    .stack td {
+      display: block;
+    }
+    .stack tbody tr {
+      padding: 1rem 0;
+    }
+    .stack tbody th,
+    .stack td {
+      padding: 0;
+    }
+    .stack td.tech {
+      margin-top: 0.2rem;
+    }
+    .stack td.why {
+      margin-top: 0.4rem;
+      font-size: 0.9375rem;
+    }
+    .stack tbody th {
+      white-space: normal;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+  }
+  .eng {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .eng-note {
+    padding: 1.25rem 1.35rem;
+    border-top: 3px solid var(--accent);
+    background: var(--paper-2);
+  }
+  .eng-note h3 {
+    margin-bottom: 0.5rem;
+    font-size: var(--step-1);
+    font-weight: 450;
+    font-variation-settings: 'opsz' 36;
+  }
+  .eng-note p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .next {
+    margin-top: clamp(4rem, 9vw, 7rem);
+  }
+  .next a {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1.5rem 0;
+    border-top: 2px solid var(--rule-strong);
+    border-bottom: 1px solid var(--rule);
+    text-decoration: none;
+  }
+  .next-title {
+    font-family: var(--serif);
+    font-size: var(--step-4);
+    font-weight: 360;
+    font-variation-settings: 'opsz' 144;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .next a:hover .next-title {
+    font-style: italic;
+  }
+  .next-tag {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-2);
+  }
+  @media (min-width: 56rem) {
+    .facts {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 2rem;
+    }
+    .part {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+      gap: 2rem;
+      align-items: start;
+    }
+    .part h2 {
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: var(--step-2);
+      position: sticky;
+      top: calc(var(--header-h) + 1.5rem);
+    }
+    .part-body {
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+    }
+    .eng {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: none;
+    }
+  }
+</style>

@@ -1,0 +1,244 @@
+---
+// Slot: Resume — the résumé as a typeset page: dates in the margin, capabilities as columns.
+// "Print résumé" prints only this section.
+import type { Resume } from '../../lib/content';
+import ChapterHead from './ChapterHead.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  resume: Resume;
+}
+const { resume } = Astro.props;
+const isPh = (s: string) => /^placeholder/i.test(s);
+---
+
+<section id="resume" class="resume" aria-labelledby="resume-h">
+  <ChapterHead num="04" label="Curriculum vitae" title="Résumé" headingId="resume-h" />
+
+  <div class="wrap">
+    <div class="top">
+      <p class="standfirst summary">{resume.summary}</p>
+      <div class="actions no-print">
+        {resume.status === 'placeholder' && <Placeholder />}
+        <button type="button" class="btn" data-print-resume>
+          <span aria-hidden="true">⎙</span> Print résumé
+        </button>
+      </div>
+    </div>
+
+    <div class="block exp-block">
+      <h3 class="label">Experience</h3>
+      <ol class="exp">
+        {resume.experience.map((e) => (
+          <li class="job">
+            <p class="when">
+              {isPh(e.start) ? (
+                <Placeholder label="Dates" />
+              ) : e.start === e.end ? (
+                e.start
+              ) : (
+                <>
+                  {e.start}
+                  <span aria-hidden="true"> — </span>
+                  <span class="visually-hidden"> to </span>
+                  {e.end}
+                </>
+              )}
+            </p>
+            <div class="what">
+              <h4>{e.org}</h4>
+              <p class="title">{e.title}</p>
+              <ul class="dash-list">
+                {e.bullets.map((b) => (
+                  <li>{b}</li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="block">
+      <h3 class="label">Capabilities</h3>
+      <div class="caps">
+        {resume.capabilities.map((c) => (
+          <div class="cap">
+            <h4>{c.group}</h4>
+            <ul>
+              {c.items.map((it) => (
+                <li>{it}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="block">
+      <h3 class="label">Education</h3>
+      <ul class="edu">
+        {resume.education.map((ed) => (
+          <li>
+            <h4>{isPh(ed.school) ? <Placeholder label="School" /> : ed.school}</h4>
+            <p>{ed.detail}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelector('[data-print-resume]')?.addEventListener('click', () => {
+    const root = document.documentElement;
+    root.classList.add('a-print-resume');
+    window.addEventListener('afterprint', () => root.classList.remove('a-print-resume'), {
+      once: true,
+    });
+    window.print();
+  });
+</script>
+
+<style>
+  .top {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: clamp(2rem, 5vw, 3.5rem);
+  }
+  .summary {
+    max-width: 44rem;
+    font-size: var(--step-2);
+    line-height: 1.32;
+    font-variation-settings: 'opsz' 48;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+  .block {
+    display: grid;
+    gap: 1rem;
+    margin-top: clamp(3rem, 7vw, 5rem);
+    padding-top: 1rem;
+    border-top: 2px solid var(--rule-strong);
+  }
+  .label {
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .exp,
+  .edu,
+  .cap ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .job {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .job:first-child {
+    padding-top: 0.5rem;
+  }
+  .job:last-child {
+    border-bottom: 0;
+  }
+  .when {
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+  h4 {
+    font-size: var(--step-2);
+    font-weight: 420;
+    font-variation-settings: 'opsz' 48;
+    line-height: 1.15;
+  }
+  .title {
+    margin: 0.3rem 0 1rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-variation-settings: 'opsz' 18;
+    color: var(--ink-2);
+  }
+  .dash-list {
+    max-width: var(--measure);
+    font-size: 1.0625rem;
+    color: var(--ink-2);
+  }
+  .caps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 1.5rem;
+    padding-top: 0.5rem;
+  }
+  .cap h4 {
+    margin-bottom: 0.6rem;
+    font-size: 1.375rem;
+    font-style: italic;
+  }
+  .cap li {
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+  }
+  .edu li {
+    padding-top: 0.5rem;
+  }
+  .edu p {
+    margin-top: 0.4rem;
+    color: var(--ink-2);
+  }
+  @media (min-width: 56rem) {
+    .top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 2rem;
+      padding-left: calc((100% - 2rem) * 0.25 + 2rem);
+    }
+    .block {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+      gap: 2rem;
+    }
+    .exp-block {
+      row-gap: 0;
+    }
+    .exp,
+    .job {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: subgrid;
+    }
+    .job {
+      column-gap: 2rem;
+    }
+    .exp-block .label {
+      padding-bottom: 0.5rem;
+    }
+    .when {
+      padding-top: 0.45rem;
+    }
+    .caps {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media print {
+    .block {
+      break-inside: avoid-page;
+    }
+    .job {
+      break-inside: avoid;
+    }
+  }
+</style>

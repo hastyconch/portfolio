@@ -1,0 +1,361 @@
+---
+// Slot: Work — every engagement told as a feature story. The airline entry opens into a
+// full-bleed spread with the live phone demo; other demos get a "in production" frame.
+import type { Work } from '../../lib/content';
+import AirlineDemo from '../../demos/airline/AirlineDemo';
+import ChapterHead from './ChapterHead.astro';
+import DemoFrame from './DemoFrame.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  work: Work[];
+}
+const { work } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+const demoLabel: Record<string, string> = {
+  grocer: 'Shopping companion',
+  scheduler: 'Schedule builder',
+  pipeline: 'Meeting → update pipeline',
+};
+let fig = 0;
+---
+
+<section id="work" class="work" aria-labelledby="work-h">
+  <ChapterHead num="01" label="Professional work" title="Selected work" headingId="work-h" />
+
+  <div class="stories">
+    {work.map((w, i) => {
+      const d = w.data;
+      const hasDemo = d.demo !== 'none';
+      const live = d.demo === 'airline';
+      const figNo = hasDemo ? ++fig : 0;
+      const hid = `work-${w.id}`;
+      return (
+        <article class="story" aria-labelledby={hid}>
+          <div class="wrap grid">
+            <div class="meta">
+              <span class="no">No. {pad(i + 1)}</span>
+              <dl>
+                <div>
+                  <dt>Sector</dt>
+                  <dd>{d.sector}</dd>
+                </div>
+                <div>
+                  <dt>Where</dt>
+                  <dd>{d.years}</dd>
+                </div>
+                <div>
+                  <dt>Role</dt>
+                  <dd>{d.role}</dd>
+                </div>
+              </dl>
+              {d.status === 'placeholder' && <Placeholder />}
+            </div>
+
+            <div class="body">
+              <h3 id={hid} class="title">
+                {d.title}
+              </h3>
+              <p class="dek">{d.kicker}</p>
+              <p class="summary">{d.summary}</p>
+              <h4 class="eyebrow sub">What I did</h4>
+              <ul class="dash-list">
+                {d.contributions.map((c) => (
+                  <li>{c}</li>
+                ))}
+              </ul>
+              {d.outcomes.length > 0 && (
+                <>
+                  <h4 class="eyebrow sub">Outcomes</h4>
+                  <ul class="dash-list">
+                    {d.outcomes.map((o) => (
+                      <li>{o}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+
+            <ul class="skills" aria-label={`Skills — ${d.title}`}>
+              {d.skills.map((s) => (
+                <li>{s}</li>
+              ))}
+            </ul>
+
+            {hasDemo && !live && (
+              <figure class="side">
+                <DemoFrame frame={d.demoFrame} pending size="small" label={demoLabel[d.demo]} />
+                <figcaption>
+                  <span class="fig">Fig. {figNo}</span> {demoLabel[d.demo] ?? 'Demo'} — an
+                  interactive mock is coming.
+                </figcaption>
+              </figure>
+            )}
+          </div>
+
+          {live && (
+            <figure class="spread" aria-labelledby={`${hid}-cap`}>
+              <div class="wrap spread-grid">
+                <figcaption id={`${hid}-cap`} class="spread-cap">
+                  <span class="eyebrow">
+                    Fig. {figNo} · Interactive · {d.sector}
+                  </span>
+                  <span class="spread-title">The member app, in your hand.</span>
+                  <span class="spread-text">
+                    Tap through Home, Status and Redeem, then book a reward flight with points. An
+                    invented brand on mock data, rebuilt to show the shape of the work.
+                  </span>
+                  <span class="spread-keys">Tabs follow the arrow keys.</span>
+                </figcaption>
+                <div class="spread-demo">
+                  <DemoFrame frame="phone">
+                    <AirlineDemo client:visible />
+                  </DemoFrame>
+                </div>
+              </div>
+            </figure>
+          )}
+        </article>
+      );
+    })}
+  </div>
+</section>
+
+<style>
+  .stories {
+    margin-top: clamp(2.5rem, 6vw, 5rem);
+  }
+  .story + .story .grid {
+    background: linear-gradient(var(--rule), var(--rule)) no-repeat center top /
+      calc(100% - 2 * var(--gutter)) 1px;
+  }
+  .grid {
+    display: grid;
+    grid-template-areas: 'meta' 'body' 'skills' 'side';
+    gap: 1.5rem;
+    padding-block: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .story:first-child .grid {
+    padding-top: 0;
+  }
+  .meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1rem;
+  }
+  .no {
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    font-style: italic;
+    font-variation-settings: 'opsz' 24;
+    color: var(--accent);
+  }
+  .meta dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 0;
+  }
+  .meta dt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .meta dd {
+    margin: 0;
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .body {
+    grid-area: body;
+    max-width: var(--measure);
+  }
+  .title {
+    font-size: var(--step-3);
+    font-weight: 400;
+    font-variation-settings: 'opsz' 96;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+  }
+  .dek {
+    margin-top: 0.75rem;
+    font-family: var(--serif);
+    font-size: var(--step-1);
+    font-style: italic;
+    font-weight: 350;
+    font-variation-settings: 'opsz' 24;
+    line-height: 1.35;
+    color: var(--ink-2);
+  }
+  .summary {
+    margin-top: 1.5rem;
+  }
+  .sub {
+    margin: 2rem 0 0.85rem;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+  }
+  .dash-list {
+    font-size: 1.0625rem;
+    color: var(--ink-2);
+  }
+  .skills {
+    grid-area: skills;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .skills li {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+  .side {
+    grid-area: side;
+    margin: 0.5rem 0 0;
+  }
+  .side figcaption {
+    margin-top: 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .fig {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  @media (min-width: 56rem) {
+    .grid {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        'meta body side'
+        'skills body side';
+      column-gap: 2rem;
+      row-gap: 1.5rem;
+    }
+    .meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.85rem;
+    }
+    .no {
+      font-size: 1.5rem;
+    }
+    .meta dl {
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .meta dt {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      font-family: var(--serif);
+      font-size: 0.875rem;
+      font-style: italic;
+      font-variation-settings: 'opsz' 14;
+      color: var(--muted);
+    }
+    .meta dd {
+      color: var(--ink);
+    }
+    .skills {
+      align-self: start;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+    .skills li {
+      padding: 0;
+      border: 0;
+      font-size: 0.9375rem;
+    }
+    .skills li::before {
+      content: '·';
+      margin-right: 0.5em;
+      color: var(--accent);
+    }
+    .side {
+      margin: 0;
+      align-self: start;
+    }
+  }
+
+  /* ——— the full-bleed spread ——— */
+  .spread {
+    margin: 0 0 clamp(1rem, 3vw, 2rem);
+    padding-block: clamp(3rem, 8vw, 6.5rem);
+    color: var(--spread-ink);
+    background:
+      radial-gradient(
+        ellipse 60% 70% at 72% 50%,
+        color-mix(in srgb, var(--accent) 22%, transparent),
+        transparent 70%
+      ),
+      var(--spread);
+  }
+  .spread-grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+  .spread-cap {
+    display: grid;
+    gap: 1.1rem;
+    max-width: 30rem;
+  }
+  .spread-cap .eyebrow {
+    color: var(--spread-muted);
+  }
+  .spread-title {
+    font-family: var(--serif);
+    font-size: var(--step-3);
+    font-style: italic;
+    font-weight: 330;
+    font-variation-settings: 'opsz' 144;
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .spread-text {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: var(--spread-muted);
+  }
+  .spread-keys {
+    padding-top: 1rem;
+    border-top: 1px solid var(--spread-rule);
+    font-size: 0.875rem;
+    color: var(--spread-muted);
+  }
+  .spread-demo :global(.phone .screen) {
+    background: #3d2c5e;
+  }
+  @media (min-width: 56rem) {
+    .spread-grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 2rem;
+    }
+    .spread-cap {
+      padding-left: 0;
+    }
+  }
+</style>
