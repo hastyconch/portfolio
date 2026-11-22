@@ -3,6 +3,7 @@
 // can be reviewed and tested before integration places it on the home page. Not indexed.
 import Base from '../../layouts/Base.astro';
 import GrocerDemo from '../../demos/grocer/GrocerDemo.tsx';
+import '../../system/tokens.css';
 ---
 
 <Base title="Grocer loyalty demo" description="Grocer loyalty phone demo (mock data)." noindex>
@@ -41,7 +42,7 @@ import GrocerDemo from '../../demos/grocer/GrocerDemo.tsx';
   }
   h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--text-xl);
   }
   p {
     margin: 0;
@@ -53,11 +54,12 @@ import GrocerDemo from '../../demos/grocer/GrocerDemo.tsx';
     width: 336px;
     max-width: 100%;
     height: 630px;
-    border-radius: 28px;
+    /* phone screen: the bezel ring adds to the container radius */
+    border-radius: calc(var(--radius-3) * 2 + 4px);
     overflow: hidden;
     box-shadow:
       0 0 0 10px #0d0d0d,
-      0 24px 48px -24px rgb(0 0 0 / 0.6);
+      var(--shadow-3);
   }
   .screen > :global(*) {
     height: 100%;

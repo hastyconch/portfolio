@@ -2,6 +2,7 @@
 // Test harness for the Billable. mini-room (WO-011). Not linked from the site; noindex.
 import Base from '../../layouts/Base.astro';
 import BillableMini from '../../demos/billable/BillableMini.tsx';
+import '../../system/tokens.css';
 ---
 
 <Base
@@ -12,7 +13,7 @@ import BillableMini from '../../demos/billable/BillableMini.tsx';
 >
   <div class="bh-wrap">
     <header class="bh-head">
-      <p class="bh-kicker">Demo harness</p>
+      <p class="bh-kicker label">Demo harness</p>
       <h1>
         Billable. <span class="bh-sub">mini-room</span>
       </h1>
@@ -55,17 +56,13 @@ import BillableMini from '../../demos/billable/BillableMini.tsx';
     margin-bottom: 1.5rem;
   }
   .bh-kicker {
-    margin: 0 0 0.25rem;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    margin: 0 0 var(--space-1);
     color: var(--bh-accent);
   }
   h1 {
-    margin: 0 0 0.5rem;
-    font-size: clamp(2rem, 6vw, 3rem);
-    line-height: 1.1;
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
     color: var(--bh-ink);
   }
   .bh-sub {

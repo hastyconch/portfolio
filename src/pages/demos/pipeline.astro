@@ -2,6 +2,7 @@
 // Review harness for the pipeline demo (WO-010): full width, then in a 360px side column.
 import Base from '../../layouts/Base.astro';
 import PipelineDemo from '../../demos/pipeline/PipelineDemo.tsx';
+import '../../system/tokens.css';
 import '../../system/liner.css';
 ---
 
@@ -43,12 +44,12 @@ import '../../system/liner.css';
   }
   h1 {
     margin: 0;
-    font-size: 1.75rem;
-    line-height: 1.2;
+    font-size: var(--text-2xl);
+    line-height: var(--leading-snug);
   }
   h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1rem;
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-md);
     color: var(--ln-ink-2);
   }
   p {
