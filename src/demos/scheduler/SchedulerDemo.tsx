@@ -329,9 +329,9 @@ export default function SchedulerDemo() {
             {assigned !== null ? (
               <>
                 <p className="sch-kicker">Shift covered</p>
-                <h3 id={`${id}-task`}>
+                <h4 id={`${id}-task`}>
                   {NURSES[assigned].name} works {DAYS[OPEN_DAY].short} night
-                </h3>
+                </h4>
                 <p>
                   {DAYS[OPEN_DAY].short} night: {openHave} of {openTarget} RNs. Now edit any cell:
                   Enter, Space or a click cycles Day → Night → Off, and the rule check updates live.
@@ -341,9 +341,9 @@ export default function SchedulerDemo() {
             ) : (
               <>
                 <p className="sch-kicker">Open shift</p>
-                <h3 id={`${id}-task`}>
+                <h4 id={`${id}-task`}>
                   {DAYS[OPEN_DAY].short} night, ICU — {openHave} of {openTarget} RNs
-                </h3>
+                </h4>
                 <p>Choose a nurse. Candidates are ranked by the unit’s rules.</p>
                 <ol className="sch-cands">
                   {candidates.map((cand) => {
@@ -396,7 +396,7 @@ export default function SchedulerDemo() {
           </section>
 
           <section className="sch-panel" aria-labelledby={`${id}-rules`}>
-            <h3 id={`${id}-rules`}>Rule check</h3>
+            <h4 id={`${id}-rules`}>Rule check</h4>
             <p className="sch-status">{summarise(issues)}</p>
             {issues.length > 0 && (
               <ul className="sch-issues">
