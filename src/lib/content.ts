@@ -3,6 +3,7 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 
 export type Profile = CollectionEntry<'profile'>['data'];
+export type Music = CollectionEntry<'music'>['data'];
 export type Work = CollectionEntry<'work'>;
 export type Project = CollectionEntry<'projects'>;
 export type Song = CollectionEntry<'songs'>;
@@ -11,16 +12,19 @@ export type Resume = CollectionEntry<'resume'>['data'];
 const byOrder = <T extends { data: { order: number } }>(a: T, b: T) => a.data.order - b.data.order;
 
 export async function getSiteContent() {
-  const [profile, resume, work, projects, songs] = await Promise.all([
+  const [profile, music, resume, work, projects, songs] = await Promise.all([
     getEntry('profile', 'me'),
+    getEntry('music', 'music'),
     getEntry('resume', 'resume'),
     getCollection('work'),
     getCollection('projects'),
     getCollection('songs'),
   ]);
-  if (!profile || !resume) throw new Error('profile.json and resume.json are required');
+  if (!profile || !resume || !music)
+    throw new Error('profile.json, music.json and resume.json are required');
   return {
     profile: profile.data,
+    music: music.data,
     resume: resume.data,
     work: work.sort(byOrder),
     projects: projects.sort(byOrder),

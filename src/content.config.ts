@@ -21,6 +21,19 @@ const profile = defineCollection({
   }),
 });
 
+// The music story: one entry. Constitution art. 3 covers people as well as clients, so the
+// collaborator is named only when `named` is true (their consent); otherwise "a friend".
+const music = defineCollection({
+  loader: file('src/content/music.json'),
+  schema: z.object({
+    story: z.array(z.string()).min(1), // paragraphs
+    releasedAs: z.string().optional(), // artist name on streaming services
+    collaborator: z.object({ name: z.string(), named: z.boolean() }),
+    links: z.array(z.object({ label: z.string(), href: z.string().url() })).default([]),
+    status,
+  }),
+});
+
 const work = defineCollection({
   loader: glob({ pattern: '*.md', base: 'src/content/work' }),
   schema: z.object({
@@ -90,24 +103,27 @@ const projects = defineCollection({
 
 const songs = defineCollection({
   loader: glob({ pattern: '*.md', base: 'src/content/songs' }),
-  schema: z.object({
-    title: z.string(),
-    year: z.string(),
-    credits: z.string(),
-    spotify: z.string().url().optional(),
-    youtube: z.string().url().optional(),
-    artColors: z.tuple([z.string(), z.string()]), // gradient stand-in until album art arrives
-    meaning: z.string(),
-    lyrics: z.array(
-      z.object({
-        section: z.string().optional(), // "Verse 1", "Chorus"…
-        line: z.string(),
-        note: z.string().optional(), // annotation shown when the line is selected
-      }),
-    ),
-    order: z.number(),
-    status,
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      year: z.string(),
+      art: image().optional(), // album art; the artColors gradient stands in until it arrives
+      artAlt: z.string().optional(),
+      credits: z.string(),
+      spotify: z.string().url().optional(),
+      youtube: z.string().url().optional(),
+      artColors: z.tuple([z.string(), z.string()]), // gradient stand-in until album art arrives
+      meaning: z.string(),
+      lyrics: z.array(
+        z.object({
+          section: z.string().optional(), // "Verse 1", "Chorus"…
+          line: z.string(),
+          note: z.string().optional(), // annotation shown when the line is selected
+        }),
+      ),
+      order: z.number(),
+      status,
+    }),
 });
 
 const resume = defineCollection({
@@ -129,4 +145,4 @@ const resume = defineCollection({
   }),
 });
 
-export const collections = { profile, work, projects, songs, resume };
+export const collections = { profile, music, work, projects, songs, resume };
