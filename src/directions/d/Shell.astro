@@ -3,6 +3,9 @@
 import Base from '../../layouts/Base.astro';
 import '@fontsource-variable/bricolage-grotesque/wdth.css';
 import '@fontsource-variable/dm-sans';
+// Preload the main faces so text doesn't shift when web fonts swap in (CLS budget).
+import bricolageFont from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wdth-normal.woff2?url';
+import dmSansFont from '@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url';
 import './liner.css';
 import Nav from './Nav.astro';
 import Footer from './Footer.astro';
@@ -21,6 +24,8 @@ const { profile } = await getSiteContent();
 ---
 
 <Base title={title} description={description} noindex bodyClass="ln">
+  <link slot="head" rel="preload" href={bricolageFont} as="font" type="font/woff2" crossorigin />
+  <link slot="head" rel="preload" href={dmSansFont} as="font" type="font/woff2" crossorigin />
   <Nav slot="header" profile={profile} home={home} nowPlaying={nowPlaying} />
   <slot />
   <Footer slot="footer" profile={profile} />

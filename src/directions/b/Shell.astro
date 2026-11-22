@@ -6,6 +6,8 @@ import Dock from './Dock.astro';
 import type { Profile } from '../../lib/content';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
+// Preload the main faces so text doesn't shift when web fonts swap in (CLS budget).
+import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 import './b.css';
 
 interface Props {
@@ -20,6 +22,7 @@ const { title, description, profile, base = '', bodyClass } = Astro.props;
 ---
 
 <Base title={title} description={description} noindex bodyClass={`dos ${bodyClass ?? ''}`.trim()}>
+  <link slot="head" rel="preload" href={interFont} as="font" type="font/woff2" crossorigin />
   <Fragment slot="head">
     <script is:inline>
       document.documentElement.classList.add('js');

@@ -170,10 +170,15 @@ const slots = [
   const yaml = document.getElementById('yaml') as HTMLTextAreaElement;
   const KEY = 'lab-picks-v1';
 
+  // Each iframe is a full direction page, so only load them once the comparison is on screen
+  // (keeps /lab inside the performance budget).
+  let framesVisible = false;
+
   function showSlot() {
     const slot = controls.querySelector<HTMLInputElement>('input[name=slot]:checked')!;
     const vp = controls.querySelector<HTMLInputElement>('input[name=vp]:checked')!.value;
     frames.dataset.vp = vp;
+    if (!framesVisible) return;
     frames.querySelectorAll<HTMLIFrameElement>('iframe').forEach((f) => {
       const url = `/lab/${f.dataset.dir}/${slot.dataset.path}`;
       if (f.getAttribute('src') !== url) f.setAttribute('src', url);
@@ -237,6 +242,12 @@ const slots = [
   });
   restore();
   showSlot();
+  new IntersectionObserver((entries, io) => {
+    if (!entries.some((e) => e.isIntersecting)) return;
+    framesVisible = true;
+    io.disconnect();
+    showSlot();
+  }).observe(frames);
 </script>
 
 <style is:global>

@@ -7,6 +7,9 @@ import type { Profile } from '../../lib/content';
 import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/fraunces/opsz-italic.css';
 import '@fontsource-variable/inter';
+// Preload the main faces so text doesn't shift when web fonts swap in (CLS budget).
+import frauncesFont from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
+import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 import './styles.css';
 
 interface Props {
@@ -20,6 +23,8 @@ const { title, description, profile, base = '' } = Astro.props;
 ---
 
 <Base title={title} description={description} noindex bodyClass="dir-a">
+  <link slot="head" rel="preload" href={frauncesFont} as="font" type="font/woff2" crossorigin />
+  <link slot="head" rel="preload" href={interFont} as="font" type="font/woff2" crossorigin />
   <Fragment slot="header">
     <Nav name={profile.name} base={base} />
   </Fragment>

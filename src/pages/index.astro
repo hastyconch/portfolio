@@ -1,9 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import '@fontsource-variable/inter';
+import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 ---
 
 <Base title="Nakul Iyer — portfolio in progress">
+  <link slot="head" rel="preload" href={interFont} as="font" type="font/woff2" crossorigin />
   <div class="holding">
     <h1>Portfolio, in progress</h1>
     <p>
