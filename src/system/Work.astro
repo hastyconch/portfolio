@@ -6,6 +6,7 @@
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
+import PipelineDemo from '../demos/pipeline/PipelineDemo.tsx';
 import DemoFrame from './DemoFrame.astro';
 import SideHead from './SideHead.astro';
 import Placeholder from './Placeholder.astro';
@@ -17,7 +18,7 @@ const { work } = Astro.props;
 const companies = [...new Set(work.map((w) => w.data.years))];
 const meta = `${work.length} engagements · ${companies.join(' / ')}`;
 // Demos that are built. Others with a demo show the "coming soon" plate.
-const LIVE = new Set(['airline', 'grocer']);
+const LIVE = new Set(['airline', 'grocer', 'pipeline']);
 // Wide demos (desktop window, diagram) sit full-width under the summary on desktop.
 const isWide = (frame: string) => frame === 'desktop' || frame === 'diagram';
 const caption = 'Playable · invented brand, mock data';
@@ -79,6 +80,14 @@ const caption = 'Playable · invented brand, mock data';
                   {d.demo === 'grocer' && (
                     <DemoFrame frame={d.demoFrame} caption={caption} tint={['#134e4a', '#f3f6f4']}>
                       <GrocerDemo client:visible />
+                    </DemoFrame>
+                  )}
+                  {d.demo === 'pipeline' && (
+                    <DemoFrame
+                      frame={d.demoFrame}
+                      caption="Interactive · invented project, mock data"
+                    >
+                      <PipelineDemo client:visible />
                     </DemoFrame>
                   )}
                   {!live && <DemoFrame frame={d.demoFrame} coming size="sm" />}
