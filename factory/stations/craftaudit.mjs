@@ -1,4 +1,4 @@
-// Vendored from ui-craft 0.1.0 (github.com/hastyconch/ui-craft, scripts/craft-audit.mjs, MIT).
+// Vendored from ui-craft 0.1.1 (github.com/hastyconch/ui-craft, scripts/craft-audit.mjs, MIT).
 // Update by copying the file again; don't edit here.
 // ui-craft auditor: measures how consistent a codebase's CSS is, and flags patterns that make
 // UI read as generated. Zero dependencies (Node 18+).
@@ -159,6 +159,23 @@ const add = (key, value, where) => {
   m.get(k).push(where);
   literalUses++;
 };
+// Split a selector list on top-level commas only, so `.x:is(:hover, :focus-visible)` stays whole.
+function splitSelectors(list) {
+  const out = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of list) {
+    if (ch === '(') depth++;
+    if (ch === ')') depth = Math.max(0, depth - 1);
+    if (ch === ',' && depth === 0) {
+      out.push(cur.trim());
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
 const baseOf = (sel) =>
   sel
     .replace(/:is\(([^)]*)\)/g, (_, inner) =>
@@ -181,7 +198,7 @@ for (const file of files) {
     if (prop.startsWith('--')) continue; // token definitions
     if (usesToken(value)) tokenUses++;
 
-    for (const sel of d.selector.split(',').map((s) => s.trim())) {
+    for (const sel of splitSelectors(d.selector)) {
       if (/:hover\b/.test(sel)) hoverSelectors.push({ sel, where: rel });
       if (/:focus(-visible)?\b/.test(sel) || /:is\([^)]*:focus/.test(sel))
         focusBases.add(baseOf(sel));

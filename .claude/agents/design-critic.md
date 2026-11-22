@@ -14,6 +14,7 @@ follow `~/.claude/skills/ui-craft/agents/ui-critic.md` and run `npm run -s craft
 behaviour findings.
 
 Score 1–5, with a one-line justification each, for:
+
 - first impression
 - typographic quality and readability
 - hierarchy and scannability
