@@ -1,0 +1,355 @@
+---
+// Lyrics — a Genius-style annotator, shared by the home Music section and the song pages.
+// Annotated lines are <details>/<summary>: native keyboard support and they still open with no JS.
+// The script adds focus management (the note receives focus; Esc or Close returns it to the line)
+// and, on desktop, keeps a note that opens in the side gutter inside the lyrics block. On mobile
+// the note opens inline under its line, like a sheet.
+import type { Song } from '../lib/content';
+
+interface Props {
+  song: Song;
+  /** heading level for "Lyrics": 4 inside the home section, 2 on a song page */
+  level?: 2 | 3 | 4;
+  headingId?: string;
+  /** rewrites displayed copy, e.g. to keep an unnamed collaborator anonymous */
+  say?: (text: string) => string;
+}
+const { song, level = 4, headingId, say = (t: string) => t } = Astro.props;
+const d = song.data;
+const H = `h${level}` as 'h2' | 'h3' | 'h4';
+
+type Line = Song['data']['lyrics'][number];
+function stanzas(lines: Line[]) {
+  const out: { section?: string; lines: Line[] }[] = [];
+  for (const l of lines) {
+    if (l.section || out.length === 0) out.push({ section: l.section, lines: [] });
+    out[out.length - 1].lines.push(l);
+  }
+  return out;
+}
+const notes = d.lyrics.filter((l) => l.note).length;
+let lineNo = 0;
+---
+
+<div class="ly" style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}>
+  <div class="ly-head">
+    <H class="ly-h" id={headingId}>
+      Lyrics
+    </H>
+    <p class="ly-legend">
+      <span class="ly-swatch" aria-hidden="true"></span>
+      {notes} annotated {notes === 1 ? 'line' : 'lines'} — select one to read the note
+    </p>
+  </div>
+  <div class="ly-grid" data-lyrics>
+    <div class="ly-col">
+      {stanzas(d.lyrics).map((st) => (
+        <div class="ly-stanza">
+          {st.section && <p class="ly-sec">[{st.section}]</p>}
+          {st.lines.map((l) => {
+            lineNo += 1;
+            return l.note ? (
+              <details class="ly-d" name={`notes-${song.id}`}>
+                <summary class="ly-s">
+                  <span class="ly-hl">{l.line}</span>
+                  <span class="visually-hidden"> — annotated line</span>
+                </summary>
+                <div
+                  class="ly-note"
+                  role="group"
+                  tabindex="-1"
+                  aria-label={`Annotation: ${l.line}`}
+                  id={`note-${song.id}-${lineNo}`}
+                >
+                  <p class="ly-note-k">
+                    <span class="ly-note-disc" aria-hidden="true" />
+                    Liner note
+                  </p>
+                  <p class="ly-note-q">“{l.line}”</p>
+                  <p class="ly-note-t">{say(l.note)}</p>
+                  <button type="button" class="ly-close" data-close>
+                    Close note <kbd>Esc</kbd>
+                  </button>
+                </div>
+              </details>
+            ) : (
+              <p class="ly-line">{l.line}</p>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+    <div class="ly-gutter">
+      <p class="ly-gutter-hint">
+        <span class="ly-gutter-ico" aria-hidden="true"></span>
+        Highlighted lines carry notes from the studio. Select one and its annotation opens here.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const wide = matchMedia('(min-width: 900px)');
+  // Desktop: the note sits in the gutter beside its line; nudge it up if it would run past the
+  // bottom of the lyrics block.
+  const place = (d: HTMLDetailsElement) => {
+    const note = d.querySelector<HTMLElement>('.ly-note');
+    const grid = d.closest<HTMLElement>('[data-lyrics]');
+    if (!note || !grid) return;
+    note.style.removeProperty('--shift');
+    if (!wide.matches) return;
+    const over = note.getBoundingClientRect().bottom - grid.getBoundingClientRect().bottom;
+    if (over > 0) note.style.setProperty('--shift', `${-over}px`);
+  };
+  document.querySelectorAll<HTMLDetailsElement>('[data-lyrics] details.ly-d').forEach((d) => {
+    const summary = d.querySelector<HTMLElement>('summary');
+    const note = d.querySelector<HTMLElement>('.ly-note');
+    d.addEventListener('toggle', () => {
+      if (!d.open) return;
+      place(d);
+      note?.focus({ preventScroll: true });
+      note?.scrollIntoView({ block: 'nearest' });
+    });
+    const close = () => {
+      d.open = false;
+      summary?.focus();
+    };
+    d.querySelector('[data-close]')?.addEventListener('click', close);
+    d.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && d.open) {
+        e.preventDefault();
+        close();
+      }
+    });
+  });
+</script>
+
+<style>
+  .ly-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.75rem;
+    border-bottom: 1px solid var(--ln-rule);
+  }
+  body.ln .ly-h {
+    font-family: var(--ln-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ln-ink-3);
+  }
+  .ly-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.875rem;
+    color: var(--ln-ink-2);
+  }
+  .ly-swatch {
+    flex: none;
+    width: 1.6rem;
+    height: 0.9rem;
+    border-radius: 2px;
+    background: var(--ln-hl);
+    box-shadow: inset 0 -2px 0 var(--ln-accent);
+  }
+  .ly-grid {
+    position: relative;
+  }
+  .ly-gutter {
+    display: none;
+  }
+  .ly-stanza {
+    margin-bottom: 1.75rem;
+  }
+  .ly-sec {
+    margin-bottom: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ln-ink-3);
+  }
+  .ly-line,
+  .ly-s {
+    font-family: var(--ln-display);
+    font-size: clamp(1.2rem, 2.3vw, 1.55rem);
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+    padding-block: 0.12rem;
+  }
+  .ly-s {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    list-style: none;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .ly-s::-webkit-details-marker {
+    display: none;
+  }
+  .ly-hl {
+    padding: 0.05em 0.3em;
+    margin-inline: -0.3em;
+    border-radius: 2px;
+    background: var(--ln-hl);
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--ln-accent) 70%, transparent);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .ly-s:hover .ly-hl {
+    background: var(--ln-hl-hover);
+  }
+  .ly-d[open] .ly-hl {
+    background: var(--ln-accent);
+    color: var(--ln-accent-ink);
+    box-shadow: none;
+  }
+
+  /* Annotation card: an inline sheet on mobile, a side panel on desktop */
+  .ly-note {
+    position: relative;
+    margin: 0.75rem 0 1.25rem;
+    padding: 1.1rem 1.2rem 1rem;
+    border-radius: 10px;
+    background: #f4ece1;
+    color: #1a1411;
+    box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.7);
+  }
+  .ly-note:focus-visible {
+    outline: 3px solid var(--ln-accent);
+    outline-offset: 3px;
+  }
+  .ly-note::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 1.5rem;
+    width: 14px;
+    height: 14px;
+    background: inherit;
+    transform: rotate(45deg);
+  }
+  .ly-note-k {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5c4f44;
+  }
+  .ly-note-disc {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, #1a1411 0 12%, transparent 13%),
+      radial-gradient(circle, var(--c2) 0 40%, transparent 41%), #1a1411;
+  }
+  .ly-note-q {
+    margin-top: 0.7rem;
+    font-family: var(--ln-display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #5c4f44;
+  }
+  .ly-note-t {
+    margin-top: 0.4rem;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+  .ly-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 36px;
+    margin-top: 0.9rem;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid #c9bba5;
+    border-radius: 999px;
+    background: transparent;
+    color: #1a1411;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ly-close:hover {
+    background: #1a1411;
+    color: #f4ece1;
+  }
+  .ly-close:focus-visible {
+    outline: 3px solid #a63d17;
+    outline-offset: 2px;
+  }
+  .ly-close kbd {
+    padding: 0 0.35rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 0.6875rem;
+    opacity: 0.8;
+  }
+
+  @media (min-width: 900px) {
+    .ly-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 4rem;
+      min-height: 100%;
+    }
+    .ly-gutter {
+      display: block;
+    }
+    .ly-gutter-hint {
+      display: flex;
+      gap: 0.9rem;
+      padding: 1.1rem 1.2rem;
+      border: 1px dashed var(--ln-rule);
+      border-radius: 10px;
+      font-size: 0.9375rem;
+      color: var(--ln-ink-2);
+    }
+    .ly-grid:has(.ly-d[open]) .ly-gutter-hint {
+      visibility: hidden;
+    }
+    .ly-gutter-ico {
+      flex: none;
+      width: 22px;
+      height: 14px;
+      margin-top: 0.3rem;
+      border-radius: 2px;
+      background: var(--ln-hl);
+      box-shadow: inset 0 -2px 0 var(--ln-accent);
+    }
+    .ly-note {
+      position: absolute;
+      right: 0;
+      width: 380px;
+      margin: 0;
+      margin-top: calc(-2.4rem + var(--shift, 0px));
+      z-index: 2;
+    }
+    .ly-note::before {
+      top: 1.1rem;
+      left: -7px;
+    }
+    .ly-note::after {
+      /* connector back to the line */
+      content: '';
+      position: absolute;
+      top: calc(1.1rem + 6px);
+      right: 100%;
+      width: 3.4rem;
+      border-top: 1px dashed var(--ln-accent);
+    }
+  }
+</style>

@@ -1,0 +1,267 @@
+---
+// A page for every song: the sleeve, credits, click-to-load players, what the song is about, the
+// full lyrics annotator and the neighbouring tracks. Like the Music section on the home page, the
+// song itself is "the record", so it stays dark in both colour schemes.
+import Shell from '../../system/Shell.astro';
+import SongArt from '../../system/SongArt.astro';
+import Lyrics from '../../system/Lyrics.astro';
+import Placeholder from '../../system/Placeholder.astro';
+import Players from './_Players.astro';
+import { voice } from './_music';
+import { getSiteContent, type Music, type Song } from '../../lib/content';
+
+export async function getStaticPaths() {
+  const { songs, music } = await getSiteContent();
+  return songs.map((song, index) => ({
+    params: { id: song.id },
+    props: { song, index, music, prev: songs[index - 1], next: songs[index + 1] },
+  }));
+}
+
+interface Props {
+  song: Song;
+  index: number;
+  music: Music;
+  prev?: Song;
+  next?: Song;
+}
+const { song, index, music, prev, next } = Astro.props;
+const d = song.data;
+const say = voice(music);
+const n = `Bonus ${index + 1}`;
+const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`;
+---
+
+<Shell
+  title={`${d.title} — lyrics and liner notes`}
+  description={say(d.meaning)}
+  nowPlaying={`${n} · ${d.title}`}
+>
+  <article class="sg ln-dark" style={colors(song)}>
+    <div class="sg-glow" aria-hidden="true"></div>
+    <header class="sg-head" data-np={`${n} · ${d.title}`}>
+      <div class="ln-wrap sg-head-grid">
+        <SongArt song={song} index={index} eager />
+        <div class="sg-intro">
+          <p class="sg-back">
+            <a href="/#music">← Bonus tracks · Music</a>
+          </p>
+          <p class="sg-k">
+            <span class="ln-eyebrow">
+              Bonus track {index + 1} · {d.year}
+            </span>
+            {d.status === 'placeholder' && <Placeholder />}
+          </p>
+          <h1 class="sg-title">{d.title}</h1>
+          <p class="sg-credits">{say(d.credits)}</p>
+          <Players song={song} />
+        </div>
+      </div>
+    </header>
+
+    <div class="ln-wrap sg-body">
+      <section
+        id="about"
+        class="sg-sec sg-about"
+        data-np={`${n} · About this song`}
+        aria-labelledby="about-h"
+      >
+        <h2 id="about-h" class="sg-h">
+          About this song
+        </h2>
+        <p>{say(d.meaning)}</p>
+      </section>
+
+      <section id="lyrics" class="sg-sec" data-np={`${n} · Lyrics`} aria-labelledby="lyrics-h">
+        <Lyrics song={song} level={2} headingId="lyrics-h" say={say} />
+      </section>
+    </div>
+
+    <nav class="ln-wrap sg-pager" aria-label="More songs">
+      {prev ? (
+        <a class="sg-pg" href={`/music/${prev.id}/`} style={colors(prev)} rel="prev">
+          <span class="sg-pg-k">← Previous track</span>
+          <span class="sg-pg-t">{prev.data.title}</span>
+        </a>
+      ) : (
+        <a class="sg-pg" href="/#music">
+          <span class="sg-pg-k">← All bonus tracks</span>
+          <span class="sg-pg-t">Music</span>
+        </a>
+      )}
+      {next ? (
+        <a class="sg-pg sg-pg-next" href={`/music/${next.id}/`} style={colors(next)} rel="next">
+          <span class="sg-pg-k">Next track →</span>
+          <span class="sg-pg-t">{next.data.title}</span>
+        </a>
+      ) : (
+        <a class="sg-pg sg-pg-next" href="/#music">
+          <span class="sg-pg-k">All bonus tracks →</span>
+          <span class="sg-pg-t">Music</span>
+        </a>
+      )}
+    </nav>
+  </article>
+</Shell>
+
+<style>
+  .sg {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background-color: #0a0908;
+    color: var(--ln-ink);
+  }
+  .sg-glow {
+    position: absolute;
+    inset: 0 0 auto;
+    height: min(900px, 100%);
+    z-index: -1;
+    background:
+      radial-gradient(
+        48% 32% at 14% 18%,
+        color-mix(in srgb, var(--c1) 75%, transparent),
+        transparent 72%
+      ),
+      radial-gradient(
+        26% 18% at 26% 14%,
+        color-mix(in srgb, var(--c2) 20%, transparent),
+        transparent 70%
+      );
+    filter: blur(20px);
+    opacity: 0.8;
+  }
+
+  .sg-head {
+    padding-block: clamp(2rem, 5vw, 4.5rem) clamp(3rem, 6vw, 5rem);
+    border-bottom: 1px solid var(--ln-rule);
+  }
+  .sg-head-grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: start;
+  }
+  .sg-intro {
+    display: grid;
+    gap: 0.9rem;
+    align-content: start;
+    min-width: 0;
+  }
+  .sg-back a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    color: var(--ln-ink-2);
+  }
+  .sg-back a:hover {
+    color: var(--ln-ink);
+    text-decoration: underline;
+  }
+  .sg-k {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.8rem;
+  }
+  .sg-k .ln-eyebrow {
+    color: var(--ln-accent);
+  }
+  body.ln .sg-title {
+    font-size: clamp(2.8rem, 8vw, 5.5rem);
+    font-weight: 800;
+    font-stretch: 78%;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+  }
+  .sg-credits {
+    font-size: 1.0625rem;
+    color: var(--ln-ink-2);
+  }
+
+  .sg-body {
+    display: grid;
+    gap: clamp(3rem, 6vw, 4.5rem);
+    padding-block: clamp(3rem, 6vw, 5rem);
+  }
+  .sg-sec {
+    scroll-margin-top: calc(var(--ln-header) + 1rem);
+    min-width: 0;
+  }
+  body.ln .sg-h {
+    font-family: var(--ln-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ln-ink-3);
+  }
+  .sg-about {
+    display: grid;
+    gap: 0.6rem;
+    max-width: 44em;
+    padding: 1.3rem 1.4rem;
+    border-left: 3px solid var(--ln-accent);
+    background: rgb(255 255 255 / 0.04);
+  }
+  .sg-about p {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--ln-ink-2);
+  }
+
+  .sg-pager {
+    display: grid;
+    gap: 1rem;
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+  .sg-pg {
+    display: grid;
+    gap: 0.3rem;
+    padding: 1.4rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--ln-rule);
+    color: var(--ln-ink);
+    text-decoration: none;
+    background: linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--c1, var(--ln-accent)) 30%, transparent),
+      transparent 60%
+    );
+  }
+  .sg-pg:hover {
+    border-color: var(--ln-ink);
+  }
+  .sg-pg-k {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ln-ink-3);
+  }
+  .sg-pg-t {
+    font-family: var(--ln-display);
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 800;
+    font-stretch: 82%;
+    letter-spacing: -0.02em;
+  }
+
+  @media (min-width: 760px) {
+    .sg-pager {
+      grid-template-columns: 1fr 1fr;
+    }
+    .sg-pg-next {
+      text-align: right;
+    }
+  }
+  @media (min-width: 900px) {
+    .sg-head-grid {
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 4rem;
+    }
+  }
+</style>

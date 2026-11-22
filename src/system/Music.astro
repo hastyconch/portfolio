@@ -1,39 +1,29 @@
 ---
-// Music slot — Bonus tracks, the showcase of this direction. Songs are a tablist of sleeves;
-// each song panel has art, credits, a click-to-load player slot and a Genius-style lyrics
-// annotator. Annotated lines are <details>/<summary> (native keyboard + no-JS); the script adds
-// focus management (note receives focus, Esc/Close return it) and desktop gutter alignment.
-import type { Song } from '../lib/content';
+// Music slot — Bonus tracks, the showcase of this direction. It opens with the music story (from
+// src/content/music.json), then the songs as a tablist of sleeves; each song panel has art,
+// credits, a link to the song's own page, click-to-load players and the lyrics annotator.
+// SongArt, the players and Lyrics are shared with the /music/<id>/ pages.
+import type { Music, Song } from '../lib/content';
 import SideHead from './SideHead.astro';
 import Placeholder from './Placeholder.astro';
+import SongArt from './SongArt.astro';
+import Lyrics from './Lyrics.astro';
+import Players from '../pages/music/_Players.astro';
+import { voice } from '../pages/music/_music';
 
 interface Props {
   songs: Song[];
+  music: Music;
 }
-const { songs } = Astro.props;
+const { songs, music } = Astro.props;
+const say = voice(music);
 
-type Line = Song['data']['lyrics'][number];
-function stanzas(lines: Line[]) {
-  const out: { section?: string; lines: Line[] }[] = [];
-  for (const l of lines) {
-    if (l.section || out.length === 0) out.push({ section: l.section, lines: [] });
-    out[out.length - 1].lines.push(l);
-  }
-  return out;
-}
-function spotifyEmbed(u?: string) {
-  const m = u?.match(/open\.spotify\.com\/(track|album|playlist)\/([A-Za-z0-9]+)/);
-  return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}` : undefined;
-}
-function youtubeEmbed(u?: string) {
-  const m = u?.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
-  return m ? `https://www.youtube-nocookie.com/embed/${m[1]}` : undefined;
-}
 const years = [...new Set(songs.map((s) => s.data.year))].sort();
-const credits = [...new Set(songs.map((s) => s.data.credits))];
 const pad = (n: number) => String(n).padStart(2, '0');
 const first = songs[0]?.data.artColors ?? ['#3b1f5e', '#e07a5f'];
-const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
+const placeholder =
+  music.status === 'placeholder' || songs.some((s) => s.data.status === 'placeholder');
+const [lead, ...story] = music.story.map(say);
 ---
 
 <section
@@ -53,19 +43,24 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
       meta={`${songs.length} songs · ${years.join(' – ')}`}
     />
 
-    <div class="mu-story">
-      <p class="mu-story-lead">{credits.join(' · ')}</p>
+    <div class="mu-story" data-story>
+      <p class="mu-story-lead">{lead}</p>
+      {story.map((p) => (
+        <p class="mu-story-p">{p}</p>
+      ))}
       <ul class="mu-story-facts">
         <li>
-          <span class="ln-eyebrow">Since</span> <span class="ln-num">{years[0]}</span>
+          <span class="ln-eyebrow">Released</span>
+          {music.releasedAs ? `as ${music.releasedAs}` : 'on streaming'}
         </li>
-        <li>
-          <span class="ln-eyebrow">Songs</span> <span class="ln-num">{songs.length}</span>
-        </li>
-        <li>
-          <span class="ln-eyebrow">Released</span> on streaming
-        </li>
-        {anyPlaceholder && (
+        {music.links.map((l) => (
+          <li>
+            <a href={l.href} rel="noopener">
+              {l.label}
+            </a>
+          </li>
+        ))}
+        {placeholder && (
           <li>
             <Placeholder label="Story & lyrics to come" />
           </li>
@@ -101,12 +96,6 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
 
     {songs.map((s, i) => {
       const d = s.data;
-      const notes = d.lyrics.filter((l) => l.note).length;
-      const players = [
-        { key: 'spotify', name: 'Spotify', url: d.spotify, embed: spotifyEmbed(d.spotify) },
-        { key: 'youtube', name: 'YouTube', url: d.youtube, embed: youtubeEmbed(d.youtube) },
-      ];
-      let lineNo = 0;
       return (
         <div
           class="mu-panel"
@@ -117,14 +106,7 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
           style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
         >
           <div class="mu-head">
-            <div class="mu-art-wrap" aria-hidden="true">
-              <span class="mu-vinyl ln-vinyl" />
-              <div class="mu-art">
-                <span class="mu-art-n ln-num">{pad(i + 1)}</span>
-                <span class="mu-art-t">{d.title}</span>
-                <span class="mu-art-y ln-num">{d.year}</span>
-              </div>
-            </div>
+            <SongArt song={s} index={i} />
             <div class="mu-info">
               <p class="mu-k">
                 <span class="ln-eyebrow">
@@ -133,103 +115,22 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
                 {d.status === 'placeholder' && <Placeholder />}
               </p>
               <h3 class="mu-title">{d.title}</h3>
-              <p class="mu-credits">{d.credits}</p>
+              <p class="mu-credits">{say(d.credits)}</p>
               <div class="mu-about">
                 <h4 class="mu-h">About this song</h4>
-                <p>{d.meaning}</p>
+                <p>{say(d.meaning)}</p>
               </div>
-              <ul class="mu-players" aria-label="Listen">
-                {players.map((p) => (
-                  <li class="mu-player" data-player>
-                    {p.url && p.embed ? (
-                      <>
-                        <button
-                          type="button"
-                          class="mu-play"
-                          data-src={p.embed}
-                          data-kind={p.key}
-                          data-title={`${d.title} on ${p.name}`}
-                        >
-                          <span class="mu-play-ico" aria-hidden="true" />
-                          <span class="mu-play-text">
-                            <strong>Play on {p.name}</strong>
-                            <small>Loads the {p.name} player</small>
-                          </span>
-                        </button>
-                        <a class="mu-play-link" href={p.url} rel="noopener">
-                          Open on {p.name}
-                        </a>
-                      </>
-                    ) : (
-                      <p class="mu-play is-soon">
-                        <span class="mu-play-ico" aria-hidden="true" />
-                        <span class="mu-play-text">
-                          <strong>{p.name}</strong>
-                          <small>Link coming — player loads on click</small>
-                        </span>
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <p>
+                <a class="mu-page" href={`/music/${s.id}/`} data-song-link>
+                  Open the song page<span class="visually-hidden">: {d.title}</span>
+                  <span aria-hidden="true">&nbsp;→</span>
+                </a>
+              </p>
+              <Players song={s} />
             </div>
           </div>
 
-          <div class="mu-lyrics">
-            <div class="mu-lyr-head">
-              <h4 class="mu-h">Lyrics</h4>
-              <p class="mu-legend">
-                <span class="mu-swatch" aria-hidden="true" />
-                {notes} annotated {notes === 1 ? 'line' : 'lines'} — select one to read the note
-              </p>
-            </div>
-            <div class="mu-lyr-grid" data-lyrics>
-              <div class="mu-lyr-col">
-                {stanzas(d.lyrics).map((st) => (
-                  <div class="ly-stanza">
-                    {st.section && <p class="ly-sec">[{st.section}]</p>}
-                    {st.lines.map((l) => {
-                      lineNo += 1;
-                      return l.note ? (
-                        <details class="ly-d" name={`notes-${s.id}`}>
-                          <summary class="ly-s">
-                            <span class="ly-hl">{l.line}</span>
-                            <span class="visually-hidden"> — annotated line</span>
-                          </summary>
-                          <div
-                            class="ly-note"
-                            role="group"
-                            tabindex="-1"
-                            aria-label={`Annotation: ${l.line}`}
-                            id={`note-${s.id}-${lineNo}`}
-                          >
-                            <p class="ly-note-k">
-                              <span class="ly-note-disc" aria-hidden="true" />
-                              Liner note
-                            </p>
-                            <p class="ly-note-q">“{l.line}”</p>
-                            <p class="ly-note-t">{l.note}</p>
-                            <button type="button" class="ly-close" data-close>
-                              Close note <kbd>Esc</kbd>
-                            </button>
-                          </div>
-                        </details>
-                      ) : (
-                        <p class="ly-line">{l.line}</p>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-              <div class="mu-gutter">
-                <p class="mu-gutter-hint">
-                  <span class="mu-gutter-ico" aria-hidden="true" />
-                  Highlighted lines carry notes from the studio. Select one and its annotation opens
-                  here.
-                </p>
-              </div>
-            </div>
-          </div>
+          <Lyrics song={s} level={4} say={say} />
         </div>
       );
     })}
@@ -237,9 +138,9 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
 </section>
 
 <script>
+  // Tabs (automatic activation, roving tabindex). Lyrics and the players bring their own scripts.
   const root = document.getElementById('music');
   if (root) {
-    // Tabs (automatic activation, roving tabindex)
     const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
     const select = (tab: HTMLButtonElement, focus = false) => {
       tabs.forEach((t) => {
@@ -265,53 +166,6 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
         if (next < 0) return;
         e.preventDefault();
         select(tabs[next], true);
-      });
-    });
-
-    // Lyrics annotator
-    const wide = matchMedia('(min-width: 900px)');
-    const place = (d: HTMLDetailsElement) => {
-      const note = d.querySelector<HTMLElement>('.ly-note');
-      const grid = d.closest<HTMLElement>('[data-lyrics]');
-      if (!note || !grid) return;
-      note.style.removeProperty('--shift');
-      if (!wide.matches) return;
-      const over = note.getBoundingClientRect().bottom - grid.getBoundingClientRect().bottom;
-      if (over > 0) note.style.setProperty('--shift', `${-over}px`);
-    };
-    root.querySelectorAll<HTMLDetailsElement>('details.ly-d').forEach((d) => {
-      const summary = d.querySelector<HTMLElement>('summary');
-      const note = d.querySelector<HTMLElement>('.ly-note');
-      d.addEventListener('toggle', () => {
-        if (!d.open) return;
-        place(d);
-        note?.focus({ preventScroll: true });
-        note?.scrollIntoView({ block: 'nearest' });
-      });
-      const close = () => {
-        d.open = false;
-        summary?.focus();
-      };
-      d.querySelector('[data-close]')?.addEventListener('click', close);
-      d.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && d.open) {
-          e.preventDefault();
-          close();
-        }
-      });
-    });
-
-    // Click-to-load players: nothing third-party loads until the visitor asks.
-    root.querySelectorAll<HTMLButtonElement>('.mu-play[data-src]').forEach((b) => {
-      b.addEventListener('click', () => {
-        const f = document.createElement('iframe');
-        f.src = b.dataset.src ?? '';
-        f.title = b.dataset.title ?? 'Music player';
-        f.className = `mu-frame mu-frame-${b.dataset.kind}`;
-        f.allow = 'encrypted-media; picture-in-picture; fullscreen';
-        f.loading = 'lazy';
-        b.replaceWith(f);
-        f.focus();
       });
     });
   }
@@ -352,7 +206,7 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
   /* Story plate */
   .mu-story {
     display: grid;
-    gap: 1.25rem;
+    gap: 1.1rem;
     margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
     max-width: 52rem;
   }
@@ -364,18 +218,29 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
     line-height: 1.05;
     letter-spacing: -0.02em;
   }
+  .mu-story-p {
+    max-width: 40em;
+    font-size: 1.0625rem;
+    color: var(--ln-ink-2);
+  }
   .mu-story-facts {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.6rem 1.75rem;
-    margin: 0;
+    margin: 0.4rem 0 0;
     padding: 0;
     list-style: none;
     color: var(--ln-ink-2);
   }
   .mu-story-facts .ln-eyebrow {
     margin-right: 0.35rem;
+  }
+  .mu-story-facts a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    color: var(--ln-ink);
   }
 
   /* Song tabs */
@@ -456,84 +321,6 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
     gap: 2rem;
     margin-bottom: clamp(2.5rem, 5vw, 4rem);
   }
-  .mu-art-wrap {
-    position: relative;
-    width: min(100%, 340px);
-  }
-  .mu-vinyl {
-    position: absolute;
-    top: 5%;
-    right: -2%;
-    width: 80%;
-    --ln-label: var(--c2);
-  }
-  .mu-art {
-    position: relative;
-    width: 82%;
-    aspect-ratio: 1;
-    container-type: inline-size;
-    border-radius: 4px;
-    overflow: hidden;
-    color: #fff;
-    background:
-      var(--ln-grain),
-      repeating-linear-gradient(var(--c1) 0 12%, transparent 12% 26%) 0 52% / 100% 22% no-repeat,
-      radial-gradient(circle at 64% 40%, var(--c2) 0 25%, transparent 25.4%),
-      radial-gradient(
-        circle at 64% 40%,
-        color-mix(in srgb, var(--c2) 45%, transparent) 0,
-        transparent 48%
-      ),
-      linear-gradient(
-        172deg,
-        color-mix(in oklab, var(--c1) 88%, #fff) 0%,
-        var(--c1) 42%,
-        color-mix(in oklab, var(--c1) 45%, #000) 100%
-      );
-    box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.2) inset,
-      0 30px 60px -24px rgb(0 0 0 / 0.7);
-  }
-  .mu-art-n {
-    position: absolute;
-    top: 7cqi;
-    left: 8cqi;
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-size: 11cqi;
-    line-height: 1;
-  }
-  .mu-art-t {
-    position: absolute;
-    left: 8cqi;
-    right: 8cqi;
-    bottom: 13cqi;
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-stretch: 75%;
-    font-size: 15cqi;
-    line-height: 0.88;
-    letter-spacing: -0.02em;
-  }
-  .mu-art-y {
-    position: absolute;
-    left: 8cqi;
-    bottom: 6cqi;
-    font-size: 4.5cqi;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .mu-panel:not([hidden]) .mu-vinyl {
-      animation: mu-out 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) both;
-    }
-  }
-  @keyframes mu-out {
-    from {
-      transform: translateX(-18%) rotate(-60deg);
-    }
-  }
-
   .mu-info {
     display: grid;
     gap: 0.9rem;
@@ -580,271 +367,16 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
   .mu-about p {
     color: var(--ln-ink-2);
   }
-
-  /* Players */
-  .mu-players {
-    display: grid;
-    gap: 0.6rem;
-    margin: 0.5rem 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .mu-player {
-    display: grid;
-    gap: 0.35rem;
-  }
-  .mu-play {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    width: 100%;
-    min-height: 60px;
-    padding: 0.6rem 1rem 0.6rem 0.6rem;
-    border: 1px solid var(--ln-rule);
-    border-radius: 999px;
-    background: var(--ln-bg-2);
-    color: var(--ln-ink);
-    font: inherit;
-    text-align: left;
-  }
-  button.mu-play {
-    cursor: pointer;
-  }
-  button.mu-play:hover {
-    border-color: var(--ln-ink);
-  }
-  .mu-play.is-soon {
-    border-style: dashed;
-    background: transparent;
-  }
-  .mu-play-ico {
-    position: relative;
-    flex: none;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: var(--ln-ink);
-  }
-  .mu-play-ico::after {
-    content: '';
-    position: absolute;
-    left: 16px;
-    top: 13px;
-    border-left: 13px solid var(--ln-bg);
-    border-block: 8px solid transparent;
-  }
-  .is-soon .mu-play-ico {
-    background: var(--ln-bg-3);
-    box-shadow: inset 0 0 0 1px var(--ln-rule);
-  }
-  .is-soon .mu-play-ico::after {
-    left: 50%;
-    top: 50%;
-    width: 4px;
-    height: 4px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--ln-ink-3);
-    box-shadow:
-      -8px 0 0 var(--ln-ink-3),
-      8px 0 0 var(--ln-ink-3);
-    transform: translate(-50%, -50%);
-  }
-
-  .mu-play-text {
-    display: grid;
-    line-height: 1.25;
-  }
-  .mu-play-text strong {
-    font-weight: 700;
-  }
-  .mu-play-text small {
-    font-size: 0.8125rem;
-    color: var(--ln-ink-3);
-  }
-  .mu-play-link {
-    justify-self: start;
-    padding: 0.25rem 1rem;
-    font-size: 0.875rem;
-    color: var(--ln-ink-2);
-  }
-  .mu-player :global(.mu-frame) {
-    width: 100%;
-    border: 0;
-    border-radius: 12px;
-  }
-  .mu-player :global(.mu-frame-spotify) {
-    height: 152px;
-  }
-  .mu-player :global(.mu-frame-youtube) {
-    aspect-ratio: 16 / 9;
-    height: auto;
-  }
-
-  /* Lyrics */
-  .mu-lyr-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.5rem 2rem;
-    padding-bottom: 1rem;
-    margin-bottom: 1.75rem;
-    border-bottom: 1px solid var(--ln-rule);
-  }
-  .mu-legend {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-size: 0.875rem;
-    color: var(--ln-ink-2);
-  }
-  .mu-swatch {
-    width: 1.6rem;
-    height: 0.9rem;
-    border-radius: 2px;
-    background: var(--ln-hl);
-    box-shadow: inset 0 -2px 0 var(--ln-accent);
-  }
-  .mu-lyr-grid {
-    position: relative;
-  }
-  .mu-gutter {
-    display: none;
-  }
-  .ly-stanza {
-    margin-bottom: 1.75rem;
-  }
-  .ly-sec {
-    margin-bottom: 0.35rem;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--ln-ink-3);
-  }
-  .ly-line,
-  .ly-s {
-    font-family: var(--ln-display);
-    font-size: clamp(1.2rem, 2.3vw, 1.55rem);
-    font-weight: 500;
-    line-height: 1.45;
-    letter-spacing: -0.005em;
-    padding-block: 0.12rem;
-  }
-  .ly-s {
-    display: block;
-    width: fit-content;
-    max-width: 100%;
-    list-style: none;
-    cursor: pointer;
-    border-radius: 3px;
-  }
-  .ly-s::-webkit-details-marker {
-    display: none;
-  }
-  .ly-hl {
-    padding: 0.05em 0.3em;
-    margin-inline: -0.3em;
-    border-radius: 2px;
-    background: var(--ln-hl);
-    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--ln-accent) 70%, transparent);
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
-  }
-  .ly-s:hover .ly-hl {
-    background: var(--ln-hl-hover);
-  }
-  .ly-d[open] .ly-hl {
-    background: var(--ln-accent);
-    color: var(--ln-accent-ink);
-    box-shadow: none;
-  }
-
-  /* Annotation card */
-  .ly-note {
-    position: relative;
-    margin: 0.75rem 0 1.25rem;
-    padding: 1.1rem 1.2rem 1rem;
-    border-radius: 10px;
-    background: #f4ece1;
-    color: #1a1411;
-    box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.7);
-  }
-  .ly-note:focus-visible {
-    outline: 3px solid var(--ln-accent);
-    outline-offset: 3px;
-  }
-  .ly-note::before {
-    content: '';
-    position: absolute;
-    top: -7px;
-    left: 1.5rem;
-    width: 14px;
-    height: 14px;
-    background: inherit;
-    transform: rotate(45deg);
-  }
-  .ly-note-k {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #5c4f44;
-  }
-  .ly-note-disc {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background:
-      radial-gradient(circle, #1a1411 0 12%, transparent 13%),
-      radial-gradient(circle, var(--c2) 0 40%, transparent 41%), #1a1411;
-  }
-  .ly-note-q {
-    margin-top: 0.7rem;
-    font-family: var(--ln-display);
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #5c4f44;
-  }
-  .ly-note-t {
-    margin-top: 0.4rem;
-    font-size: 1.0625rem;
-    line-height: 1.55;
-  }
-  .ly-close {
+  .mu-page {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    min-height: 36px;
-    margin-top: 0.9rem;
-    padding: 0.3rem 0.85rem;
-    border: 1px solid #c9bba5;
-    border-radius: 999px;
-    background: transparent;
-    color: #1a1411;
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
+    min-height: 44px;
+    font-weight: 700;
+    color: var(--ln-accent);
+    text-underline-offset: 0.2em;
   }
-  .ly-close:hover {
-    background: #1a1411;
-    color: #f4ece1;
-  }
-  .ly-close:focus-visible {
-    outline: 3px solid #a63d17;
-    outline-offset: 2px;
-  }
-  .ly-close kbd {
-    padding: 0 0.35rem;
-    border: 1px solid currentColor;
-    border-radius: 4px;
-    font: inherit;
-    font-size: 0.6875rem;
-    opacity: 0.8;
+  .mu-page:hover {
+    color: var(--ln-ink);
   }
 
   @media (min-width: 900px) {
@@ -852,12 +384,6 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
       grid-template-columns: 360px minmax(0, 1fr);
       gap: 4rem;
       align-items: start;
-    }
-    .mu-art-wrap {
-      width: 360px;
-    }
-    .mu-players {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .mu-tabs {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -871,57 +397,6 @@ const anyPlaceholder = songs.some((s) => s.data.status === 'placeholder');
     }
     .mu-tab-t {
       font-size: 1.15rem;
-    }
-    .mu-lyr-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 380px;
-      gap: 4rem;
-      min-height: 100%;
-    }
-    .mu-gutter {
-      display: block;
-    }
-    .mu-gutter-hint {
-      display: flex;
-      gap: 0.9rem;
-      padding: 1.1rem 1.2rem;
-      border: 1px dashed var(--ln-rule);
-      border-radius: 10px;
-      font-size: 0.9375rem;
-      color: var(--ln-ink-2);
-    }
-    .mu-lyr-grid:has(.ly-d[open]) .mu-gutter-hint {
-      visibility: hidden;
-    }
-    .mu-gutter-ico {
-      flex: none;
-      width: 22px;
-      height: 14px;
-      margin-top: 0.3rem;
-      border-radius: 2px;
-      background: var(--ln-hl);
-      box-shadow: inset 0 -2px 0 var(--ln-accent);
-    }
-    .ly-note {
-      position: absolute;
-      right: 0;
-      width: 380px;
-      margin: 0;
-      margin-top: calc(-2.4rem + var(--shift, 0px));
-      z-index: 2;
-    }
-    .ly-note::before {
-      top: 1.1rem;
-      left: -7px;
-    }
-    .ly-note::after {
-      /* connector back to the line */
-      content: '';
-      position: absolute;
-      top: calc(1.1rem + 6px);
-      right: 100%;
-      width: 3.4rem;
-      border-top: 1px dashed var(--ln-accent);
     }
   }
 </style>

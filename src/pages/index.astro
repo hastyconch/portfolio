@@ -8,7 +8,7 @@ import Music from '../system/Music.astro';
 import Resume from '../system/Resume.astro';
 import { getSiteContent } from '../lib/content';
 
-const { profile, resume, work, projects, songs } = await getSiteContent();
+const { profile, music, resume, work, projects, songs } = await getSiteContent();
 ---
 
 <Shell home nowPlaying="Intro" description={profile.headline}>
@@ -18,6 +18,6 @@ const { profile, resume, work, projects, songs } = await getSiteContent();
   />
   <Work work={work} />
   <Projects projects={projects} />
-  <Music songs={songs} />
+  <Music songs={songs} music={music} />
   <Resume resume={resume} />
 </Shell>
