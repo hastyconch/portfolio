@@ -1,5 +1,5 @@
 ---
-// SongArt: a song's sleeve with the record peeking out. Uses the song's `art` image when the
+// SongArt: a song's sleeve with the record peeking out (Music is where the record theme lives). Uses the song's `art` image when the
 // owner has supplied it; otherwise the `artColors` gradient sleeve (number, title, year) stands in.
 // Shared by the home Music section and the /music/<id>/ pages.
 import type { Song } from '../lib/content';
@@ -54,7 +54,7 @@ const decorative = !d.art || !d.artAlt;
   .sa-vinyl {
     position: absolute;
     top: 5%;
-    right: -2%;
+    right: 0;
     width: 80%;
     --ln-label: var(--c2);
   }
@@ -63,11 +63,10 @@ const decorative = !d.art || !d.artAlt;
     width: 82%;
     aspect-ratio: 1;
     container-type: inline-size;
-    border-radius: 4px;
+    border-radius: var(--radius-1);
     overflow: hidden;
     color: #fff;
     background:
-      var(--ln-grain),
       repeating-linear-gradient(var(--c1) 0 12%, transparent 12% 26%) 0 52% / 100% 22% no-repeat,
       radial-gradient(circle at 64% 40%, var(--c2) 0 25%, transparent 25.4%),
       radial-gradient(
@@ -83,7 +82,7 @@ const decorative = !d.art || !d.artAlt;
       );
     box-shadow:
       0 1px 0 rgb(255 255 255 / 0.2) inset,
-      0 30px 60px -24px rgb(0 0 0 / 0.7);
+      var(--shadow-3);
   }
   .sa-art-img img {
     display: block;
@@ -91,39 +90,39 @@ const decorative = !d.art || !d.artAlt;
     height: 100%;
     object-fit: cover;
   }
+  /* Cover art type is sized to the cover. */
   .sa-n {
     position: absolute;
     top: 7cqi;
     left: 8cqi;
     font-family: var(--ln-display);
     font-weight: 800;
-    font-size: 11cqi;
-    line-height: 1;
+    font-size: 6cqi;
+    line-height: var(--leading-tight);
   }
   .sa-t {
     position: absolute;
     left: 8cqi;
     right: 8cqi;
-    bottom: 13cqi;
+    bottom: 15cqi;
     font-family: var(--ln-display);
     font-weight: 800;
-    font-stretch: 75%;
+    font-stretch: var(--stretch-display);
     font-size: 15cqi;
-    line-height: 0.88;
-    letter-spacing: -0.02em;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
   }
   .sa-y {
     position: absolute;
     left: 8cqi;
-    bottom: 6cqi;
-    font-size: 4.5cqi;
+    bottom: 7cqi;
+    font-size: 6cqi;
     font-weight: 700;
-    letter-spacing: 0.14em;
   }
   /* The record slides out of the sleeve; it replays whenever a hidden tab panel is shown. */
   @media (prefers-reduced-motion: no-preference) {
     .sa-vinyl {
-      animation: sa-out 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+      animation: sa-out calc(var(--dur-reveal) * 2) var(--ease-out) both;
     }
   }
   @keyframes sa-out {

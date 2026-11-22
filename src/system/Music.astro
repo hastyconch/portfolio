@@ -1,10 +1,9 @@
 ---
-// Music slot: Bonus tracks, the showcase of this direction. It opens with the music story (from
+// Music: the one section where the record theme lives. It opens with the music story (from
 // src/content/music.json), then the songs as a tablist of sleeves; each song panel has art,
 // credits, a link to the song's own page, click-to-load players and the lyrics annotator.
 // SongArt, the players and Lyrics are shared with the /music/<id>/ pages.
 import type { Music, Song } from '../lib/content';
-import SideHead from './SideHead.astro';
 import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
 import Lyrics from './Lyrics.astro';
@@ -21,7 +20,6 @@ interface Props {
 const { songs, features = [], music } = Astro.props;
 const say = voice(music);
 
-const years = [...new Set(songs.map((s) => s.data.year))].sort();
 const pad = (n: number) => String(n).padStart(2, '0');
 const first = songs[0]?.data.artColors ?? ['#3b1f5e', '#e07a5f'];
 const placeholder =
@@ -31,45 +29,37 @@ const [lead, ...story] = music.story.map(say);
 
 <section
   id="music"
-  class="ln-side music ln-dark"
-  data-np="Bonus tracks · Music"
+  class="ln-sec music ln-dark"
   aria-labelledby="music-h"
-  style={`--c1: ${first[0]}; --c2: ${first[1]}`}
+  style={`--mu-tint: ${first[0]}`}
 >
-  <div class="mu-glow" aria-hidden="true"></div>
-  <div class="ln-wrap mu-wrap">
-    <SideHead
-      badge="+"
-      kicker="Bonus tracks"
-      title="Music"
-      id="music-h"
-      meta={`${songs.length} songs · ${years.length > 1 ? `${years[0]}–${years.at(-1)}` : years[0]}`}
-    />
-
-    <div class="mu-story" data-story>
-      <p class="mu-story-lead">{lead}</p>
-      {story.map((p) => (
-        <p class="mu-story-p">{p}</p>
-      ))}
-      <ul class="mu-story-facts">
-        <li>
-          <span class="ln-eyebrow">Released</span>
-          {music.releasedAs ? `as ${music.releasedAs}` : 'on streaming'}
-        </li>
-        {music.links.map((l) => (
-          <li>
-            <a href={l.href} rel="noopener">
-              {l.label}
-            </a>
-          </li>
+  <div class="ln-wrap">
+    <header class="mu-intro">
+      <h2 id="music-h" class="mu-h2 label">
+        Music
+      </h2>
+      <div class="mu-story" data-story>
+        <p class="mu-story-lead">{lead}</p>
+        {story.map((p) => (
+          <p class="mu-story-p">{p}</p>
         ))}
-        {placeholder && (
-          <li>
-            <Placeholder label="Story & lyrics to come" />
-          </li>
-        )}
-      </ul>
-    </div>
+        <ul class="mu-story-facts">
+          <li>Released {music.releasedAs ? `as ${music.releasedAs}` : 'on streaming services'}</li>
+          {music.links.map((l) => (
+            <li>
+              <a class="ln-link" href={l.href} rel="noopener">
+                {l.label}
+              </a>
+            </li>
+          ))}
+          {placeholder && (
+            <li>
+              <Placeholder label="Story & lyrics to come" />
+            </li>
+          )}
+        </ul>
+      </div>
+    </header>
 
     <div class="mu-tabs" role="tablist" aria-label="Songs">
       {songs.map((s, i) => (
@@ -82,7 +72,6 @@ const [lead, ...story] = music.story.map(say);
           aria-selected={i === 0 ? 'true' : 'false'}
           tabindex={i === 0 ? 0 : -1}
           data-c1={s.data.artColors[0]}
-          data-c2={s.data.artColors[1]}
           style={`--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`}
         >
           <span class:list={['mu-tab-art', s.data.art && 'has-art']} aria-hidden="true">
@@ -100,7 +89,6 @@ const [lead, ...story] = music.story.map(say);
             <span class="ln-num">{pad(i + 1)}</span>
           </span>
           <span class="mu-tab-text">
-            <span class="mu-tab-k">Bonus {i + 1}</span>
             <span class="mu-tab-t">{s.data.title}</span>
             <span class="mu-tab-y ln-num">{s.data.year}</span>
           </span>
@@ -123,8 +111,8 @@ const [lead, ...story] = music.story.map(say);
             <SongArt song={s} index={i} />
             <div class="mu-info">
               <p class="mu-k">
-                <span class="ln-eyebrow">
-                  Bonus track {i + 1} · {d.year}
+                <span class="label">
+                  Track {i + 1} · {d.year}
                 </span>
                 {d.status === 'placeholder' && <Placeholder />}
               </p>
@@ -132,11 +120,11 @@ const [lead, ...story] = music.story.map(say);
               <p class="mu-credits">{say(d.credits)}</p>
               {d.release && <p class="mu-release">{d.release}</p>}
               <div class="mu-about">
-                <h4 class="mu-h">About this song</h4>
+                <h4 class="label">About this song</h4>
                 <p>{say(d.meaning)}</p>
               </div>
               <p>
-                <a class="mu-page" href={`/music/${s.id}/`} data-song-link>
+                <a class="mu-page ln-link" href={`/music/${s.id}/`} data-song-link>
                   Open the song page<span class="visually-hidden">: {d.title}</span>
                   <span aria-hidden="true">&nbsp;→</span>
                 </a>
@@ -152,7 +140,7 @@ const [lead, ...story] = music.story.map(say);
 
     {features.length > 0 && (
       <section class="mu-feat" aria-labelledby="mu-feat-h">
-        <h3 id="mu-feat-h" class="mu-feat-h">
+        <h3 id="mu-feat-h" class="label">
           Appears on
         </h3>
         <ul class="mu-feat-list">
@@ -200,8 +188,8 @@ const [lead, ...story] = music.story.map(say);
         const panel = document.getElementById(t.getAttribute('aria-controls') ?? '');
         if (panel) panel.hidden = !on;
       });
-      root.style.setProperty('--c1', tab.dataset.c1 ?? '');
-      root.style.setProperty('--c2', tab.dataset.c2 ?? '');
+      // The section's tint cross-fades to the song's colour (a registered custom property).
+      if (tab.dataset.c1) root.style.setProperty('--mu-tint', tab.dataset.c1);
       if (focus) tab.focus();
     };
     tabs.forEach((t, i) => {
@@ -222,111 +210,100 @@ const [lead, ...story] = music.story.map(say);
 </script>
 
 <style>
+  /* Registered so the tint interpolates: a real cross-fade between songs, not a snap. */
+  @property --mu-tint {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #3b1f5e;
+  }
   .music {
     position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    background-color: #0a0908;
-    border-block: 1px solid #2a2522;
-  }
-  .mu-glow {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(
-        42% 26% at 16% 40%,
-        color-mix(in srgb, var(--c1) 80%, transparent),
-        transparent 72%
-      ),
-      radial-gradient(
-        26% 16% at 26% 36%,
-        color-mix(in srgb, var(--c2) 22%, transparent),
-        transparent 70%
-      );
-    filter: blur(20px);
-    opacity: 0.8;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .mu-glow {
-      transition: background 0.6s ease;
-    }
+    overflow-x: clip;
+    background-color: color-mix(in srgb, var(--mu-tint) 12%, var(--ln-bg));
+    border-block: var(--ln-hairline);
+    transition: --mu-tint var(--dur-slow) var(--ease-out);
   }
 
-  /* Story plate */
+  /* Intro: the section opens with the story, not a big title. */
+  .mu-intro {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-7);
+  }
   .mu-story {
     display: grid;
-    gap: 1.1rem;
-    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
-    max-width: 52rem;
+    gap: var(--space-4);
+    max-width: var(--measure);
   }
   .mu-story-lead {
     font-family: var(--ln-display);
-    font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+    font-size: var(--text-xl);
     font-weight: 600;
-    font-stretch: 88%;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-title);
   }
   .mu-story-p {
-    max-width: 40em;
-    font-size: 1.0625rem;
     color: var(--ln-ink-2);
   }
   .mu-story-facts {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem 1.75rem;
-    margin: 0.4rem 0 0;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
     padding: 0;
     list-style: none;
+    font-size: var(--text-sm);
     color: var(--ln-ink-2);
-  }
-  .mu-story-facts .ln-eyebrow {
-    margin-right: 0.35rem;
   }
   .mu-story-facts a {
     display: inline-flex;
     align-items: center;
     min-height: 24px;
-    color: var(--ln-ink);
   }
 
   /* Song tabs */
   .mu-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin-bottom: clamp(2rem, 4vw, 3rem);
+    gap: var(--space-3);
+    margin-bottom: var(--space-7);
   }
   .mu-tab {
     display: grid;
-    gap: 0.6rem;
+    gap: var(--space-2);
     align-content: start;
-    padding: 0.5rem;
-    border: 1px solid var(--ln-rule);
-    border-radius: 10px;
+    padding: var(--space-2);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-3);
     background: transparent;
     color: var(--ln-ink);
     font: inherit;
     text-align: left;
     cursor: pointer;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      border-color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
   }
-  .mu-tab:hover {
+  .mu-tab:hover,
+  .mu-tab:focus-visible {
     background: var(--ln-hl);
   }
+  .mu-tab:active {
+    scale: var(--press-scale);
+  }
   .mu-tab[aria-selected='true'] {
-    border-color: var(--ln-ink);
+    border-color: var(--ln-ink-2);
     background: var(--ln-bg-3);
-    box-shadow: inset 0 -3px 0 var(--ln-accent);
+    box-shadow: inset 0 -2px 0 var(--ln-accent);
   }
   .mu-tab-art {
     display: flex;
     align-items: flex-end;
     aspect-ratio: 1;
-    padding: 0.4rem 0.5rem;
-    border-radius: 6px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-1);
     background:
       repeating-linear-gradient(var(--c1) 0 12%, transparent 12% 26%) 0 52% / 100% 22% no-repeat,
       radial-gradient(circle at 64% 40%, var(--c2) 0 25%, transparent 25.4%),
@@ -339,41 +316,32 @@ const [lead, ...story] = music.story.map(say);
     color: #fff;
     font-family: var(--ln-display);
     font-weight: 800;
-    font-size: 1.1rem;
-    line-height: 1;
+    font-size: var(--text-md);
+    line-height: var(--leading-tight);
   }
   .mu-tab-text {
     display: grid;
-    gap: 0.1rem;
     min-width: 0;
   }
-  .mu-tab-k {
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ln-accent);
-  }
   .mu-tab-t {
-    font-family: var(--ln-display);
     font-weight: 700;
-    font-size: 0.95rem;
-    line-height: 1.15;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
   }
   .mu-tab-y {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
 
   /* Song head */
   .mu-head {
     display: grid;
-    gap: 2rem;
-    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+    gap: var(--space-6);
+    margin-bottom: var(--space-7);
   }
   .mu-info {
     display: grid;
-    gap: 0.9rem;
+    gap: var(--space-3);
     align-content: start;
     min-width: 0;
   }
@@ -381,38 +349,23 @@ const [lead, ...story] = music.story.map(say);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 0.8rem;
-  }
-  .mu-k .ln-eyebrow {
-    color: var(--ln-accent);
+    gap: var(--space-2) var(--space-3);
   }
   body.ln .mu-title {
-    font-size: clamp(2.6rem, 7vw, 5rem);
+    font-size: var(--text-2xl);
     font-weight: 800;
-    font-stretch: 78%;
-    line-height: 0.9;
-    letter-spacing: -0.03em;
+    line-height: var(--leading-tight);
   }
   .mu-credits {
-    font-size: 1.0625rem;
     color: var(--ln-ink-2);
-  }
-  body.ln .mu-h {
-    font-family: var(--ln-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ln-ink-3);
   }
   .mu-about {
     display: grid;
-    gap: 0.4rem;
-    max-width: 36em;
-    margin-top: 0.4rem;
-    padding: 1.1rem 1.2rem;
-    border-left: 3px solid var(--ln-accent);
-    background: rgb(255 255 255 / 0.04);
+    gap: var(--space-1);
+    max-width: 52ch;
+    margin-top: var(--space-2);
+    padding-left: var(--space-4);
+    border-left: 2px solid var(--ln-rule);
   }
   .mu-about p {
     color: var(--ln-ink-2);
@@ -421,37 +374,30 @@ const [lead, ...story] = music.story.map(say);
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    font-weight: 700;
-    color: var(--ln-accent);
-    text-underline-offset: 0.2em;
-  }
-  .mu-page:hover {
-    color: var(--ln-ink);
   }
 
   @media (min-width: 900px) {
+    .mu-intro {
+      grid-template-columns: 11rem minmax(0, 1fr);
+      column-gap: clamp(2.5rem, 4vw, 4rem);
+      align-items: baseline;
+    }
     .mu-head {
       grid-template-columns: 360px minmax(0, 1fr);
-      gap: 4rem;
+      gap: var(--space-8);
       align-items: start;
     }
-    .mu-tabs {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1rem;
-    }
     .mu-tab {
-      grid-template-columns: 76px minmax(0, 1fr);
+      grid-template-columns: 64px minmax(0, 1fr);
       align-items: center;
-      gap: 1rem;
-      padding: 0.6rem;
+      gap: var(--space-4);
     }
     .mu-tab-t {
-      font-size: 1.15rem;
+      font-size: var(--text-md);
     }
   }
   .mu-release {
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
     color: var(--ln-ink-3);
   }
   .mu-tab-art.has-art {
@@ -467,41 +413,34 @@ const [lead, ...story] = music.story.map(say);
   }
   .mu-tab-art.has-art .ln-num {
     position: relative;
-    padding: 0 0.25rem;
-    border-radius: 3px;
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-1);
     background: rgb(0 0 0 / 0.6);
   }
+
   /* Appears on: songs by other artists that feature me */
   .mu-feat {
-    margin-top: clamp(3rem, 7vw, 5rem);
-    padding-top: 2rem;
-    border-top: 1px solid var(--ln-rule);
-  }
-  body.ln .mu-feat-h {
-    font-family: var(--ln-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ln-accent);
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: var(--ln-hairline);
   }
   .mu-feat-list {
     display: grid;
-    gap: 1.5rem;
-    margin: 1.25rem 0 0;
+    gap: var(--space-5);
+    margin: var(--space-5) 0 0;
     padding: 0;
     list-style: none;
   }
   .mu-feat-item {
     display: grid;
     grid-template-columns: 96px minmax(0, 1fr);
-    gap: 1rem 1.5rem;
+    gap: var(--space-4) var(--space-5);
     align-items: start;
   }
   .mu-feat-art {
     display: block;
     aspect-ratio: 1;
-    border-radius: 6px;
+    border-radius: var(--radius-1);
     overflow: hidden;
     background: linear-gradient(160deg, var(--c1), var(--c2));
   }
@@ -513,17 +452,17 @@ const [lead, ...story] = music.story.map(say);
   }
   .mu-feat-t {
     font-family: var(--ln-display);
-    font-size: 1.5rem;
+    font-size: var(--text-xl);
     font-weight: 700;
-    line-height: 1.1;
+    line-height: var(--leading-snug);
   }
   .mu-feat-c {
-    margin-top: 0.25rem;
+    margin-top: var(--space-1);
     color: var(--ln-ink-2);
   }
   .mu-feat-r {
-    margin: 0.2rem 0 0.9rem;
-    font-size: 0.875rem;
+    margin: var(--space-1) 0 var(--space-3);
+    font-size: var(--text-sm);
     color: var(--ln-ink-3);
   }
   @media (min-width: 760px) {
