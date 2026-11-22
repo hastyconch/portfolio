@@ -75,12 +75,12 @@ const caption = 'Playable · invented brand, mock data';
                 <div class="wk-demo">
                   {d.demo === 'airline' && (
                     <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
-                      <AirlineDemo client:visible={{ rootMargin: '300px' }} />
+                      <AirlineDemo client:visible />
                     </DemoFrame>
                   )}
                   {d.demo === 'grocer' && (
                     <DemoFrame frame={d.demoFrame} caption={caption} tint={['#134e4a', '#f3f6f4']}>
-                      <GrocerDemo client:visible={{ rootMargin: '300px' }} />
+                      <GrocerDemo client:visible />
                     </DemoFrame>
                   )}
                   {d.demo === 'pipeline' && (
@@ -88,7 +88,7 @@ const caption = 'Playable · invented brand, mock data';
                       frame={d.demoFrame}
                       caption="Interactive · invented project, mock data"
                     >
-                      <PipelineDemo client:visible={{ rootMargin: '300px' }} />
+                      <PipelineDemo client:visible />
                     </DemoFrame>
                   )}
                   {d.demo === 'scheduler' && (
@@ -96,7 +96,7 @@ const caption = 'Playable · invented brand, mock data';
                       frame={d.demoFrame}
                       caption="Interactive · invented unit and staff, mock data"
                     >
-                      <SchedulerDemo client:visible={{ rootMargin: '300px' }} />
+                      <SchedulerDemo client:visible />
                     </DemoFrame>
                   )}
                   {!live && <DemoFrame frame={d.demoFrame} coming size="sm" />}
