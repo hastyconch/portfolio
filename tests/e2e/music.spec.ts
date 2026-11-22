@@ -16,6 +16,69 @@ const songIds = readdirSync(join(CONTENT, 'songs'))
   .map((f) => f.replace(/\.md$/, ''))
   .sort();
 const THIRD_PARTY = /spotify|youtube/i;
+const songFile = (id: string) => readFileSync(join(CONTENT, 'songs', `${id}.md`), 'utf8');
+const titleOf = (id: string) => /^title: (['"])(.+)\1$/m.exec(songFile(id))?.[2] ?? id;
+const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// A song's first lyric line (long enough not to collide with other copy), if it has lyrics.
+const firstLine = (id: string) => /'line': '(.{16,}?)'/.exec(songFile(id))?.[1];
+
+// WO-018: a frame-by-frame probe of the song art. Each animation frame records every rendered,
+// non-transparent sleeve (.sa): which panel it's in, whether its cover image is loaded, and how far
+// the record's slide-out has run. Installed before any page script so it sees the first frame.
+type ArtFrame = {
+  selected: string | null;
+  shown: { panel: string | null; ready: boolean; slide: number | null }[];
+};
+const probeArt = () => {
+  const w = window as unknown as { __art: ArtFrame[] };
+  w.__art = [];
+  const tick = () => {
+    const sel = document.querySelector('#music [role="tab"][aria-selected="true"]');
+    w.__art.push({
+      selected: sel?.getAttribute('aria-controls') ?? null,
+      shown: [...document.querySelectorAll<HTMLElement>('.sa')]
+        .filter((sa) => sa.offsetParent && Number(getComputedStyle(sa).opacity) > 0)
+        .map((sa) => {
+          const img = sa.querySelector('img');
+          const slide = sa.querySelector('.sa-vinyl')?.getAnimations()[0];
+          return {
+            panel: sa.closest('[role="tabpanel"]')?.id ?? null,
+            ready: !img || (img.complete && img.naturalWidth > 0),
+            slide: slide ? Number(slide.currentTime) : null,
+          };
+        }),
+    });
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+};
+const artFrames = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __art: ArtFrame[] }).__art);
+// Covers arrive late (as on a slow network), so any frame drawn before them would show.
+const slowCovers = (page: Page) =>
+  page.route(/\/_astro\/.+\.(webp|avif|png|jpe?g)$/, async (r) => {
+    await new Promise((done) => setTimeout(done, 500));
+    await r.continue();
+  });
+// A sleeve that is shown is the selected song's, with its cover loaded, and its record starts
+// sliding as it appears (not before, behind a stand-in).
+const expectCleanFrames = (frames: ArtFrame[], tabs: boolean) => {
+  expect(frames.length).toBeGreaterThan(10);
+  let prev: string | null | undefined;
+  for (const [i, f] of frames.entries()) {
+    expect(f.shown.length, `frame ${i}: sleeves shown`).toBeLessThanOrEqual(1);
+    const [art] = f.shown;
+    if (art) {
+      expect(art.ready, `frame ${i}: cover shown before it loaded`).toBe(true);
+      if (tabs) expect(art.panel, `frame ${i}: another song's art`).toBe(f.selected);
+      // The first frame a sleeve appears on: its record has only just started.
+      if (prev !== art.panel && art.slide !== null)
+        expect(art.slide, `frame ${i}: record slid before the cover showed`).toBeLessThan(100);
+    }
+    prev = art ? art.panel : undefined;
+  }
+};
+
 // Songs whose lyrics carry at least one annotation (the annotator test needs one to open).
 const annotated = songIds.filter((id) =>
   /note:/.test(readFileSync(join(CONTENT, 'songs', `${id}.md`), 'utf8')),
@@ -40,13 +103,76 @@ test.describe('music', () => {
     if (music.status === 'placeholder') await expect(story.locator('.ln-ph')).toBeVisible();
   });
 
-  test('home shows a lyrics excerpt per song, linking to the full lyrics', async ({ page }) => {
+  test('home shows a lyrics call-out', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#music details.ly-d')).toHaveCount(0);
+    const section = page.locator('#music');
+    // No lyric lines on the home page: they live on the song pages.
+    await expect(section.locator('details.ly-d, .mu-excerpt, blockquote')).toHaveCount(0);
+    for (const id of songIds) {
+      const line = firstLine(id);
+      if (line) await expect(section).not.toContainText(line);
+    }
+    // Each song's panel has one call-out, and it is that song's one link to its page.
+    for (const id of songIds) {
+      await page.locator(`#mu-tab-${id}`).click();
+      const call = page.locator(`#mu-panel-${id} .mu-call`);
+      await expect(call).toHaveCount(1);
+      await expect(call).toBeVisible();
+      const link = call.getByRole('link');
+      await expect(link).toHaveCount(1);
+      await expect(link).toHaveAttribute('href', `/music/${id}/`);
+      await expect(link).toHaveAccessibleName(new RegExp(`^Read .+\\s?: ${escape(titleOf(id))}$`));
+    }
+    // The whole card is the target: a click by its arrow (not on the text) opens the song page.
+    const last = songIds[songIds.length - 1];
+    const card = page.locator(`#mu-panel-${last} .mu-call`);
+    const box = await card.boundingBox();
+    await card.click({ position: { x: (box?.width ?? 40) - 24, y: (box?.height ?? 40) / 2 } });
+    await expect(page).toHaveURL(new RegExp(`/music/${last}/$`));
+  });
+
+  test('tab switch shows only the selected song art', async ({ page }) => {
+    await page.addInitScript(probeArt);
+    await page.goto('/');
+    const tabs = page.locator('#music [role="tab"]');
+    await expect(page.locator('#music [role="tabpanel"]:visible .sa')).toHaveAttribute(
+      'data-state',
+      'in',
+    );
+    await slowCovers(page);
+    // Fast switching with the mouse, then the keyboard, while covers are still on their way.
+    await tabs.nth(1).click();
+    await tabs.nth(2).click();
+    await page.waitForTimeout(150);
+    await tabs.nth(1).click();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('End');
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowRight');
     const panel = page.locator('#music [role="tabpanel"]:visible');
-    const lines = panel.locator('.mu-excerpt blockquote p');
-    expect(await lines.count()).toBeLessThanOrEqual(4);
-    await expect(panel.getByRole('link', { name: /^Lyrics and story/ })).toBeVisible();
+    await expect(panel.locator('.sa')).toHaveAttribute('data-state', 'in');
+    await page.waitForTimeout(200);
+    expectCleanFrames(await artFrames(page), true);
+  });
+
+  test('song page shows cover and record together', async ({ page }) => {
+    await page.addInitScript(probeArt);
+    await slowCovers(page);
+    await page.goto(`/music/${songIds[0]}/`);
+    await expect(page.locator('.sa')).toHaveAttribute('data-state', 'in');
+    // Next song, then back and forward.
+    await page.locator('a[rel="next"]').click();
+    await expect(page.locator('.sa')).toHaveAttribute('data-state', 'in');
+    await page.waitForTimeout(200);
+    expectCleanFrames(await artFrames(page), false);
+    await page.goBack();
+    await expect(page.locator('.sa')).toHaveAttribute('data-state', 'in');
+    await page.goForward();
+    await expect(page.locator('.sa')).toHaveAttribute('data-state', 'in');
+    await page.waitForTimeout(200);
+    expectCleanFrames(await artFrames(page), false);
   });
 
   test('section links every song to its page', async ({ page }) => {

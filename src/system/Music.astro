@@ -1,8 +1,8 @@
 ---
 // Music: the one section where the record theme lives. It opens with the music story (from
 // src/content/music.json), then the songs as a tablist of sleeves; each song panel has art,
-// credits, the first lines of the lyrics, a link to the song's page (full lyrics, annotations
-// and story) and click-to-load players. SongArt and Players are shared with the song pages.
+// credits, a call-out to the song's page (full lyrics, notes on the lines and story; no lyric lines
+// here) and click-to-load players. SongArt and Players are shared with the song pages.
 import type { Music, Song } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
@@ -97,6 +97,14 @@ const [lead, ...story] = music.story.map(say);
 
     {songs.map((s, i) => {
       const d = s.data;
+      const notes = d.lyrics.filter((l) => l.note).length;
+      // Promise the stories only once the song has notes on its lines (art. 7).
+      const cta =
+        notes > 0
+          ? 'Read the lyrics and the stories behind the lines'
+          : d.lyrics.length > 0
+            ? 'Read the full lyrics'
+            : 'Read about this song';
       return (
         <div
           class="mu-panel"
@@ -122,22 +130,34 @@ const [lead, ...story] = music.story.map(say);
                 <h4 class="label">About this song</h4>
                 <p>{say(d.meaning)}</p>
               </div>
-              {d.lyrics.length > 0 && (
-                <figure class="mu-excerpt">
-                  <figcaption class="label">Opening lines</figcaption>
-                  <blockquote>
-                    {d.lyrics.slice(0, 4).map((l) => (
-                      <p>{l.line}</p>
-                    ))}
-                  </blockquote>
-                </figure>
-              )}
-              <p>
-                <a class="mu-page ln-link" href={`/music/${s.id}/`} data-song-link>
-                  Lyrics and story<span class="visually-hidden">: {d.title}</span>
-                  <span aria-hidden="true">&nbsp;→</span>
-                </a>
-              </p>
+              <div class="mu-call">
+                <span class="mu-call-disc ln-vinyl" aria-hidden="true" />
+                <div class="mu-call-body">
+                  <p class="mu-call-k label">Liner notes</p>
+                  <a class="mu-call-a" href={`/music/${s.id}/`} data-song-link>
+                    {cta}
+                    <span class="visually-hidden">: {d.title}</span>
+                  </a>
+                  <p class="mu-call-m">
+                    {d.title}
+                    {d.lyrics.length > 0 && (
+                      <>
+                        {' '}
+                        · <span class="ln-num">{d.lyrics.length}</span> lines
+                      </>
+                    )}
+                    {notes > 0 && (
+                      <>
+                        {' '}
+                        · <span class="ln-num">{notes}</span> notes
+                      </>
+                    )}
+                  </p>
+                </div>
+                <span class="mu-call-arrow" aria-hidden="true">
+                  →
+                </span>
+              </div>
               <Players song={s} />
             </div>
           </div>
@@ -187,20 +207,33 @@ const [lead, ...story] = music.story.map(say);
   const root = document.getElementById('music');
   if (root) {
     const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panelOf = (t: HTMLButtonElement) =>
+      document.getElementById(t.getAttribute('aria-controls') ?? '');
     const select = (tab: HTMLButtonElement, focus = false) => {
       tabs.forEach((t) => {
         const on = t === tab;
         t.setAttribute('aria-selected', String(on));
         t.tabIndex = on ? 0 : -1;
-        const panel = document.getElementById(t.getAttribute('aria-controls') ?? '');
-        if (panel) panel.hidden = !on;
+        const panel = panelOf(t);
+        if (!panel || panel.hidden === !on) return;
+        panel.hidden = !on;
+        // SongArt holds the cover and record back until the cover is ready (same task, so the
+        // panel is never painted with a half-loaded sleeve).
+        if (on) panel.dispatchEvent(new Event('sa:show', { bubbles: true }));
       });
       // The section's tint cross-fades to the song's colour (a registered custom property).
       if (tab.dataset.c1) root.style.setProperty('--mu-tint', tab.dataset.c1);
       if (focus) tab.focus();
     };
+    // Start fetching a song's cover on hover or focus, so it's usually ready by the click.
+    const warm = (t: HTMLButtonElement) => {
+      const img = panelOf(t)?.querySelector<HTMLImageElement>('[data-sa] img');
+      if (img) img.loading = 'eager';
+    };
     tabs.forEach((t, i) => {
       t.addEventListener('click', () => select(t));
+      t.addEventListener('pointerenter', () => warm(t));
+      t.addEventListener('focus', () => warm(t));
       t.addEventListener('keydown', (e) => {
         const k = e.key;
         let next = -1;
@@ -345,16 +378,6 @@ const [lead, ...story] = music.story.map(say);
     display: grid;
     gap: var(--space-6);
   }
-  .mu-excerpt {
-    margin: var(--space-2) 0 0;
-  }
-  .mu-excerpt blockquote {
-    margin: var(--space-2) 0 0;
-    font-family: var(--ln-display);
-    font-size: var(--text-lg);
-    font-weight: 500;
-    line-height: var(--leading-normal);
-  }
   .mu-info {
     display: grid;
     gap: var(--space-3);
@@ -386,10 +409,102 @@ const [lead, ...story] = music.story.map(say);
   .mu-about p {
     color: var(--ln-ink-2);
   }
-  .mu-page {
-    display: inline-flex;
+
+  /* Lyrics call-out: a liner-notes card that sends visitors to the song page. The whole card is
+     the link's target (stretched ::after); the focus ring sits on the card. */
+  .mu-call {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    min-height: 44px;
+    gap: var(--space-4);
+    max-width: 34rem;
+    margin-top: var(--space-2);
+    padding: var(--space-4);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-3);
+    background: var(--ln-bg-3);
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      border-color var(--dur-quick) var(--ease-out);
+  }
+  /* The disc and arrow move (rotate, translate), which paints them above the link's ::after:
+     let clicks through to the link. */
+  .mu-call-disc,
+  .mu-call-arrow {
+    pointer-events: none;
+  }
+  .mu-call-disc {
+    width: 48px;
+    --ln-label: var(--c2);
+    transition: rotate var(--dur-base) var(--ease-out);
+  }
+  .mu-call-body {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+  .mu-call-a {
+    font-family: var(--ln-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-title);
+    color: var(--ln-ink);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color var(--dur-quick) var(--ease-out);
+  }
+  .mu-call-a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  /* The card carries the focus ring (below). */
+  body.ln .mu-call-a:focus-visible {
+    outline: none;
+  }
+  .mu-call-m {
+    font-size: var(--text-sm);
+    color: var(--ln-ink-2);
+  }
+  .mu-call-arrow {
+    color: var(--ln-accent);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    transition: translate var(--dur-quick) var(--ease-out);
+  }
+  .mu-call:hover,
+  .mu-call:focus-within {
+    border-color: var(--ln-ink-2);
+    background: var(--ln-hl);
+  }
+  .mu-call:has(:focus-visible) {
+    outline: var(--focus-width) solid var(--ln-accent);
+    outline-offset: var(--focus-offset);
+  }
+  .mu-call:hover .mu-call-a,
+  .mu-call:focus-within .mu-call-a {
+    text-decoration-color: currentColor;
+  }
+  .mu-call:hover .mu-call-arrow,
+  .mu-call:focus-within .mu-call-arrow {
+    translate: var(--move-sm) 0;
+  }
+  .mu-call:active {
+    background: var(--ln-hl-hover);
+  }
+  .mu-call:active .mu-call-arrow {
+    translate: 0 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .mu-call:hover .mu-call-disc,
+    .mu-call:focus-within .mu-call-disc {
+      rotate: 30deg;
+    }
   }
 
   @media (min-width: 900px) {
