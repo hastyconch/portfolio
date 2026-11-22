@@ -76,7 +76,7 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   const task = demo.locator('.sch-task');
   const openCover = cell(/(open shift: |RNs on the )Saturday night/);
 
-  await expect(task.getByRole('heading')).toHaveText('Sat night, ICU — 3 of 4 RNs');
+  await expect(task.getByRole('heading')).toHaveText('Sat night, ICU: 3 of 4 RNs');
   await expect(openCover).toHaveAccessibleName(
     '3/4 open shift: Saturday night, 1 short, including 2 RNs not shown here.',
   );
@@ -131,7 +131,7 @@ test('scheduler finds cover for a gap the visitor opens', async ({ page }) => {
   // Take Ines off Saturday night: the panel turns into a new open shift with ranked cover.
   await cell(/^Ines, Saturday: Night/).click();
   await expect(task).toContainText('New gap');
-  await expect(task.getByRole('heading')).toHaveText('Sat night, ICU — 3 of 4 RNs');
+  await expect(task.getByRole('heading')).toHaveText('Sat night, ICU: 3 of 4 RNs');
   await expect(task.locator('.sch-cand strong').first()).toHaveText('Ines');
   await task.getByRole('button', { name: 'Assign Ines' }).click();
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');

@@ -1,5 +1,5 @@
 ---
-// Work — Side A. Organisation from direction A (owner pick): every engagement is open, with a
+// Work: Side A. Organisation from direction A (owner pick): every engagement is open, with a
 // sector / company / role column beside the story. Demo frame from direction D: the live demo
 // sits inline beside its engagement (after the summary on phones) so nobody scrolls past
 // text to reach it. Styled in the Liner Notes system.
@@ -122,7 +122,7 @@ const caption = 'Playable · invented brand, mock data';
                 )}
               </div>
 
-              <ul class="wk-skills" aria-label={`Skills — ${d.title}`}>
+              <ul class="wk-skills" aria-label={`Skills: ${d.title}`}>
                 {d.skills.map((s) => (
                   <li>{s}</li>
                 ))}
@@ -158,7 +158,7 @@ const caption = 'Playable · invented brand, mock data';
     margin-top: 1.5rem;
   }
 
-  /* ——— Meta column: number, sector / company / role ——— */
+  /* Meta column: number, sector / company / role */
   .wk-meta {
     grid-area: meta;
     display: flex;
@@ -196,7 +196,7 @@ const caption = 'Playable · invented brand, mock data';
     color: var(--ln-ink-3);
   }
 
-  /* ——— Story ——— */
+  /* Story */
   .wk-head {
     grid-area: head;
     max-width: 40em;
@@ -261,7 +261,7 @@ const caption = 'Playable · invented brand, mock data';
     font-weight: 600;
   }
 
-  /* ——— Demo, inline ——— */
+  /* Demo, inline */
   .wk-demo {
     grid-area: demo;
     min-width: 0;
@@ -276,7 +276,7 @@ const caption = 'Playable · invented brand, mock data';
     max-width: 150px;
   }
 
-  /* ——— Skills ——— */
+  /* Skills */
   .wk-skills {
     grid-area: skills;
     display: flex;
@@ -294,7 +294,7 @@ const caption = 'Playable · invented brand, mock data';
     color: var(--ln-ink-2);
   }
 
-  /* ——— Tablet: meta column + story ——— */
+  /* Tablet: meta column + story */
   @media (min-width: 760px) {
     .wk article {
       grid-template-columns: 11rem minmax(0, 1fr);
@@ -370,7 +370,7 @@ const caption = 'Playable · invented brand, mock data';
     }
   }
 
-  /* ——— Desktop: meta | story | demo, side by side ——— */
+  /* Desktop: meta | story | demo, side by side */
   @media (min-width: 1100px) {
     .wk article {
       grid-template-columns: 11rem minmax(0, 1fr) 360px;

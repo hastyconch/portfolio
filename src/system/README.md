@@ -1,4 +1,4 @@
-# Design system — Liner Notes
+# Design system: Liner Notes
 
 Built in Phase 2 (WO-007) from the owner's Phase 1 picks in `factory/picks.yaml`:
 direction D (Liner Notes) for the look and most sections, with direction A's organisation

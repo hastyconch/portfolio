@@ -6,7 +6,7 @@ years: Deloitte Digital
 role: Product
 summary: An AI-focused engagement to bring multiple properties of an insurance business together into one unified digital experience. Case study in progress.
 contributions:
-  - Placeholder — details to come from the owner.
+  - 'Placeholder: details to come from the owner.'
 outcomes: []
 skills: [AI product, Experience strategy]
 demo: none

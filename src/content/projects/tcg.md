@@ -4,7 +4,7 @@ tagline: Find underpriced trading cards across vendors.
 category: tool
 year: '2026'
 platforms: [Web]
-problem: Card prices vary wildly between vendors. This compares singles and sealed product — English and Japanese — against market prices, flags deals and tracks a collection.
+problem: Card prices vary wildly between vendors. This compares singles and sealed product (English and Japanese) against market prices, flags deals and tracks a collection.
 features:
   - Cross-vendor price comparison against market prices.
   - Deal alerts and a collection tracker.
@@ -28,7 +28,7 @@ stack:
 engineering:
   - {
       title: 'Spec first',
-      body: 'Built from a detailed written specification before any code — the same spec-driven approach I use with clients.',
+      body: 'Built from a detailed written specification before any code, the same spec-driven approach I use with clients.',
     }
 demo: tcg
 accent: '#1d4ed8'

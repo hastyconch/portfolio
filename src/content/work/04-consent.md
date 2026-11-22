@@ -1,7 +1,7 @@
 ---
 title: Consent strategy & capture
 sector: Privacy
-kicker: Making consent compliant — and usable.
+kicker: Making consent compliant, and usable.
 years: Deloitte Digital
 role: Product
 summary: Defined consent strategy and delivered the mechanisms that capture and honour customer consent, in line with Canadian privacy and anti-spam requirements.

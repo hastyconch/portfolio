@@ -2,14 +2,14 @@
   {
     "id": "me",
     "name": "Nakul Iyer",
-    "headline": "I lead products with AI — and build them too.",
+    "headline": "I lead products with AI, and build them too.",
     "roleLine": "Product, Deloitte Digital · since 2019",
     "location": "Toronto, Canada",
-    "intro": "For seven years I've led large-scale digital delivery — loyalty platforms, data transformations, consent, and healthcare workforce systems — from discovery to launch. As AI reshaped how software gets made, I became a builder too: I prototype, design and ship my own products, and help clients rewire their delivery lifecycle around AI.",
+    "intro": "For seven years I've led large-scale digital delivery (loyalty platforms, data transformations, consent, and healthcare workforce systems) from discovery to launch. As AI reshaped how software gets made, I became a builder too: I prototype, design and ship my own products, and help clients rewire their delivery lifecycle around AI.",
     "pillars": [
       {
         "title": "Product leadership",
-        "body": "Discovery, prioritization and agile delivery across design, security, engineering, testing and strategy — turning what clients want into what they can ship."
+        "body": "Discovery, prioritization and agile delivery across design, security, engineering, testing and strategy, turning what clients want into what they can ship."
       },
       {
         "title": "AI-enabled delivery",
@@ -17,7 +17,7 @@
       },
       {
         "title": "Builder",
-        "body": "Prototypes, designs and production apps — web, iOS and games — built with AI and understood down to the stack."
+        "body": "Prototypes, designs and production apps (web, iOS and games) built with AI and understood down to the stack."
       }
     ],
     "links": [

@@ -6,15 +6,15 @@ year: '2026'
 platforms: [Web, iOS (in progress)]
 problem: Planning a trip to Portugal and the Azores, I wanted one place that drafts the itinerary, guides each day and settles costs with travel companions. It started as a personal tool and became a multi-user app with sign-in.
 features:
-  - AI trip planning from a free-text description, paced relaxed, balanced or adventurous — previewed before it's saved.
+  - AI trip planning from a free-text description, paced relaxed, balanced or adventurous, previewed before it's saved.
   - An AI assistant that edits the schedule on request ("Day 1 is too packed, clear my afternoon").
   - Daily dashboard with AI tips that factor in the weather forecast.
   - Day-by-day map with walking and driving routes and an AI day briefing.
   - Flight lookup by number, hotel cards with photos.
-  - Group cost splitter in CAD, EUR or USD with live exchange rates, equal/full/custom splits and net settlement — fed by a companion receipt scanner.
+  - Group cost splitter in CAD, EUR or USD with live exchange rates, equal/full/custom splits and net settlement, fed by a companion receipt scanner.
   - Trip sharing with editor and viewer roles; sign-in with email, Google or GitHub; waitlist with admin approval.
 planned:
-  - Native iOS app (SwiftUI) — in progress.
+  - Native iOS app (SwiftUI), in progress.
 stack:
   - {
       layer: Web app,
@@ -24,7 +24,7 @@ stack:
   - {
       layer: AI,
       tech: 'Groq · Llama 3.3 70B (JSON mode)',
-      why: 'Very fast, low-cost structured output — itineraries come back as JSON, validated before they touch the trip.',
+      why: 'Very fast, low-cost structured output: itineraries come back as JSON, validated before they touch the trip.',
     }
   - {
       layer: Data & auth,
@@ -48,7 +48,7 @@ engineering:
     }
   - {
       title: 'One document per trip',
-      body: 'The trip is a single JSON document with debounced auto-save — simple to sync, and shareable between web and iOS.',
+      body: 'The trip is a single JSON document with debounced auto-save: simple to sync, and shareable between web and iOS.',
     }
   - {
       title: 'Receipts to settlement',

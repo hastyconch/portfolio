@@ -1,4 +1,4 @@
-/* Design system — Liner Notes (direction D, picked in Phase 1). A record sleeve: dark vinyl by default, a cream paper sleeve in
+/* Design system: Liner Notes (direction D, picked in Phase 1). A record sleeve: dark vinyl by default, a cream paper sleeve in
    light mode. `.ln-dark` re-scopes the dark palette for surfaces that are "the record itself"
    (hero cover, music, outro) and stay dark in both schemes. */
 
@@ -43,7 +43,7 @@
   --ln-max: 1240px;
   --ln-gutter: clamp(1rem, 4vw, 2.5rem);
   --ln-header: 60px;
-  /* Signature cover gradient — art, identical in both schemes. */
+  /* Signature cover gradient: art, identical in both schemes. */
   --ln-cover:
     radial-gradient(120% 90% at 85% 8%, #ffb37a 0, transparent 46%),
     linear-gradient(168deg, #ff7a45 0%, #d2445a 34%, #6d1f5f 62%, #1c1340 100%);

@@ -25,7 +25,7 @@ async function expectVisibleFocus(el: Locator) {
 test('grocer demo is keyboard operable', async ({ page, isMobile }) => {
   test.skip(!!isMobile, 'keyboard pass runs on desktop');
   await page.goto('/demos/grocer/');
-  // client:visible — wait for React to hydrate the island before driving it.
+  // client:visible: wait for React to hydrate the island before driving it.
   await page.waitForSelector('astro-island:not([ssr])');
 
   const demo = page.getByRole('group', { name: /grocer loyalty app/i });

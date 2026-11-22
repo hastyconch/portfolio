@@ -1,4 +1,4 @@
-/* Invented "Pantry Lane" brand — deliberately not any real grocer's palette. */
+/* Invented "Pantry Lane" brand, deliberately not any real grocer's palette. */
 .gro-app {
   /* The app has its own light UI: keep native controls light even on a dark page. */
   color-scheme: light;

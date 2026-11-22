@@ -4,7 +4,7 @@ tagline: A clean, mobile-first NBA scoreboard.
 category: app
 year: '2026'
 platforms: [Web]
-problem: Sports apps bury the box score under ads and video. I wanted today's games, box scores, standings and the bracket — fast and readable.
+problem: Sports apps bury the box score under ads and video. I wanted today's games, box scores, standings and the bracket, fast and readable.
 features:
   - Today's games, full box scores, schedule and teams.
   - Standings, stat leaders and the playoff bracket.
