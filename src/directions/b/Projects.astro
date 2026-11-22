@@ -1,0 +1,35 @@
+---
+// The Projects window: every project as an app tile (ProjectCard), featured first.
+import type { Project } from '../../lib/content';
+import Window from './Window.astro';
+import ProjectCard from './ProjectCard.astro';
+
+interface Props {
+  projects: Project[];
+}
+const { projects } = Astro.props;
+const sorted = [...projects].sort((a, b) => Number(b.data.featured) - Number(a.data.featured));
+const counts = (['app', 'game', 'tool'] as const)
+  .map((c) => ({ c, n: projects.filter((p) => p.data.category === c).length }))
+  .filter((x) => x.n > 0);
+---
+
+<Window id="projects" meta={`${projects.length} apps`} bodyLabel="Projects">
+  <div class="proj-head">
+    <ul class="proj-counts" aria-label="By category">
+      {counts.map(({ c, n }) => (
+        <li>
+          <strong>{n}</strong> {c}
+          {n === 1 ? '' : 's'}
+        </li>
+      ))}
+    </ul>
+  </div>
+  <ul class="proj-grid">
+    {sorted.map((p) => (
+      <li>
+        <ProjectCard project={p} />
+      </li>
+    ))}
+  </ul>
+</Window>

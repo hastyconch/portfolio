@@ -1,0 +1,47 @@
+---
+// An app window (desktop) / full-screen app sheet (mobile) for one home-page section.
+// Without JS it is a plain <section> shown by CSS when its id is the URL :target, and its
+// close control is a link home. With JS (wm.ts) it becomes role="dialog": non-modal floating
+// window on desktop, modal sheet on mobile; Escape closes it and focus returns to the opener.
+import Icon from './Icon.astro';
+import AppIcon from './AppIcon.astro';
+import { app, type SystemApp } from './apps';
+
+interface Props {
+  id: Exclude<SystemApp['id'], 'hero'>;
+  /** Small mono text on the right of the title bar. */
+  meta?: string;
+  /** Extra class for per-window sizing/layout. */
+  class?: string;
+  /** Label for the scrolling body (keyboard-scrollable region). */
+  bodyLabel?: string;
+}
+const { id, meta, class: cls, bodyLabel } = Astro.props;
+const a = app(id);
+---
+
+<section id={id} class:list={['win', `win--${id}`, cls]} aria-labelledby={`${id}-title`} data-win>
+  <div class="win-bar" data-drag>
+    <div class="win-ctl">
+      <a class="win-close" href="#hero" data-close>
+        <span class="win-close-dot" aria-hidden="true"></span>
+        <Icon name="chevron" size={22} stroke={2.2} class="win-back-chev" />
+        <span class="win-close-txt">Home</span>
+        <span class="visually-hidden">, close {a.label}</span>
+      </a>
+      <span class="win-dot win-dot--min" aria-hidden="true"></span>
+      <button type="button" class="win-zoom" data-zoom aria-pressed="false" hidden>
+        <span class="win-dot win-dot--zoom" aria-hidden="true"></span>
+        <span class="visually-hidden">Maximize {a.label}</span>
+      </button>
+    </div>
+    <h2 id={`${id}-title`} class="win-title" tabindex="-1">
+      <AppIcon icon={a.icon} color={a.colors[1]} from={a.colors[0]} size="sm" />
+      <span>{a.label}</span>
+    </h2>
+    <span class="win-meta">{meta}</span>
+  </div>
+  <div class="win-body" tabindex="0" role="region" aria-label={bodyLabel ?? `${a.label} content`}>
+    <slot />
+  </div>
+</section>

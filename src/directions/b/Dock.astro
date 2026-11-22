@@ -1,0 +1,27 @@
+---
+// Nav slot (part 2 of 2): the dock of section apps, fixed to the bottom of the screen at every
+// size. Rendered after <main> so keyboard users meet the menu bar first and the dock last.
+import AppIcon from './AppIcon.astro';
+import { APPS } from './apps';
+
+interface Props {
+  /** '' on the home page, LAB_BASE elsewhere. */
+  base?: string;
+}
+const { base = '' } = Astro.props;
+const dockApps = APPS.filter((a) => a.id !== 'hero');
+---
+
+<nav class="dock" aria-label="Dock" data-bg>
+  <ul>
+    {dockApps.map((a) => (
+      <li>
+        <a class="dock-app" href={`${base}#${a.id}`} data-app={a.id}>
+          <AppIcon icon={a.icon} color={a.colors[1]} from={a.colors[0]} size="md" />
+          <span class="dock-label">{a.label}</span>
+          <span class="dock-run" aria-hidden="true" />
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

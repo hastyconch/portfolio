@@ -1,0 +1,162 @@
+---
+// Music slot: a player-style window. Track list → each song with art (gradient stand-in),
+// meaning, click-to-load listening placeholders, and the lyrics annotator.
+// Annotator: each annotated line is a native <details> disclosure (keyboard + no-JS friendly);
+// `name` makes them exclusive per song. CSS shows the note in a side gutter on wide windows and
+// inline as a card on phones; wm.ts adds Escape-to-close with focus kept on the line.
+import type { Song } from '../../lib/content';
+import Window from './Window.astro';
+import Icon from './Icon.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  songs: Song[];
+}
+const { songs } = Astro.props;
+
+const years = [...new Set(songs.map((s) => s.data.year))].sort();
+const yearSpan = years.length > 1 ? `${years[0]}–${years[years.length - 1]}` : years[0];
+const credits = [...new Set(songs.map((s) => s.data.credits))];
+
+const art = (s: Song) =>
+  `background: linear-gradient(135deg, ${s.data.artColors[0]}, ${s.data.artColors[1]})`;
+
+function stanzas(s: Song) {
+  const out: { section?: string; lines: Song['data']['lyrics'] }[] = [];
+  for (const l of s.data.lyrics) {
+    if (l.section || out.length === 0) out.push({ section: l.section, lines: [] });
+    out[out.length - 1].lines.push(l);
+  }
+  return out;
+}
+
+const spotifyEmbed = (url: string) => url.replace('open.spotify.com/', 'open.spotify.com/embed/');
+const youtubeEmbed = (url: string) => {
+  const id = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/)?.[1];
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : url;
+};
+---
+
+<Window id="music" meta={`${songs.length} songs · ${yearSpan}`} bodyLabel="Music">
+  <div class="music">
+    <header class="music-intro">
+      <p class="music-eyebrow">{yearSpan}</p>
+      {credits.map((c) => (
+        <p class="music-credits">{c}</p>
+      ))}
+      <ol class="tracklist" aria-label="Tracks">
+        {songs.map((s, i) => (
+          <li>
+            <a href={`#song-${s.id}`}>
+              <span class="art art--sm" style={art(s)} aria-hidden="true" />
+              <span class="track-n">{String(i + 1).padStart(2, '0')}</span>
+              <span class="track-t">{s.data.title}</span>
+              <span class="track-y">{s.data.year}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </header>
+
+    {songs.map((s, i) => (
+      <article id={`song-${s.id}`} class="song" aria-labelledby={`song-${s.id}-h`}>
+        <div class="song-head">
+          <span class="art art--lg" style={art(s)} aria-hidden="true">
+            <span class="art-n">{String(i + 1).padStart(2, '0')}</span>
+          </span>
+          <div class="song-id">
+            <p class="song-meta">
+              Track {i + 1} · {s.data.year}
+              <Placeholder status={s.data.status} />
+            </p>
+            <h3 id={`song-${s.id}-h`} class="song-title">
+              {s.data.title}
+            </h3>
+            <p class="song-credits">{s.data.credits}</p>
+            <div class="listen">
+              {s.data.spotify ? (
+                <div class="embed" data-embed-box>
+                  <button
+                    type="button"
+                    class="btn btn--listen"
+                    data-embed={spotifyEmbed(s.data.spotify)}
+                    data-embed-title={`${s.data.title} on Spotify`}
+                  >
+                    <Icon name="play" size={16} /> Load Spotify player
+                  </button>
+                  <a class="embed-alt" href={s.data.spotify}>
+                    Open on Spotify
+                  </a>
+                </div>
+              ) : (
+                <span class="listen-ph">
+                  <Icon name="play" size={14} /> Spotify player · link pending
+                </span>
+              )}
+              {s.data.youtube ? (
+                <div class="embed" data-embed-box>
+                  <button
+                    type="button"
+                    class="btn btn--listen"
+                    data-embed={youtubeEmbed(s.data.youtube)}
+                    data-embed-title={`${s.data.title} on YouTube`}
+                  >
+                    <Icon name="play" size={16} /> Load YouTube video
+                  </button>
+                  <a class="embed-alt" href={s.data.youtube}>
+                    Open on YouTube
+                  </a>
+                </div>
+              ) : (
+                <span class="listen-ph">
+                  <Icon name="play" size={14} /> YouTube video · link pending
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div class="song-meaning">
+          <h4 class="song-sub">
+            <Icon name="quote" size={16} /> What it's about
+          </h4>
+          <p>{s.data.meaning}</p>
+        </div>
+
+        <div class="lyrics">
+          <h4 class="song-sub">Lyrics</h4>
+          <p class="lyrics-hint">
+            <span class="lyr-swatch" aria-hidden="true" />
+            Underlined lines have notes — select one to read it.
+          </p>
+          <div class="lyrics-col">
+            {stanzas(s).map((st) => (
+              <div class="stanza">
+                {st.section && <p class="stanza-h">{st.section}</p>}
+                <ol class="stanza-lines">
+                  {st.lines.map((l) =>
+                    l.note ? (
+                      <li>
+                        <details class="lyr" name={`lyr-${s.id}`}>
+                          <summary class="lyr-line">{l.line}</summary>
+                          <div class="lyr-note">
+                            <p class="lyr-note-h">
+                              <Icon name="quote" size={14} /> Note
+                            </p>
+                            <p class="lyr-note-t">{l.note}</p>
+                          </div>
+                        </details>
+                      </li>
+                    ) : (
+                      <li class="lyr-plain">{l.line}</li>
+                    ),
+                  )}
+                </ol>
+              </div>
+            ))}
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+</Window>

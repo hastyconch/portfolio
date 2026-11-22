@@ -1,0 +1,27 @@
+---
+// Direction B — Desktop OS. The home page is a desktop (phone: home screen); each section is an
+// app window/sheet that opens from the menu bar, dock or links, and by deep link (#work …).
+import { getSiteContent } from '../../../lib/content';
+import Shell from '../../../directions/b/Shell.astro';
+import Hero from '../../../directions/b/Hero.astro';
+import Launcher from '../../../directions/b/Launcher.astro';
+import Work from '../../../directions/b/Work.astro';
+import Projects from '../../../directions/b/Projects.astro';
+import Music from '../../../directions/b/Music.astro';
+import Resume from '../../../directions/b/Resume.astro';
+import Contact from '../../../directions/b/Contact.astro';
+
+const { profile, resume, work, projects, songs } = await getSiteContent();
+---
+
+<Shell title={`${profile.name} — Desktop OS (lab B)`} profile={profile} bodyClass="dos-home">
+  <div class="desk">
+    <Hero profile={profile} />
+    <Launcher projects={projects} />
+  </div>
+  <Work work={work} />
+  <Projects projects={projects} />
+  <Music songs={songs} />
+  <Resume resume={resume} profile={profile} />
+  <Contact profile={profile} />
+</Shell>

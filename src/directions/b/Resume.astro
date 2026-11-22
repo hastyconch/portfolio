@@ -1,0 +1,63 @@
+---
+// Résumé slot: a document viewer window with a paper page inside. Prints as a clean résumé.
+import type { Profile, Resume } from '../../lib/content';
+import Window from './Window.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props {
+  resume: Resume;
+  profile: Profile;
+}
+const { resume, profile } = Astro.props;
+---
+
+<Window id="resume" meta={`${resume.experience.length} roles`} bodyLabel="Résumé document">
+  <div class="doc-tools" data-js-only hidden>
+    <button type="button" class="btn btn--sm" data-print>
+      Print or save as PDF
+    </button>
+  </div>
+  <div class="doc">
+    <header class="doc-head">
+      <p class="doc-name">{profile.name}</p>
+      <p class="doc-line">
+        {profile.roleLine} · {profile.location}
+      </p>
+      <Placeholder status={resume.status} />
+    </header>
+    <p class="doc-summary">{resume.summary}</p>
+
+    <h3 class="doc-h">Experience</h3>
+    {resume.experience.map((x) => (
+      <article class="doc-role">
+        <p class="doc-when">{x.start === x.end ? x.start : `${x.start} – ${x.end}`}</p>
+        <div>
+          <h4 class="doc-title">{x.title}</h4>
+          <p class="doc-org">{x.org}</p>
+          <ul class="doc-bullets">
+            {x.bullets.map((b) => (
+              <li>{b}</li>
+            ))}
+          </ul>
+        </div>
+      </article>
+    ))}
+
+    <h3 class="doc-h">Capabilities</h3>
+    <dl class="doc-caps">
+      {resume.capabilities.map((c) => (
+        <div>
+          <dt>{c.group}</dt>
+          <dd>{c.items.join(' · ')}</dd>
+        </div>
+      ))}
+    </dl>
+
+    <h3 class="doc-h">Education</h3>
+    {resume.education.map((e) => (
+      <p class="doc-edu">
+        <strong>{e.school}</strong> — {e.detail}
+      </p>
+    ))}
+  </div>
+</Window>
