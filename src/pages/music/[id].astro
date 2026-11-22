@@ -54,6 +54,7 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
           </p>
           <h1 class="sg-title">{d.title}</h1>
           <p class="sg-credits">{say(d.credits)}</p>
+          {d.release && <p class="sg-release">{d.release}</p>}
           <Players song={song} />
         </div>
       </div>
@@ -263,5 +264,10 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
       grid-template-columns: 360px minmax(0, 1fr);
       gap: 4rem;
     }
+  }
+  .sg-release {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--ln-ink-3);
   }
 </style>

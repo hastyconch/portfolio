@@ -9,13 +9,16 @@ import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
 import Lyrics from './Lyrics.astro';
 import Players from './Players.astro';
+import { Image } from 'astro:assets';
 import { voice } from '../lib/music';
 
 interface Props {
   songs: Song[];
+  /** Songs by other artists that feature me: listen only, no page or lyrics. */
+  features?: Song[];
   music: Music;
 }
-const { songs, music } = Astro.props;
+const { songs, features = [], music } = Astro.props;
 const say = voice(music);
 
 const years = [...new Set(songs.map((s) => s.data.year))].sort();
@@ -40,7 +43,7 @@ const [lead, ...story] = music.story.map(say);
       kicker="Bonus tracks"
       title="Music"
       id="music-h"
-      meta={`${songs.length} songs · ${years.join(' – ')}`}
+      meta={`${songs.length} songs · ${years.length > 1 ? `${years[0]}–${years.at(-1)}` : years[0]}`}
     />
 
     <div class="mu-story" data-story>
@@ -82,7 +85,18 @@ const [lead, ...story] = music.story.map(say);
           data-c2={s.data.artColors[1]}
           style={`--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`}
         >
-          <span class="mu-tab-art" aria-hidden="true">
+          <span class:list={['mu-tab-art', s.data.art && 'has-art']} aria-hidden="true">
+            {s.data.art && (
+              <Image
+                class="mu-tab-img"
+                src={s.data.art}
+                alt=""
+                widths={[96, 192]}
+                sizes="96px"
+                loading="lazy"
+                decoding="async"
+              />
+            )}
             <span class="ln-num">{pad(i + 1)}</span>
           </span>
           <span class="mu-tab-text">
@@ -116,6 +130,7 @@ const [lead, ...story] = music.story.map(say);
               </p>
               <h3 class="mu-title">{d.title}</h3>
               <p class="mu-credits">{say(d.credits)}</p>
+              {d.release && <p class="mu-release">{d.release}</p>}
               <div class="mu-about">
                 <h4 class="mu-h">About this song</h4>
                 <p>{say(d.meaning)}</p>
@@ -134,6 +149,41 @@ const [lead, ...story] = music.story.map(say);
         </div>
       );
     })}
+
+    {features.length > 0 && (
+      <section class="mu-feat" aria-labelledby="mu-feat-h">
+        <h3 id="mu-feat-h" class="mu-feat-h">
+          Appears on
+        </h3>
+        <ul class="mu-feat-list">
+          {features.map((f) => (
+            <li
+              class="mu-feat-item"
+              style={`--c1: ${f.data.artColors[0]}; --c2: ${f.data.artColors[1]}`}
+            >
+              <span class="mu-feat-art" aria-hidden="true">
+                {f.data.art && (
+                  <Image
+                    src={f.data.art}
+                    alt=""
+                    widths={[120, 240]}
+                    sizes="120px"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+              </span>
+              <div class="mu-feat-text">
+                <p class="mu-feat-t">{f.data.title}</p>
+                <p class="mu-feat-c">{say(f.data.credits)}</p>
+                {f.data.release && <p class="mu-feat-r">{f.data.release}</p>}
+                <Players song={f} onlyAvailable />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
   </div>
 </section>
 
@@ -397,6 +447,88 @@ const [lead, ...story] = music.story.map(say);
     }
     .mu-tab-t {
       font-size: 1.15rem;
+    }
+  }
+  .mu-release {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--ln-ink-3);
+  }
+  .mu-tab-art.has-art {
+    position: relative;
+    overflow: hidden;
+  }
+  .mu-tab-art :global(.mu-tab-img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .mu-tab-art.has-art .ln-num {
+    position: relative;
+    padding: 0 0.25rem;
+    border-radius: 3px;
+    background: rgb(0 0 0 / 0.6);
+  }
+  /* Appears on: songs by other artists that feature me */
+  .mu-feat {
+    margin-top: clamp(3rem, 7vw, 5rem);
+    padding-top: 2rem;
+    border-top: 1px solid var(--ln-rule);
+  }
+  body.ln .mu-feat-h {
+    font-family: var(--ln-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ln-accent);
+  }
+  .mu-feat-list {
+    display: grid;
+    gap: 1.5rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .mu-feat-item {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 1rem 1.5rem;
+    align-items: start;
+  }
+  .mu-feat-art {
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--c1), var(--c2));
+  }
+  .mu-feat-art :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .mu-feat-t {
+    font-family: var(--ln-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .mu-feat-c {
+    margin-top: 0.25rem;
+    color: var(--ln-ink-2);
+  }
+  .mu-feat-r {
+    margin: 0.2rem 0 0.9rem;
+    font-size: 0.875rem;
+    color: var(--ln-ink-3);
+  }
+  @media (min-width: 760px) {
+    .mu-feat-item {
+      grid-template-columns: 140px minmax(0, 1fr);
     }
   }
 </style>

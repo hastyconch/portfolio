@@ -110,17 +110,23 @@ const songs = defineCollection({
       art: image().optional(), // album art; the artColors gradient stands in until it arrives
       artAlt: z.string().optional(),
       credits: z.string(),
+      // A song by another artist that features me: listed under “Appears on”, no page or lyrics.
+      feature: z.boolean().default(false),
+      release: z.string().optional(), // e.g. 'Single · Aug 2020 · later on the Misfits EP'
       spotify: z.string().url().optional(),
       youtube: z.string().url().optional(),
       artColors: z.tuple([z.string(), z.string()]), // gradient stand-in until album art arrives
-      meaning: z.string(),
-      lyrics: z.array(
-        z.object({
-          section: z.string().optional(), // "Verse 1", "Chorus"…
-          line: z.string(),
-          note: z.string().optional(), // annotation shown when the line is selected
-        }),
-      ),
+      meaning: z.string().default(''),
+      lyrics: z
+        .array(
+          z.object({
+            section: z.string().optional(), // "Verse 1", "Chorus"…
+            stanza: z.boolean().optional(), // start a new stanza here without a section label
+            line: z.string(),
+            note: z.string().optional(), // annotation shown when the line is selected
+          }),
+        )
+        .default([]),
       order: z.number(),
       status,
     }),
