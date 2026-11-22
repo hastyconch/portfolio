@@ -1,10 +1,29 @@
 ---
-import Base from '../layouts/Base.astro';
+import Shell from '../system/Shell.astro';
 ---
 
-<Base title="Page not found" noindex>
-  <h1>Page not found</h1>
-  <p>
-    <a href="/">Back to the home page</a>
-  </p>
-</Base>
+<Shell title="Page not found" nowPlaying="Skipped track" noindex>
+  <section class="nf ln-wrap">
+    <p class="ln-eyebrow">Error 404</p>
+    <h1>This track isn’t on the record.</h1>
+    <p>
+      <a href="/">Back to the home page</a>
+    </p>
+  </section>
+</Shell>
+
+<style>
+  .nf {
+    padding-block: clamp(5rem, 16vh, 10rem);
+    display: grid;
+    gap: 1.25rem;
+  }
+  body :global(.nf h1) {
+    font-size: clamp(2.25rem, 7vw, 4.5rem);
+    font-stretch: 80%;
+  }
+  .nf a {
+    font-weight: 700;
+    color: var(--ln-accent);
+  }
+</style>

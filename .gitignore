@@ -21,3 +21,6 @@ factory/out/
 
 .DS_Store
 .claude/settings.local.json
+
+# builder agents' git worktrees
+.claude/worktrees/

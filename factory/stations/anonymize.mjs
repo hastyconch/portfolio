@@ -48,6 +48,7 @@ const TEXT_EXT = new Set([
 ]);
 const IMG_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.tif', '.tiff', '.heic']);
 const SKIP_DIRS = new Set([
+  'worktrees',
   'node_modules',
   '.git',
   'private',

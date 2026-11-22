@@ -1,13 +1,24 @@
 ---
-import Base from '../layouts/Base.astro';
+// The one-page home, built from the Phase 1 picks (factory/picks.yaml).
+import '@fontsource-variable/inter'; // the airline demo's own typeface
+import Shell from '../system/Shell.astro';
+import Hero from '../system/Hero.astro';
+import Work from '../system/Work.astro';
+import Projects from '../system/Projects.astro';
+import Music from '../system/Music.astro';
+import Resume from '../system/Resume.astro';
+import { getSiteContent } from '../lib/content';
+
+const { profile, resume, work, projects, songs } = await getSiteContent();
 ---
 
-<Base title="Portfolio — under construction">
-  <h1>Portfolio</h1>
-  <p>
-    Product leader, AI-enabled builder, songwriter. This site is being built in the open by a
-    software factory: every change passes automated accessibility, performance and privacy gates
-    before it ships.
-  </p>
-  <p>Four design directions are coming next.</p>
-</Base>
+<Shell home nowPlaying="Intro" description={profile.headline}>
+  <Hero
+    profile={profile}
+    counts={{ work: work.length, projects: projects.length, songs: songs.length }}
+  />
+  <Work work={work} />
+  <Projects projects={projects} />
+  <Music songs={songs} />
+  <Resume resume={resume} />
+</Shell>

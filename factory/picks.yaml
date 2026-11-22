@@ -1,0 +1,31 @@
+# Phase 1 picks — the owner's mix-and-match decisions (2026-11-22).
+# Phase 2 (WO-007) builds src/system/ from these.
+date: 2026-11-22
+slots:
+  overall:
+    pick: d
+    note: 'This feels the most creative. The visual flair of the records, the colours, especially the pop from the records, is amazing.'
+  hero:
+    pick: d
+    note: 'Hero and nav on option D are amazing. The record theme is a little overbearing (tracklist, credits, etc.) but we can adjust that later — noted for a later pass.'
+  work:
+    pick: a
+    note: 'I still like the theme of D, but the organization of A is really nice. I like the way sector/company/role are laid out.'
+  demo:
+    pick: d
+    note: "I like the demo frame inline with the experience, so the user doesn't have to scroll too far to see it."
+  projects:
+    pick: d
+    note: 'D is by far my favourite.'
+  casestudy:
+    pick: d
+    note: 'D is the best.'
+  music:
+    pick: d
+    note: 'Easily the best, matches the theme.'
+  resume:
+    pick: d
+    note: 'The best.'
+motion: calm # iterate as we build
+follow_ups:
+  - Tone down the record metaphor (tracklist / credits / personnel wording) once real copy lands.

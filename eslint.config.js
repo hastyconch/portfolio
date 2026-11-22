@@ -5,6 +5,8 @@ import astro from 'eslint-plugin-astro';
 export default [
   {
     ignores: [
+      '.claude/worktrees/',
+      'factory/out/',
       'dist/',
       '.astro/',
       'node_modules/',
@@ -23,6 +25,7 @@ export default [
       sourceType: 'commonjs',
       globals: { module: 'writable', require: 'readonly' },
     },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     files: ['factory/**/*.mjs', '*.config.*', 'lighthouserc.cjs'],

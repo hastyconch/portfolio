@@ -69,5 +69,16 @@ for (const route of routes) {
       );
       expect(long).toBe(0);
     });
+
+    test('calm motion: no looping animations', async ({ page }) => {
+      await page.goto(route);
+      const looping = await page.evaluate(
+        () =>
+          document
+            .getAnimations()
+            .filter((a) => a.effect?.getComputedTiming().iterations === Infinity).length,
+      );
+      expect(looping).toBe(0);
+    });
   });
 }
