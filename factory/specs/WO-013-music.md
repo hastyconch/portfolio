@@ -9,6 +9,8 @@ touches:
   - src/system/Music.astro
   - src/system/Lyrics.astro
   - src/system/SongArt.astro
+  - src/system/Players.astro
+  - src/lib/music.ts
   - src/pages/music/**
   - src/pages/index.astro
   - tests/e2e/music.spec.ts

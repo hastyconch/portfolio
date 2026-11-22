@@ -6,8 +6,8 @@ import Shell from '../../system/Shell.astro';
 import SongArt from '../../system/SongArt.astro';
 import Lyrics from '../../system/Lyrics.astro';
 import Placeholder from '../../system/Placeholder.astro';
-import Players from './_Players.astro';
-import { voice } from './_music';
+import Players from '../../system/Players.astro';
+import { voice } from '../../lib/music';
 import { getSiteContent, type Music, type Song } from '../../lib/content';
 
 export async function getStaticPaths() {

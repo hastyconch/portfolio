@@ -1,6 +1,5 @@
-// Helpers shared by the home Music section and the /music/<id>/ pages. The leading underscore
-// keeps this file out of the router.
-import type { Music } from '../../lib/content';
+// Helpers shared by the home Music section and the /music/<id>/ pages.
+import type { Music } from './content';
 
 export function spotifyEmbed(u?: string) {
   const m = u?.match(/open\.spotify\.com\/(track|album|playlist)\/([A-Za-z0-9]+)/);

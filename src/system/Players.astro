@@ -1,10 +1,9 @@
 ---
 // Click-to-load Spotify/YouTube players for one song (constitution art. 5 and 6): nothing
 // third-party is requested until the visitor presses a player button, and every player keeps a
-// plain "Open on …" link as its no-JS fallback. Shared by the home Music section and song pages;
-// the leading underscore keeps this file out of the router.
-import type { Song } from '../../lib/content';
-import { spotifyEmbed, youtubeEmbed } from './_music';
+// plain "Open on …" link as its no-JS fallback. Shared by the home Music section and song pages.
+import type { Song } from '../lib/content';
+import { spotifyEmbed, youtubeEmbed } from '../lib/music';
 
 interface Props {
   song: Song;
