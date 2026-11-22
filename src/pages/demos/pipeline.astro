@@ -1,0 +1,63 @@
+---
+// Review harness for the pipeline demo (WO-010): full width, then in a 360px side column.
+import Base from '../../layouts/Base.astro';
+import PipelineDemo from '../../demos/pipeline/PipelineDemo.tsx';
+import '../../system/liner.css';
+---
+
+<Base title="Pipeline demo harness" noindex>
+  <div class="h-wrap">
+    <h1>Pipeline demo harness</h1>
+    <p>AI-assisted program management, step by step. Mock data only.</p>
+
+    <section aria-labelledby="h-full">
+      <h2 id="h-full">Full width</h2>
+      <div class="h-full">
+        <PipelineDemo client:visible />
+      </div>
+    </section>
+
+    <section aria-labelledby="h-side">
+      <h2 id="h-side">360px side column</h2>
+      <div class="h-side">
+        <PipelineDemo client:visible />
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style is:global>
+  body {
+    color: var(--ln-ink);
+    background: var(--ln-bg);
+  }
+</style>
+
+<style>
+  .h-wrap {
+    display: grid;
+    gap: 2rem;
+    max-width: 940px;
+    margin-inline: auto;
+    padding: 2rem 1rem 4rem;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: var(--ln-ink-2);
+  }
+  p {
+    margin: 0;
+  }
+  .h-full {
+    max-width: 900px;
+  }
+  .h-side {
+    max-width: 360px;
+  }
+</style>

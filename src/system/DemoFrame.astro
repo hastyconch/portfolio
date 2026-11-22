@@ -6,13 +6,16 @@ interface Props {
   caption?: string;
   coming?: boolean;
   size?: 'lg' | 'sm';
+  /** phone status-bar colour and screen colour behind the demo's own header, e.g. ['#3d2c5e', '#f6f3fb'] */
+  tint?: [string, string];
 }
-const { frame, caption, coming = false, size = 'lg' } = Astro.props;
+const { frame, caption, coming = false, size = 'lg', tint } = Astro.props;
+const tintStyle = tint ? `--df-top: ${tint[0]}; --df-screen: ${tint[1]}` : undefined;
 const kind = frame === 'none' ? 'diagram' : frame;
 const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram' }[kind];
 ---
 
-<figure class:list={['df', `df-${kind}`, `df-${size}`, coming && 'df-coming']}>
+<figure class:list={['df', `df-${kind}`, `df-${size}`, coming && 'df-coming']} style={tintStyle}>
   <div class="df-device">
     {kind === 'desktop' && (
       <div class="df-titlebar" aria-hidden="true">
@@ -71,7 +74,7 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
     border-radius: 37px;
     padding-top: 36px;
     /* status-bar strip in the demo's own (invented) header colour */
-    background: linear-gradient(#3d2c5e 0 40px, #f6f3fb 40px);
+    background: linear-gradient(var(--df-top, #3d2c5e) 0 40px, var(--df-screen, #f6f3fb) 40px);
   }
   .df-phone.df-lg .df-screen > :global(*) {
     height: 100%;
@@ -145,6 +148,15 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
   .df-diagram .df-screen {
     aspect-ratio: 16 / 10;
     background: transparent;
+  }
+  /* Live desktop and diagram demos size to their content; only the "coming" plate keeps 16:10. */
+  .df-desktop:not(.df-coming) .df-screen,
+  .df-diagram:not(.df-coming) .df-screen {
+    aspect-ratio: auto;
+  }
+  .df-desktop:not(.df-coming),
+  .df-diagram:not(.df-coming) {
+    justify-items: stretch;
   }
 
   /* Coming soon state */

@@ -5,6 +5,9 @@
 // text to reach it. Styled in the Liner Notes system.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
+import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
+import PipelineDemo from '../demos/pipeline/PipelineDemo.tsx';
+import SchedulerDemo from '../demos/scheduler/SchedulerDemo.tsx';
 import DemoFrame from './DemoFrame.astro';
 import SideHead from './SideHead.astro';
 import Placeholder from './Placeholder.astro';
@@ -15,6 +18,11 @@ interface Props {
 const { work } = Astro.props;
 const companies = [...new Set(work.map((w) => w.data.years))];
 const meta = `${work.length} engagements · ${companies.join(' / ')}`;
+// Demos that are built. Others with a demo show the "coming soon" plate.
+const LIVE = new Set(['airline', 'grocer', 'pipeline', 'scheduler']);
+// Wide demos (desktop window, diagram) sit full-width under the summary on desktop.
+const isWide = (frame: string) => frame === 'desktop' || frame === 'diagram';
+const caption = 'Playable · invented brand, mock data';
 ---
 
 <section
@@ -30,10 +38,11 @@ const meta = `${work.length} engagements · ${companies.join(' / ')}`;
       {work.map((w, i) => {
         const d = w.data;
         const hid = `work-${w.id}`;
-        const live = d.demo === 'airline';
+        const live = LIVE.has(d.demo);
         const hasDemo = d.demo !== 'none';
+        const wide = live && isWide(d.demoFrame);
         return (
-          <li class:list={['wk', live && 'wk-live', !hasDemo && 'wk-nodemo']}>
+          <li class:list={['wk', live && 'wk-live', wide && 'wk-wide', !hasDemo && 'wk-nodemo']}>
             <article aria-labelledby={hid}>
               <div class="wk-meta">
                 <span class="wk-n ln-num">A{i + 1}</span>
@@ -64,13 +73,33 @@ const meta = `${work.length} engagements · ${companies.join(' / ')}`;
 
               {hasDemo && (
                 <div class="wk-demo">
-                  {live ? (
-                    <DemoFrame frame={d.demoFrame} caption="Playable · invented brand, mock data">
+                  {d.demo === 'airline' && (
+                    <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
                       <AirlineDemo client:visible />
                     </DemoFrame>
-                  ) : (
-                    <DemoFrame frame={d.demoFrame} coming size="sm" />
                   )}
+                  {d.demo === 'grocer' && (
+                    <DemoFrame frame={d.demoFrame} caption={caption} tint={['#134e4a', '#f3f6f4']}>
+                      <GrocerDemo client:visible />
+                    </DemoFrame>
+                  )}
+                  {d.demo === 'pipeline' && (
+                    <DemoFrame
+                      frame={d.demoFrame}
+                      caption="Interactive · invented project, mock data"
+                    >
+                      <PipelineDemo client:visible />
+                    </DemoFrame>
+                  )}
+                  {d.demo === 'scheduler' && (
+                    <DemoFrame
+                      frame={d.demoFrame}
+                      caption="Interactive · invented unit and staff, mock data"
+                    >
+                      <SchedulerDemo client:visible />
+                    </DemoFrame>
+                  )}
+                  {!live && <DemoFrame frame={d.demoFrame} coming size="sm" />}
                 </div>
               )}
 
@@ -367,6 +396,17 @@ const meta = `${work.length} engagements · ${companies.join(' / ')}`;
     }
     .wk:not(.wk-live) .wk-demo :global(.df) {
       justify-items: end;
+    }
+    /* Wide demos (desktop window, diagram): full width under the summary. */
+    .wk-wide article {
+      grid-template-areas:
+        'meta head head'
+        'skills demo demo'
+        'skills details details';
+      grid-template-rows: auto auto 1fr;
+    }
+    .wk-wide .wk-demo {
+      margin-top: 2rem;
     }
   }
 </style>

@@ -1,0 +1,50 @@
+---
+// Test harness for the nurse scheduler demo (WO-012): full width, then in a 360px column.
+import Base from '../../layouts/Base.astro';
+import SchedulerDemo from '../../demos/scheduler/SchedulerDemo.tsx';
+---
+
+<Base
+  title="Nurse scheduler demo — harness"
+  description="Test harness for the nurse scheduler demo."
+  noindex
+>
+  <div class="harness">
+    <h1>Nurse scheduler demo</h1>
+    <p>Test harness. Mock data only: the unit, staff and rules are invented.</p>
+
+    <section aria-labelledby="full-width">
+      <h2 id="full-width">Full width</h2>
+      <h3 class="visually-hidden">Roster</h3>
+      <div class="frame">
+        <SchedulerDemo client:visible />
+      </div>
+    </section>
+
+    <section aria-labelledby="narrow">
+      <h2 id="narrow">360px column</h2>
+      <h3 class="visually-hidden">Roster (narrow)</h3>
+      <div class="frame narrow">
+        <SchedulerDemo client:visible />
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .harness {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+  section {
+    margin-top: 2rem;
+  }
+  .frame {
+    border: 1px solid GrayText;
+  }
+  .narrow {
+    width: 100%;
+    max-width: 360px;
+  }
+</style>
