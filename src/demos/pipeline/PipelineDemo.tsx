@@ -40,24 +40,28 @@ const transcript = [
   },
 ];
 
+// Each extracted item cites the transcript line it came from (index into `transcript`).
 const extracted = [
   {
     kind: 'Decisions',
     icon: '✓',
-    items: ['Tenant dashboard ships without saved search.', 'Release 3 scope is locked.'],
+    items: [
+      { text: 'Tenant dashboard ships without saved search.', src: 2 },
+      { text: 'Release 3 scope is locked.', src: 4 },
+    ],
   },
   {
     kind: 'Risks',
     icon: '!',
-    items: ['Flaky payments sandbox may delay integration testing.'],
+    items: [{ text: 'Flaky payments sandbox may delay integration testing.', src: 3 }],
   },
   {
     kind: 'Action items',
     icon: '→',
     items: [
-      'Theo: review the migration script (was due Friday).',
-      'Ines: final tenant specs by Thursday.',
-      'Jonah: raise a sandbox ticket with the payments team.',
+      { text: 'Theo: review the migration script (was due Friday).', src: 1 },
+      { text: 'Ines: final tenant specs by Thursday.', src: 4 },
+      { text: 'Jonah: raise a sandbox ticket with the payments team.', src: 3 },
     ],
   },
 ];
@@ -83,12 +87,21 @@ const tickets: { id: string; title: string; from: Column | 'New'; to: Column }[]
   { id: 'LAR-118', title: 'Drop saved search from R3', from: 'In progress', to: 'Done' },
 ];
 
-type Step = { short: string; title: string; say: string; body: ReactNode };
+type View = { nudged: boolean; synced: boolean };
+type Step = {
+  short: string;
+  title: string;
+  say: string;
+  /** the TPM's action that moves to the next step */
+  action?: string;
+  body: ReactNode | ((v: View) => ReactNode);
+};
 
 const steps: Step[] = [
   {
     short: 'Transcript',
     title: 'Meeting transcript in',
+    action: 'Extract with AI',
     say: 'A stand-up transcript for Project Larch, Release 3, comes in.',
     body: (
       <div className="pl-card pl-transcript">
@@ -109,7 +122,8 @@ const steps: Step[] = [
   {
     short: 'Extract',
     title: 'AI extracts decisions, risks and actions',
-    say: 'The AI pulls out 2 decisions, 1 risk and 3 action items with owners.',
+    action: 'Draft exec update',
+    say: 'The AI pulls out 2 decisions, 1 risk and 3 action items with owners. Open any item to see the transcript line it came from.',
     body: (
       <div className="pl-grid3">
         {extracted.map((g) => (
@@ -122,7 +136,15 @@ const steps: Step[] = [
             </p>
             <ul className="pl-list">
               {g.items.map((it) => (
-                <li key={it}>{it}</li>
+                <li key={it.text}>
+                  <details className="pl-cite">
+                    <summary>{it.text}</summary>
+                    <p>
+                      <span className="pl-meta">Source · {transcript[it.src].who}:</span>{' '}
+                      <q>{transcript[it.src].line}</q>
+                    </p>
+                  </details>
+                </li>
               ))}
             </ul>
           </div>
@@ -133,6 +155,7 @@ const steps: Step[] = [
   {
     short: 'Status',
     title: 'Exec status update drafted',
+    action: 'Approve and send',
     say: 'An executive status update is drafted: overall amber, one red workstream with a fallback plan.',
     body: (
       <div className="pl-card">
@@ -159,8 +182,9 @@ const steps: Step[] = [
   {
     short: 'Nudge',
     title: 'Nudge engine flags a follow-up',
-    say: 'The nudge engine flags Theo’s review as 2 days overdue and drafts a polite nudge.',
-    body: (
+    action: 'Send nudge',
+    say: 'The nudge engine flags Theo’s review as 2 days overdue and drafts a polite nudge for you to send.',
+    body: (v: View) => (
       <div className="pl-grid2">
         <div className="pl-card">
           <p className="pl-group">Follow-ups</p>
@@ -180,12 +204,22 @@ const steps: Step[] = [
           </ul>
         </div>
         <div className="pl-card pl-draft">
-          <p className="pl-meta">Draft to Theo · AI-written, sent after TPM review</p>
+          <p className="pl-meta">
+            {v.nudged
+              ? 'Sent to Theo · AI-drafted, approved by the TPM'
+              : 'Draft to Theo · AI-written, waiting for TPM review'}
+          </p>
           <p>
             Hi Theo, hope your week is going well! Jonah’s migration script is ready for review
             whenever you have a moment; it’s the last step before cut-over. Could you take a look by
             Wednesday? Happy to pair on it if that helps. Thanks, Maya
           </p>
+          {v.nudged && (
+            <p className="pl-reply">
+              <span className="pl-meta">Theo replied · 4 min later</span>
+              On it. Reviewing this afternoon, sorry for the delay!
+            </p>
+          )}
         </div>
       </div>
     ),
@@ -194,7 +228,7 @@ const steps: Step[] = [
     short: 'PM tool',
     title: 'PM tool updated',
     say: 'Four tickets in the PM tool are updated to match the meeting. Release 3: delivered on time.',
-    body: (
+    body: (v: View) => (
       <>
         <div className="pl-board">
           {columns.map((c) => (
@@ -202,31 +236,35 @@ const steps: Step[] = [
               <p className="pl-group">{c}</p>
               <ul className="pl-tickets">
                 {tickets
-                  .filter((t) => t.to === c)
+                  .filter((t) => (v.synced ? t.to === c : t.from === c))
                   .map((t) => (
-                    <li key={t.id} className="pl-ticket">
+                    <li key={t.id} className={`pl-ticket${v.synced ? ' is-moved' : ''}`}>
                       <span className="pl-tid">{t.id}</span>
                       <span>{t.title}</span>
-                      <span className="pl-moved">
-                        {t.from === 'New' ? 'Created' : `Moved from ${t.from}`}
-                      </span>
+                      {v.synced && (
+                        <span className="pl-moved">
+                          {t.from === 'New' ? 'Created by AI' : `Moved from ${t.from}`}
+                        </span>
+                      )}
                     </li>
                   ))}
               </ul>
             </div>
           ))}
         </div>
-        <p className="pl-done">
-          <span className="pl-done-mark" aria-hidden="true">
-            ✓
-          </span>
-          <span>
-            <strong>Delivered on time</strong>
-            <span className="pl-done-sub">
-              Repeated after every stand-up until Release 3 shipped.
+        {v.synced && (
+          <p className="pl-done">
+            <span className="pl-done-mark" aria-hidden="true">
+              ✓
             </span>
-          </span>
-        </p>
+            <span>
+              <strong>Delivered on time</strong>
+              <span className="pl-done-sub">
+                Repeated after every stand-up until Release 3 shipped.
+              </span>
+            </span>
+          </p>
+        )}
       </>
     ),
   },
@@ -240,32 +278,62 @@ export default function PipelineDemo() {
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
   const [moved, setMoved] = useState(false); // fade only on a real step change, not on load
+  const [nudged, setNudged] = useState(false);
+  const [synced, setSynced] = useState(false);
+  const [say, setSay] = useState('');
   const base = useId();
+  const view: View = { nudged, synced };
 
   function show(i: number) {
+    const n = Math.max(0, Math.min(LAST, i));
     setMoved(true);
-    setStep(Math.max(0, Math.min(LAST, i)));
+    setStep(n);
+    setSay('');
+    if (n < 3) setNudged(false);
+    if (n < LAST) setSynced(false);
   }
 
-  // Autoplay only for visitors who haven't asked for reduced motion.
+  // Autoplay is opt-in (the Play button) and never runs under reduced motion.
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReady(true);
-    if (!mq.matches) setPlaying(true);
     const stop = () => mq.matches && setPlaying(false);
     mq.addEventListener('change', stop);
     return () => mq.removeEventListener('change', stop);
   }, []);
 
+  // Arriving at the PM tool step: tickets start where they were, then sync across.
+  useEffect(() => {
+    if (step !== LAST || synced) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t = window.setTimeout(() => setSynced(true), reduce ? 0 : 700);
+    return () => window.clearTimeout(t);
+  }, [step, synced]);
+
   useEffect(() => {
     if (!playing) return;
     const t = window.setTimeout(() => {
+      if (step === 3 && !nudged) {
+        setNudged(true);
+        return;
+      }
       const next = Math.min(step + 1, LAST);
       show(next);
       if (next === LAST) setPlaying(false);
     }, STEP_MS);
     return () => window.clearTimeout(t);
-  }, [playing, step]);
+  }, [playing, step, nudged]);
+
+  // The primary button performs the TPM's action for this step.
+  function act() {
+    setPlaying(false);
+    if (step === 3 && !nudged) {
+      setNudged(true);
+      setSay('Nudge sent to Theo. Theo replied: on it, reviewing this afternoon.');
+      return;
+    }
+    if (step < LAST) show(step + 1);
+  }
 
   function go(i: number) {
     setPlaying(false);
@@ -281,6 +349,7 @@ export default function PipelineDemo() {
   const atStart = step === 0;
   const atEnd = step === LAST;
   const playLabel = playing ? 'Pause' : atEnd ? 'Replay' : 'Play';
+  const actLabel = step === 3 && nudged ? 'Update PM tool' : (steps[step].action ?? 'Done');
 
   return (
     <div
@@ -329,7 +398,7 @@ export default function PipelineDemo() {
                   {s.title}
                 </strong>
               </p>
-              {s.body}
+              {typeof s.body === 'function' ? s.body(view) : s.body}
             </section>
           ))}
         </div>
@@ -350,14 +419,14 @@ export default function PipelineDemo() {
             type="button"
             className="pl-btn pl-next"
             aria-disabled={atEnd}
-            onClick={() => !atEnd && go(step + 1)}
+            onClick={() => !atEnd && act()}
           >
-            Next <span aria-hidden="true">→</span>
+            {actLabel} {!atEnd && <span aria-hidden="true">→</span>}
           </button>
         </div>
 
         <p className="pl-sr" aria-live="polite" aria-atomic="true" data-pl-live>
-          {`Step ${step + 1} of ${steps.length}: ${steps[step].title}. ${steps[step].say}`}
+          {say || `Step ${step + 1} of ${steps.length}: ${steps[step].title}. ${steps[step].say}`}
         </p>
       </div>
     </div>

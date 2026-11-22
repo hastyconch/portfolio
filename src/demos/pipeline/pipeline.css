@@ -390,7 +390,8 @@
 
 .pl-controls {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  /* Back · Play · the TPM's action (widest label: "Draft exec update →") */
+  grid-template-columns: 1fr 1fr 1.6fr;
   gap: 8px;
 }
 .pl-btn {
@@ -448,7 +449,7 @@
     grid-template-columns: repeat(3, 1fr);
   }
   .pl-controls {
-    grid-template-columns: repeat(3, minmax(0, 9rem));
+    grid-template-columns: minmax(0, 7.5rem) minmax(0, 7.5rem) minmax(0, 13rem);
     justify-content: end;
   }
 }
@@ -482,5 +483,45 @@
   from {
     opacity: 0;
     transform: translateY(4px);
+  }
+}
+
+/* Extracted items cite their transcript line */
+.pl-cite summary {
+  cursor: pointer;
+  list-style: none;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.pl-cite summary::-webkit-details-marker {
+  display: none;
+}
+.pl-cite[open] summary {
+  text-decoration: none;
+}
+.pl-cite p {
+  margin: 0.35rem 0 0.25rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--pl-accent, currentColor);
+  font-size: 0.875em;
+}
+.pl-reply {
+  margin-top: 0.85rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: var(--pl-sunk);
+  display: grid;
+  gap: 0.2rem;
+  font-style: normal;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pl-ticket.is-moved {
+    animation: pl-move 0.45s ease-out;
+  }
+}
+@keyframes pl-move {
+  from {
+    transform: translateX(-12px);
+    opacity: 0.4;
   }
 }
