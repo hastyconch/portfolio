@@ -78,6 +78,27 @@ export default function SchedulerDemo() {
   const gapHave = gap ? coverageOf(week, gap.shift, gap.day) : 0;
   const busy = gap ? NURSES.filter((_, r) => week[r][gap.day] !== 'O').map((n) => n.name) : [];
   const gridWrap = useRef<HTMLDivElement | null>(null);
+  // Which edges of the roster have more columns past them (drives the fade and the hint).
+  const [edges, setEdges] = useState<'' | 'start' | 'end' | 'both'>('');
+
+  useEffect(() => {
+    const wrap = gridWrap.current;
+    if (!wrap) return;
+    const update = () => {
+      const max = wrap.scrollWidth - wrap.clientWidth;
+      if (max <= 1) return setEdges('');
+      const atStart = wrap.scrollLeft <= 1;
+      const atEnd = wrap.scrollLeft >= max - 1;
+      setEdges(atStart ? 'end' : atEnd ? 'start' : 'both');
+    };
+    update();
+    wrap.addEventListener('scroll', update, { passive: true });
+    addEventListener('resize', update);
+    return () => {
+      wrap.removeEventListener('scroll', update);
+      removeEventListener('resize', update);
+    };
+  }, []);
 
   // On a narrow screen the grid scrolls sideways: bring the open shift's column into view.
   useEffect(() => {
@@ -215,7 +236,13 @@ export default function SchedulerDemo() {
 
       <div className="sch-body">
         <div className="sch-main">
-          <div className="sch-gridwrap" ref={gridWrap}>
+          {edges && (
+            <p className="sch-scrollhint">
+              The roster scrolls sideways for the whole week
+              <span aria-hidden="true"> →</span>
+            </p>
+          )}
+          <div className="sch-gridwrap" ref={gridWrap} data-more={edges || undefined}>
             <table
               className="sch-grid"
               role="grid"

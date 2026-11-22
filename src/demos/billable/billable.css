@@ -102,6 +102,10 @@
 .bm-btn:hover {
   background: #a3d65f;
 }
+/* Pressed: the button sinks (the Play button drops onto its shadow). */
+.bm-btn:active {
+  scale: 0.97;
+}
 .bm-btn:focus-visible,
 .bm-pad-btn:focus-visible {
   outline: 3px solid var(--bm-paper);
@@ -113,6 +117,11 @@
   min-height: 3.25rem;
   font-size: 1.25rem;
   box-shadow: 0 6px 0 var(--bm-ink);
+}
+.bm-btn-play:active {
+  scale: 1;
+  translate: 0 4px;
+  box-shadow: 0 2px 0 var(--bm-ink);
 }
 .bm-btn-small {
   min-height: 2.25rem;
