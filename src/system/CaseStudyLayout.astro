@@ -5,6 +5,7 @@ import type { Project } from '../lib/content';
 import Shell from './Shell.astro';
 import Placeholder from './Placeholder.astro';
 import { Image } from 'astro:assets';
+import BillableMini from '../demos/billable/BillableMini.tsx';
 
 interface Props {
   project: Project;
@@ -17,6 +18,7 @@ const d = project.data;
 const n = `B${index + 1}`;
 const pad = (i: number) => String(i + 1).padStart(2, '0');
 const contents = [
+  ...(d.demo === 'billable' ? [{ id: 'play', label: 'Play a room' }] : []),
   { id: 'problem', label: 'The problem' },
   { id: 'features', label: 'Tracklist' },
   ...(d.gallery ? [{ id: 'gallery', label: d.gallery.title }] : []),
@@ -84,6 +86,20 @@ const contents = [
       </nav>
 
       <div class="cs-main">
+        {d.demo === 'billable' && (
+          <section
+            id="play"
+            class="cs-sec cs-play"
+            data-np={`${n} · Play a room`}
+            aria-labelledby="play-h"
+          >
+            <h2 id="play-h" class="cs-h">
+              Play a room <span>one room of the real game, in your browser</span>
+            </h2>
+            <BillableMini client:visible />
+          </section>
+        )}
+
         <section
           id="problem"
           class="cs-sec"
@@ -771,5 +787,18 @@ const contents = [
     .cs-gal-wide {
       grid-column: span 2;
     }
+  }
+
+  /* Billable mini-room: give its Goal / Controls headings room inside the system's type. */
+  body.ln .cs-play :global(.bm-h) {
+    margin: 1.25rem 0 0.4rem;
+    font-size: 0.75rem;
+    font-family: var(--ln-body);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ln-accent);
+  }
+  body.ln .cs-play :global(.bm-h:first-child) {
+    margin-top: 0;
   }
 </style>

@@ -280,13 +280,13 @@ export default function BillableMini() {
       </div>
 
       <div className="bm-info">
-        <h2 className="bm-h">Goal</h2>
+        <h3 className="bm-h">Goal</h3>
         <p id={goalId}>
           Collect the Billable Hours (the clock coins), open the Leaked Email on the top desk, then
           defeat the Red Stapler that patrols the floor. Two laptop swings or pogo bounces finish
           it.
         </p>
-        <h2 className="bm-h">Controls</h2>
+        <h3 className="bm-h">Controls</h3>
         <dl className="bm-keys" id={controlsId}>
           <div>
             <dt>Move</dt>
