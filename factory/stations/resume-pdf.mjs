@@ -7,7 +7,7 @@
 //   node factory/stations/resume-pdf.mjs          regenerate (needs dist/: run the build first)
 //   node factory/stations/resume-pdf.mjs --check  fail if the PDF is missing or the hash is stale
 //
-// The hash is sha256 over src/content/resume.json then src/content/profile.json.
+// The hash is sha256 over the SOURCES below, in order.
 
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -18,7 +18,16 @@ const ROOT = new URL('../..', import.meta.url).pathname;
 const DIST = join(ROOT, 'dist');
 const PDF = join(ROOT, 'public/resume.pdf');
 const HASH = join(ROOT, 'factory/stations/resume-pdf.hash');
-const SOURCES = ['src/content/resume.json', 'src/content/profile.json'];
+// WO-026: the section and this script are hashed too, so a change to the print view or the PDF
+// options also marks the PDF stale.
+const SOURCES = [
+  'src/content/resume.json',
+  'src/content/profile.json',
+  'src/system/Resume.astro',
+  'factory/stations/resume-pdf.mjs',
+];
+const [{ name }] = JSON.parse(readFileSync(join(ROOT, 'src/content/profile.json'), 'utf8'));
+const TITLE = `${name}, Résumé`;
 
 const hash = () => {
   const h = createHash('sha256');
@@ -35,7 +44,7 @@ if (process.argv.includes('--check')) {
   }
   if (have !== want) {
     console.error(
-      '✗ resume pdf: stale. resume.json or profile.json changed since the PDF was made. Run `npm run resume:pdf`.',
+      '✗ resume pdf: stale. The content, Resume.astro or this script changed since the PDF was made. Run `npm run resume:pdf`.',
     );
     process.exit(1);
   }
@@ -85,15 +94,20 @@ try {
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
   // Runs in the page.
   /* global document */
-  await page.evaluate(async () => {
+  // The PDF's title is the document's (no em dash, art. 11).
+  await page.evaluate(async (title) => {
     document.documentElement.classList.add('ln-print-cv');
+    document.title = title;
     await document.fonts.ready;
-  });
+  }, TITLE);
+  // Tagged (structure from the HTML, SC 1.3.1) with an outline from the headings.
   await page.pdf({
     path: PDF,
     format: 'Letter',
     margin: { top: '0.6in', bottom: '0.6in', left: '0.6in', right: '0.6in' },
     printBackground: false,
+    tagged: true,
+    outline: true,
   });
 } finally {
   await browser.close();
