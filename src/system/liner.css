@@ -18,9 +18,6 @@
   --ln-hl: rgb(255 255 255 / 0.11);
   --ln-hl-hover: rgb(255 155 102 / 0.24);
   --ln-groove: rgb(255 255 255 / 0.06);
-  /* Skill badges: a neutral step tinted towards the accent, edged with a plain hairline (WO-025).
-     Recomputed per scope, so light mode and .ln-dark each mix their own accent. */
-  --ln-badge: color-mix(in oklch, var(--ln-accent) 9%, var(--ln-bg-2));
 }
 
 @media (prefers-color-scheme: light) {
