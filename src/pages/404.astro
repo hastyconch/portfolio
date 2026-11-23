@@ -1,4 +1,6 @@
 ---
+// 404: what happened, then two real ways out (WO-027): the home page as the main button and
+// the projects as the second.
 import Shell from '../system/Shell.astro';
 ---
 
@@ -9,9 +11,12 @@ import Shell from '../system/Shell.astro';
     <p class="nf-body">
       There's nothing at this address. The link may be mistyped, or the page may have moved.
     </p>
-    <p>
-      <a class="ln-link" href="/">
+    <p class="nf-ways">
+      <a class="nf-btn nf-home" href="/">
         Go to the home page
+      </a>
+      <a class="nf-btn" href="/#projects">
+        Projects
       </a>
     </p>
   </section>
@@ -31,5 +36,47 @@ import Shell from '../system/Shell.astro';
   .nf-body {
     max-width: 52ch;
     color: var(--ln-ink-2);
+  }
+  .nf-ways {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+  .nf-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-5);
+    border: 1px solid var(--ln-ink);
+    border-radius: var(--radius-2);
+    color: var(--ln-ink);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      border-color var(--dur-quick) var(--ease-out),
+      color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
+  }
+  .nf-btn:hover,
+  .nf-btn:focus-visible {
+    background: var(--ln-ink);
+    color: var(--ln-bg);
+  }
+  .nf-btn:active {
+    scale: var(--press-scale);
+  }
+  /* The main way out: filled. */
+  .nf-home {
+    background: var(--ln-ink);
+    color: var(--ln-bg);
+  }
+  .nf-home:hover,
+  .nf-home:focus-visible {
+    border-color: var(--ln-accent);
+    background: var(--ln-accent);
+    color: var(--ln-accent-ink);
   }
 </style>

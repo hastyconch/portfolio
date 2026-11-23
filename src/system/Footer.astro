@@ -86,7 +86,8 @@ const real = (href: string) => external(href) || href.startsWith('mailto:');
     justify-content: space-between;
     gap: var(--space-4);
     min-height: 60px;
-    padding-inline: var(--space-1);
+    /* Flush: labels start where "Get in touch" and the hairlines start (WO-027). */
+    padding-inline: 0;
     border-bottom: var(--ln-hairline);
   }
   .ft-links a {
@@ -124,8 +125,13 @@ const real = (href: string) => external(href) || href.startsWith('mailto:');
   .ft-links a:focus-visible .ft-arrow {
     translate: var(--move-sm) calc(var(--move-sm) * -1);
   }
+  /* The press tint bleeds a little past the flush text on both sides (shadows, so the hairlines
+     keep their length). */
   .ft-links a:active {
     background: var(--ln-hl);
+    box-shadow:
+      calc(var(--space-2) * -1) 0 var(--ln-hl),
+      var(--space-2) 0 var(--ln-hl);
   }
   .ft-fine {
     display: flex;

@@ -298,16 +298,18 @@ const contents = [
     </div>
 
     <nav class="ln-wrap cs-pager" aria-label="More projects">
-      {prev ? (
+      {prev && (
         <a class="cs-pg" href={`/projects/${prev.id}/`} rel="prev">
           <span class="cs-pg-k">Previous project</span>
           <span class="cs-pg-t">{prev.data.title}</span>
         </a>
-      ) : (
-        <span />
       )}
       {next ? (
-        <a class="cs-pg cs-pg-next" href={`/projects/${next.id}/`} rel="next">
+        <a
+          class:list={['cs-pg cs-pg-next', !prev && 'cs-pg-solo']}
+          href={`/projects/${next.id}/`}
+          rel="next"
+        >
           <span class="cs-pg-k">Next project</span>
           <span class="cs-pg-t">{next.data.title}</span>
         </a>
@@ -776,6 +778,11 @@ const contents = [
       text-align: right;
       grid-column: 2;
     }
+    /* The first project has no previous one: its next link spans the row, so the pager's rule
+       runs the width of the content column instead of starting at its middle (WO-027). */
+    .cs-pg-solo {
+      grid-column: 1 / -1;
+    }
   }
   @media (min-width: 1000px) {
     .cs-head-grid {
@@ -793,6 +800,11 @@ const contents = [
     .cs-body {
       grid-template-columns: 12rem minmax(0, 1fr);
       gap: var(--space-8);
+    }
+    /* The pager sits in the content column, under the sections it follows (the "On this page"
+       column and its gap, past the gutter). */
+    .cs-pager {
+      padding-left: calc(var(--ln-gutter) + 12rem + var(--space-8));
     }
     .cs-toc {
       position: sticky;

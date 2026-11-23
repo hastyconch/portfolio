@@ -322,11 +322,33 @@ const frame = cover?.frame ?? 'browser';
     body.ln .pc-title {
       font-size: var(--text-xl);
     }
+    /* Even lines (WO-027): the card and its body take their rows from the rail (subgrid: art,
+       title, kind, tagline, platforms, stack), so each row starts at the same height on every
+       card, and the stack hairline is level across the rail whatever each card says above it.
+       Rows carry no gaps; the spacing is margins. */
+    .pc {
+      grid-row: span 6;
+      grid-template-rows: subgrid;
+      gap: 0;
+    }
+    .pc-art {
+      margin-bottom: var(--space-4);
+    }
+    .pc-body {
+      grid-row: span 5;
+      grid-template-rows: subgrid;
+      gap: 0;
+    }
+    .pc-body > * + * {
+      margin-top: var(--space-1);
+    }
     .pc-stack {
       display: block;
       padding-top: var(--space-2);
-      margin-top: var(--space-1);
       border-top: var(--ln-hairline);
+    }
+    .pc-body > .pc-stack {
+      margin-top: var(--space-2);
     }
   }
 </style>
