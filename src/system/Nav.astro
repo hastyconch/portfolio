@@ -1,35 +1,170 @@
 ---
-// Site header: the name with a small disc mark, plain section links and a reading-progress bar.
-// Phones get a menu (details/summary, works without JS).
-import type { Profile } from '../lib/content';
+// Site header: the name with a small disc mark, a breadcrumb that says where you are, plain
+// section links and a reading-progress bar. Phones get a menu (details/summary, works without JS).
+// WO-019 wayfinding: the crumb follows the section in view (`Name / Work / Grocer loyalty`), the
+// nav link for that section is marked, and a stepper plus a jump list move between siblings:
+// Work's demo engagements on the home page, every project on a case study. One small script
+// below drives the crumb, the stepper, the jump list and a case study's "On this page" list.
+import { getSiteContent, type Profile } from '../lib/content';
+import ProjectCard from './ProjectCard.astro';
 
 interface Props {
   profile: Profile;
   home: boolean;
+  /** the section a page belongs to (case studies, songs); the home page follows the scroll */
+  section?: string;
+  /** a case study's project id: the crumb's item, the stepper and the jump list */
+  project?: string;
 }
-const { profile, home } = Astro.props;
+const { profile, home, section, project } = Astro.props;
 const base = home ? '' : '/';
 const links = [
-  { href: `${base}#work`, label: 'Work' },
-  { href: `${base}#projects`, label: 'Projects' },
-  { href: `${base}#music`, label: 'Music' },
-  { href: `${base}#resume`, label: 'Résumé' },
-  { href: `${base}#contact`, label: 'Contact' },
-];
+  { id: 'work', label: 'Work' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'music', label: 'Music' },
+  { id: 'resume', label: 'Résumé' },
+  { id: 'contact', label: 'Contact' },
+].map((l) => ({ ...l, href: `${base}#${l.id}` }));
+const here = links.find((l) => l.id === section);
+
+const { work, projects } = await getSiteContent();
+// Home: Work's demo engagements, then the compact list. Labels are the crumb's short names.
+const featured = work.filter((w) => w.data.demo !== 'none');
+const stops = home
+  ? [
+      ...featured.map((w) => ({ target: `work-${w.id}`, label: w.data.short ?? w.data.title })),
+      ...(featured.length < work.length
+        ? [{ target: 'work-more-h', label: 'More client work' }]
+        : []),
+    ]
+  : [];
+// Case study: its place in the projects order.
+const pi = project ? projects.findIndex((p) => p.id === project) : -1;
+const cur = projects[pi];
+const prev = projects[pi - 1];
+const next = projects[pi + 1];
+const jump = stops.length > 0 || !!cur;
 ---
 
-<header class="np">
+<header class="np" data-home={home ? '' : undefined} data-deep={cur ? '' : undefined}>
   <div class="np-bar">
-    <a class="np-brand" href={`${base}#hero`}>
-      <span class="np-disc" aria-hidden="true"></span>
-      <span>{profile.name}</span>
-    </a>
+    <nav class="np-crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li class="np-c-home">
+          <a class="np-brand" href={`${base}#hero`}>
+            <span class="np-disc" aria-hidden="true"></span>
+            <span class="np-name">{profile.name}</span>
+          </a>
+        </li>
+        <li class="np-c np-c-sec" hidden={!here}>
+          <span class="np-sep" aria-hidden="true">
+            /
+          </span>
+          <a class="np-sec" href={here?.href ?? '#work'}>
+            {here?.label}
+          </a>
+        </li>
+        {jump && (
+          <li class="np-c np-c-item" hidden={!cur}>
+            <span class="np-sep" aria-hidden="true">
+              /
+            </span>
+            <button
+              type="button"
+              class="np-trigger"
+              popovertarget="np-jump"
+              aria-current="location"
+            >
+              <span class="np-item">{cur?.data.title}</span>
+              <span class="np-caret" aria-hidden="true" />
+            </button>
+            {cur ? (
+              <span class="np-step">
+                {prev ? (
+                  <a
+                    class="np-arrow np-prev"
+                    href={`/projects/${prev.id}/`}
+                    rel="prev"
+                    aria-label={`Previous project: ${prev.data.title}`}
+                  />
+                ) : (
+                  <span class="np-arrow np-prev" aria-hidden="true" data-off />
+                )}
+                <span class="np-count ln-num" aria-hidden="true">
+                  {pi + 1} / {projects.length}
+                </span>
+                {next ? (
+                  <a
+                    class="np-arrow np-next"
+                    href={`/projects/${next.id}/`}
+                    rel="next"
+                    aria-label={`Next project: ${next.data.title}`}
+                  />
+                ) : (
+                  <span class="np-arrow np-next" aria-hidden="true" data-off />
+                )}
+              </span>
+            ) : (
+              <span class="np-step">
+                <button
+                  type="button"
+                  class="np-arrow np-prev"
+                  data-step="-1"
+                  aria-label="Previous engagement"
+                />
+                <span class="np-count ln-num" aria-hidden="true" />
+                <button
+                  type="button"
+                  class="np-arrow np-next"
+                  data-step="1"
+                  aria-label="Next engagement"
+                />
+              </span>
+            )}
+          </li>
+        )}
+      </ol>
+    </nav>
+
+    {jump && (
+      <div class="np-jump" id="np-jump" popover>
+        <p class="label np-jump-h" id="np-jump-h">
+          {cur ? 'Projects' : 'Work'}
+        </p>
+        <ul aria-labelledby="np-jump-h">
+          {cur
+            ? projects.map((p) => (
+                <li>
+                  <a
+                    href={`/projects/${p.id}/`}
+                    aria-current={p.id === cur.id ? 'page' : undefined}
+                  >
+                    <ProjectCard project={p} thumb />
+                    <span class="np-jump-t">
+                      <span>{p.data.title}</span>
+                      <span class="np-jump-f">{p.data.category}</span>
+                    </span>
+                  </a>
+                </li>
+              ))
+            : stops.map((s) => (
+                <li>
+                  <a href={`#${s.target}`} data-target={s.target}>
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+        </ul>
+      </div>
+    )}
 
     <nav class="np-nav" aria-label="Sections">
       <ul class="np-links">
         {links.map((l) => (
           <li>
-            <a href={l.href}>{l.label}</a>
+            <a href={l.href} aria-current={l.id === section ? 'true' : undefined}>
+              {l.label}
+            </a>
           </li>
         ))}
       </ul>
@@ -44,7 +179,9 @@ const links = [
         <ul class="np-menu-list">
           {links.map((l) => (
             <li>
-              <a href={l.href}>{l.label}</a>
+              <a href={l.href} aria-current={l.id === section ? 'true' : undefined}>
+                {l.label}
+              </a>
             </li>
           ))}
         </ul>
@@ -68,6 +205,198 @@ const links = [
       menu.querySelector('summary')?.focus();
     }
   });
+
+  // Wayfinding (WO-019). One observer for the section, the Work pane and a case study's
+  // "On this page" list: the current target is the last one whose top has crossed a line a
+  // quarter of the way down the view, under the header.
+  const header = document.querySelector<HTMLElement>('.np')!;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+  function spy(targets: HTMLElement[], onChange: (i: number) => void) {
+    let cur = -2;
+    let io: IntersectionObserver | undefined;
+    const line = () => {
+      const h = header.offsetHeight;
+      return Math.round(h + (innerHeight - h) / 4);
+    };
+    const update = () => {
+      const y = line();
+      let i = -1;
+      targets.forEach((t, k) => {
+        if (t.getBoundingClientRect().top <= y) i = k;
+      });
+      // At the very bottom the last target counts, even if it is too short to reach the line.
+      const doc = document.documentElement;
+      const last = targets[targets.length - 1].getBoundingClientRect();
+      if (i >= 0 && innerHeight + scrollY >= doc.scrollHeight - 4 && last.top < innerHeight) {
+        i = targets.length - 1;
+      }
+      if (i !== cur) onChange((cur = i));
+    };
+    const observe = () => {
+      io?.disconnect();
+      const y = line();
+      io = new IntersectionObserver(update, {
+        rootMargin: `-${y}px 0px -${Math.max(0, innerHeight - y - 1)}px 0px`,
+      });
+      targets.forEach((t) => io!.observe(t));
+    };
+    observe();
+    addEventListener('resize', observe, { passive: true });
+    addEventListener('scrollend', update, { passive: true });
+  }
+
+  // New crumb text arrives as one short slide and fade (an instant swap under reduced motion).
+  function swap(el: HTMLElement, text: string) {
+    if (el.textContent === text) return;
+    el.textContent = text;
+    el.classList.remove('np-swap');
+    void el.offsetWidth;
+    el.classList.add('np-swap');
+  }
+  function mark(els: Element[], on: (el: Element) => boolean, value = 'true') {
+    els.forEach((el) =>
+      on(el) ? el.setAttribute('aria-current', value) : el.removeAttribute('aria-current'),
+    );
+  }
+
+  const secLi = header.querySelector<HTMLElement>('.np-c-sec');
+  const secA = secLi?.querySelector<HTMLAnchorElement>('a');
+  const itemLi = header.querySelector<HTMLElement>('.np-c-item');
+  const itemT = header.querySelector<HTMLElement>('.np-item');
+  const trigger = header.querySelector<HTMLButtonElement>('.np-trigger');
+  const jump = document.getElementById('np-jump');
+  const jumpLinks = [...(jump?.querySelectorAll<HTMLAnchorElement>('a') ?? [])];
+
+  // Home: the section in view marks its nav link and names the crumb; inside Work, the pane.
+  const navLinks = [...header.querySelectorAll<HTMLAnchorElement>('.np-links a, .np-menu-list a')];
+  const sections = header.hasAttribute('data-home')
+    ? [...header.querySelectorAll<HTMLAnchorElement>('.np-links a')].flatMap((a) => {
+        const el = document.getElementById(a.hash.slice(1));
+        return el ? [{ id: el.id, label: a.textContent!.trim(), el }] : [];
+      })
+    : [];
+  const stops = jumpLinks.flatMap((a) => {
+    const h = a.dataset.target ? document.getElementById(a.dataset.target) : null;
+    const pane = h?.closest<HTMLElement>('.wk, .wk-more');
+    return h && pane ? [{ a, h, pane, label: a.textContent!.trim() }] : [];
+  });
+  const panes = stops.filter((s) => s.pane.matches('.wk')).length;
+  const prevB = header.querySelector<HTMLButtonElement>('button.np-prev');
+  const nextB = header.querySelector<HTMLButtonElement>('button.np-next');
+  const count = header.querySelector<HTMLElement>('.np-count');
+  let section = '';
+  let item = -1;
+  let pending: number | null = null;
+
+  function renderItem() {
+    if (!itemLi || !itemT || !stops.length) return;
+    const show = section === 'work' && item >= 0;
+    itemLi.hidden = !show;
+    mark(
+      stops.map((s) => s.a),
+      (a) => show && a === stops[item].a,
+    );
+    if (!show) return;
+    swap(itemT, stops[item].label);
+    if (count) count.textContent = item < panes ? `${item + 1} / ${panes}` : '';
+    const p = stops[item - 1];
+    const n = stops[item + 1];
+    if (prevB) {
+      prevB.disabled = !p;
+      prevB.setAttribute(
+        'aria-label',
+        p ? `Previous engagement: ${p.label}` : 'Previous engagement',
+      );
+    }
+    if (nextB) {
+      nextB.disabled = !n;
+      const kind = item + 1 < panes ? 'Next engagement' : 'Next';
+      nextB.setAttribute('aria-label', n ? `${kind}: ${n.label}` : 'Next engagement');
+    }
+  }
+
+  if (sections.length) {
+    spy(
+      sections.map((s) => s.el),
+      (i) => {
+        const s = sections[i];
+        section = s?.id ?? '';
+        mark(navLinks, (a) => !!s && (a as HTMLAnchorElement).hash === `#${s.id}`);
+        if (secLi && secA) {
+          secLi.hidden = !s;
+          if (s) {
+            secA.href = `#${s.id}`;
+            swap(secA, s.label);
+          }
+        }
+        renderItem();
+      },
+    );
+  }
+
+  // Previous and next scroll the pane into view (the snap settles it) and put focus on its
+  // heading, so keyboard users land in the right place.
+  function go(i: number) {
+    const s = stops[i];
+    if (!s) return;
+    if (jump?.matches(':popover-open')) jump.hidePopover();
+    pending = i;
+    s.pane.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'start' });
+    s.h.focus({ preventScroll: true });
+  }
+  if (stops.length) {
+    spy(
+      stops.map((s) => s.pane),
+      (i) => {
+        item = i;
+        if (pending === i) pending = null;
+        renderItem();
+      },
+    );
+    addEventListener('scrollend', () => (pending = null));
+    for (const b of [prevB, nextB]) {
+      b?.addEventListener('click', () => go((pending ?? item) + Number(b.dataset.step)));
+    }
+    stops.forEach((s, i) =>
+      s.a.addEventListener('click', (e) => {
+        e.preventDefault();
+        go(i);
+      }),
+    );
+  }
+
+  // The jump list opens under its trigger with focus on the current entry. Arrow keys move
+  // through it; Escape closes it and the browser returns focus to the trigger.
+  if (jump && trigger) {
+    jump.addEventListener('beforetoggle', (e) => {
+      if ((e as ToggleEvent).newState !== 'open') return;
+      jump.style.setProperty('--jx', `${Math.round(trigger.getBoundingClientRect().left)}px`);
+    });
+    jump.addEventListener('toggle', (e) => {
+      if ((e as ToggleEvent).newState !== 'open') return;
+      (jumpLinks.find((a) => a.hasAttribute('aria-current')) ?? jumpLinks[0])?.focus();
+    });
+    jump.addEventListener('keydown', (e) => {
+      const i = jumpLinks.indexOf(document.activeElement as HTMLAnchorElement);
+      const keys: Record<string, number> = {
+        ArrowDown: i + 1,
+        ArrowUp: i - 1,
+        Home: 0,
+        End: jumpLinks.length - 1,
+      };
+      if (!(e.key in keys)) return;
+      e.preventDefault();
+      jumpLinks[(keys[e.key] + jumpLinks.length) % jumpLinks.length]?.focus();
+    });
+  }
+
+  // A case study's "On this page" list marks the section in view.
+  const toc = [...document.querySelectorAll<HTMLAnchorElement>('.cs-toc a[href^="#"]')];
+  const tocTargets = toc.flatMap((a) => document.getElementById(a.hash.slice(1)) ?? []);
+  if (toc.length && tocTargets.length === toc.length) {
+    spy(tocTargets, (i) => mark(toc, (a) => a === toc[i]));
+  }
 </script>
 
 <style>
@@ -79,6 +408,8 @@ const links = [
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-bottom: var(--ln-hairline);
+    /* It holds still while a page changes underneath it (cross-document view transitions). */
+    view-transition-name: site-header;
   }
   .np-bar {
     display: flex;
@@ -100,6 +431,7 @@ const links = [
     font-weight: 700;
     font-size: var(--text-md);
     letter-spacing: var(--tracking-title);
+    white-space: nowrap;
   }
   .np-disc {
     width: 26px;
@@ -130,9 +462,271 @@ const links = [
     scale: var(--press-scale);
   }
 
+  /* Breadcrumb: it takes the space between the name and the links, so a change of crumb never
+     moves the links; long names truncate. */
+  .np-crumbs {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .np-crumbs ol {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    white-space: nowrap;
+  }
+  .np-c-home {
+    flex: none;
+  }
+  .np-c {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .np-c[hidden] {
+    display: none;
+  }
+  .np-c-sec {
+    flex: none;
+  }
+  .np-sep {
+    color: var(--ln-ink-3);
+    font-size: var(--text-sm);
+  }
+  .np-sec,
+  .np-trigger {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  .np-sec {
+    color: var(--ln-ink-2);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+    transition:
+      color var(--dur-quick) var(--ease-out),
+      text-decoration-color var(--dur-quick) var(--ease-out);
+  }
+  .np-sec:hover,
+  .np-sec:focus-visible {
+    color: var(--ln-ink);
+    text-decoration-color: currentColor;
+  }
+  .np-sec:active {
+    color: var(--ln-ink-3);
+  }
+  /* The item: the current place, and the trigger for the jump list. */
+  .np-trigger {
+    gap: var(--space-2);
+    min-width: 0;
+    margin-inline: calc(var(--space-2) * -1) 0;
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-2);
+    background: transparent;
+    color: var(--ln-ink);
+    font-family: inherit;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
+  }
+  .np-trigger:hover,
+  .np-trigger:focus-visible,
+  .np:has(.np-jump:popover-open) .np-trigger {
+    background: var(--ln-hl);
+  }
+  .np-trigger:active {
+    scale: var(--press-scale);
+  }
+  .np-item {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .np-caret {
+    flex: none;
+    width: 0.4em;
+    height: 0.4em;
+    margin-top: -0.2em;
+    border-right: 2px solid var(--ln-ink-3);
+    border-bottom: 2px solid var(--ln-ink-3);
+    rotate: 45deg;
+    transition: rotate var(--dur-quick) var(--ease-out);
+  }
+  .np:has(.np-jump:popover-open) .np-caret {
+    margin-top: 0.2em;
+    rotate: 225deg;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .np-swap {
+      animation: np-swap var(--dur-base) var(--ease-out);
+    }
+  }
+  @keyframes np-swap {
+    from {
+      opacity: 0;
+      translate: 0 calc((var(--move-sm) + var(--move-md)) / 2);
+    }
+  }
+
+  /* Stepper: previous, "2 / 4", next. Laptops and tablets only. */
+  .np-step {
+    display: none;
+    flex: none;
+    align-items: center;
+  }
+  .np-arrow {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-2);
+    background: transparent;
+    color: var(--ln-ink-2);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
+  }
+  .np-arrow::before {
+    content: '';
+    width: 0.45em;
+    height: 0.45em;
+    border-left: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    rotate: 45deg;
+    translate: 0.1em 0;
+  }
+  .np-next::before {
+    rotate: -135deg;
+    translate: -0.1em 0;
+  }
+  .np-arrow:is(a, :enabled):hover,
+  .np-arrow:is(a, :enabled):focus-visible {
+    background: var(--ln-hl);
+    color: var(--ln-ink);
+  }
+  .np-arrow:is(a, :enabled):active {
+    scale: var(--press-scale);
+  }
+  .np-arrow:disabled,
+  .np-arrow[data-off] {
+    color: var(--ln-rule);
+    cursor: default;
+  }
+  .np-count {
+    min-width: 3.25em;
+    font-size: var(--text-xs);
+    color: var(--ln-ink-3);
+    text-align: center;
+  }
+
+  /* Jump list: a small popover under the trigger. */
+  .np-jump {
+    --jw: min(20rem, calc(100vw - 2 * var(--ln-gutter)));
+    position: fixed;
+    inset: auto;
+    top: calc(var(--ln-header) - var(--space-1));
+    left: clamp(var(--space-4), var(--jx, 0px), 100vw - var(--jw) - var(--space-4));
+    width: var(--jw);
+    max-height: calc(100svh - var(--ln-header) - var(--space-5));
+    overflow: auto;
+    margin: 0;
+    padding: var(--space-2);
+    border: var(--ln-hairline);
+    border-radius: var(--radius-3);
+    background: var(--ln-bg);
+    color: var(--ln-ink);
+    box-shadow: var(--shadow-2);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .np-jump:popover-open {
+      animation: np-pop var(--dur-base) var(--ease-out);
+    }
+  }
+  @keyframes np-pop {
+    from {
+      opacity: 0;
+      translate: 0 calc(var(--move-sm) * -1);
+    }
+  }
+  /* Browsers without popovers keep the stepper and the pager. */
+  @supports not selector(:popover-open) {
+    .np-jump,
+    .np-caret {
+      display: none;
+    }
+  }
+  .np-jump-h {
+    margin: var(--space-2) var(--space-3) var(--space-1);
+  }
+  .np-jump ul {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .np-jump a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    color: var(--ln-ink-2);
+    text-decoration: none;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      color var(--dur-quick) var(--ease-out);
+  }
+  .np-jump a:hover,
+  .np-jump a:focus-visible {
+    background: var(--ln-hl);
+    color: var(--ln-ink);
+  }
+  .np-jump a:active {
+    background: var(--ln-hl-hover);
+  }
+  body.ln .np-jump a:focus-visible {
+    outline-offset: calc(var(--focus-width) * -1);
+  }
+  .np-jump a[aria-current] {
+    color: var(--ln-ink);
+    box-shadow: inset 2px 0 var(--ln-accent);
+  }
+  .np-jump-t {
+    display: grid;
+    min-width: 0;
+  }
+  .np-jump-f {
+    font-size: var(--text-xs);
+    font-weight: 400;
+    color: var(--ln-ink-3);
+    text-transform: capitalize;
+  }
+
   /* Phone menu */
   .np-links {
     display: none;
+  }
+  .np-nav {
+    flex: none;
   }
   .np-menu summary {
     display: inline-flex;
@@ -189,6 +783,7 @@ const links = [
   .np-menu-list a {
     display: flex;
     align-items: center;
+    gap: var(--space-3);
     min-height: 52px;
     border-bottom: var(--ln-hairline);
     font-family: var(--ln-display);
@@ -207,6 +802,14 @@ const links = [
   }
   .np-menu-list a:active {
     background: var(--ln-hl);
+  }
+  /* The current section: an accent edge before its name. */
+  .np-menu-list a[aria-current]::before {
+    content: '';
+    width: 3px;
+    height: 1.1em;
+    border-radius: var(--radius-1);
+    background: var(--ln-accent);
   }
 
   /* Reading progress */
@@ -236,6 +839,28 @@ const links = [
   @keyframes np-grow {
     to {
       transform: scaleX(1);
+    }
+  }
+
+  /* Phones: on a case study the name folds to its disc, so the disc, "/ Projects / Billable."
+     and the menu fit on one line. */
+  @media (max-width: 759px) {
+    .np[data-deep] .np-name {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    /* Home: the section only; the engagement stepper and list are for wider screens. */
+    .np[data-home] .np-c-item {
+      display: none;
+    }
+  }
+  @media (min-width: 760px) {
+    .np-step {
+      display: inline-flex;
     }
   }
 
@@ -274,6 +899,11 @@ const links = [
     }
     .np-links a:active {
       background: var(--ln-hl);
+    }
+    /* The section you are in: the hover underline, in the accent, at full ink. */
+    .np-links a[aria-current] {
+      color: var(--ln-ink);
+      text-decoration-color: var(--ln-accent);
     }
   }
 </style>

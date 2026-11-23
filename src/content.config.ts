@@ -38,6 +38,7 @@ const work = defineCollection({
   loader: glob({ pattern: '*.md', base: 'src/content/work' }),
   schema: z.object({
     title: z.string(),
+    short: z.string().optional(), // the header crumb's name for it; falls back to title
     sector: z.string(),
     kicker: z.string(), // one-line framing for cards
     years: z.string(),

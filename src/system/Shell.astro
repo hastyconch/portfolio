@@ -20,9 +20,22 @@ interface Props {
   /** true on the one-page home, so nav links are plain fragments */
   home?: boolean;
   noindex?: boolean;
+  /** a case study's project id, for the header's crumb, stepper and jump list */
+  project?: string;
 }
-const { title, description, home = false, noindex = false } = Astro.props;
-const { profile } = await getSiteContent();
+const { title, description, home = false, noindex = false, project } = Astro.props;
+const { profile, projects } = await getSiteContent();
+// The section a deep page belongs to: its nav link is marked and its crumb shown.
+const path = Astro.url.pathname;
+const section = path.startsWith('/projects/')
+  ? 'projects'
+  : path.startsWith('/music/')
+    ? 'music'
+    : undefined;
+// Cross-document view transitions (WO-019, CSS in liner.css). This runs before first render:
+// between case studies it sets the direction (`fwd` or `back`, from the projects order), and
+// between a project card and its case study it names that one art `art-<id>` so it morphs.
+const order = projects.map((p) => p.id);
 const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · ${profile.headline}`;
 ---
 
@@ -34,7 +47,38 @@ const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · ${
 >
   <link slot="head" rel="preload" href={bricolageFont} as="font" type="font/woff2" crossorigin />
   <link slot="head" rel="preload" href={dmSansFont} as="font" type="font/woff2" crossorigin />
-  <Nav slot="header" profile={profile} home={home} />
+  {project && <link slot="head" rel="expect" href="#cs-art" blocking="render" />}
+  <script slot="head" is:inline define:vars={{ order }}>
+    const path = (u) => new URL(u, location.href).pathname;
+    const pid = (u) => (path(u).match(/^\/projects\/([^/]+)\/$/) || [])[1];
+    const name = (id, vt) => {
+      document.querySelectorAll('[data-art]').forEach((el) => (el.style.viewTransitionName = ''));
+      const el = id && document.querySelector(`[data-art="${id}"]`);
+      if (!el) return;
+      el.style.viewTransitionName = `art-${id}`;
+      vt.finished.finally(() => (el.style.viewTransitionName = ''));
+    };
+    addEventListener('pageswap', (e) => {
+      const vt = e.viewTransition;
+      const to = e.activation?.entry?.url;
+      if (!vt || !to) return;
+      if (path(location.href) === '/') name(pid(to), vt);
+      else if (path(to) === '/') name(pid(location.href), vt);
+    });
+    addEventListener('pagereveal', (e) => {
+      const vt = e.viewTransition;
+      const from = window.navigation?.activation?.from?.url;
+      if (!vt || !from) return;
+      const f = pid(from);
+      const t = pid(location.href);
+      if (f && t && vt.types) {
+        vt.types.add('cs');
+        vt.types.add(order.indexOf(t) < order.indexOf(f) ? 'back' : 'fwd');
+      } else if (path(from) === '/') name(t, vt);
+      else if (path(location.href) === '/') name(f, vt);
+    });
+  </script>
+  <Nav slot="header" profile={profile} home={home} section={section} project={project} />
   <slot />
   <Footer slot="footer" profile={profile} />
 </Base>
