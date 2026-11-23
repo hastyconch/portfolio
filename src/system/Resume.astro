@@ -1,9 +1,12 @@
 ---
 // Résumé: experience beside capabilities and education. Print-friendly.
-// WO-024: "Download PDF" serves /resume.pdf, generated from this section's print view by
+// WO-024: the download link serves /resume.pdf, generated from this section's print view by
 // factory/stations/resume-pdf.mjs (npm run resume:pdf).
 // WO-026: the actions have their own row under the heading (Download is the primary button,
 // Print a quieter text button), and the print view fits on two Letter pages.
+// WO-030: "Download résumé (PDF)", and in print the name is the level-1 heading (so the PDF's tag
+// tree starts with H1, "Résumé" an H2 under it). It is a role, not an <h1>: the print head is
+// display: none on screen, and the page keeps its one <h1> (the hero's).
 import { getSiteContent, type Resume } from '../lib/content';
 import SideHead from './SideHead.astro';
 import Placeholder from './Placeholder.astro';
@@ -25,7 +28,9 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
 <section id="resume" class="ln-sec resume" aria-labelledby="resume-h">
   <div class="ln-wrap">
     <div class="cv-print-head">
-      <p class="cv-print-name">{profile.name}</p>
+      <p class="cv-print-name" role="heading" aria-level="1">
+        {profile.name}
+      </p>
       <p>{[profile.roleLine, profile.location, ...contacts].join(' · ')}</p>
       {resume.status === 'placeholder' && <p class="cv-print-draft">Draft: some details to come</p>}
     </div>
@@ -38,7 +43,7 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
       )}
       <div class="cv-actions">
         <a class="cv-btn" href="/resume.pdf" download={file}>
-          Download PDF
+          Download résumé (PDF)
         </a>
         <button type="button" class="cv-text-btn" data-print>
           Print résumé
