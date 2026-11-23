@@ -49,33 +49,25 @@ const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · ${
   <link slot="head" rel="preload" href={dmSansFont} as="font" type="font/woff2" crossorigin />
   {project && <link slot="head" rel="expect" href="#cs-art" blocking="render" />}
   <script slot="head" is:inline define:vars={{ order }}>
-    const path = (u) => new URL(u, location.href).pathname;
-    const pid = (u) => (path(u).match(/^\/projects\/([^/]+)\/$/) || [])[1];
-    const name = (id, vt) => {
-      document.querySelectorAll('[data-art]').forEach((el) => (el.style.viewTransitionName = ''));
-      const el = id && document.querySelector(`[data-art="${id}"]`);
-      if (!el) return;
-      el.style.viewTransitionName = `art-${id}`;
-      vt.finished.finally(() => (el.style.viewTransitionName = ''));
-    };
-    addEventListener('pageswap', (e) => {
-      const vt = e.viewTransition;
-      const to = e.activation?.entry?.url;
-      if (!vt || !to) return;
-      if (path(location.href) === '/') name(pid(to), vt);
-      else if (path(to) === '/') name(pid(location.href), vt);
+    const at = (u) => new URL(u, location.href).pathname;
+    const pid = (u) => at(u).match(/^\/projects\/([^/]+)\/$/)?.[1];
+    const name = (k) =>
+      document.querySelectorAll('[data-art]').forEach((el) => {
+        el.style.viewTransitionName = el.dataset.art === k ? `art-${k}` : '';
+      });
+    addEventListener('pageswap', ({ viewTransition: vt, activation: a }) => {
+      const to = a?.entry?.url;
+      const here = location.href;
+      if (vt && to) name(at(here) === '/' ? pid(to) : at(to) === '/' && pid(here));
     });
-    addEventListener('pagereveal', (e) => {
-      const vt = e.viewTransition;
+    addEventListener('pagereveal', ({ viewTransition: vt }) => {
       const from = window.navigation?.activation?.from?.url;
       if (!vt || !from) return;
       const f = pid(from);
       const t = pid(location.href);
-      if (f && t && vt.types) {
-        vt.types.add('cs');
-        vt.types.add(order.indexOf(t) < order.indexOf(f) ? 'back' : 'fwd');
-      } else if (path(from) === '/') name(t, vt);
-      else if (path(location.href) === '/') name(f, vt);
+      if (f && t) vt.types?.add('cs').add(order.indexOf(t) < order.indexOf(f) ? 'back' : 'fwd');
+      else name(at(from) === '/' ? t : at(location.href) === '/' && f);
+      vt.finished.finally(() => name());
     });
   </script>
   <Nav slot="header" profile={profile} home={home} section={section} project={project} />
