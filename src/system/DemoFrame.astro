@@ -50,12 +50,15 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
     justify-items: center;
     gap: var(--space-3);
   }
+  /* Both shrink with their column (WO-024): a demo's own minimum never widens the page. */
   .df-device {
     position: relative;
     width: 100%;
+    min-width: 0;
   }
   .df-screen {
     position: relative;
+    min-width: 0;
     overflow: hidden;
     background: var(--ln-bg-2);
   }
@@ -92,6 +95,24 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
   .df-phone.df-lg .df-screen > :global(*) > :global(*) {
     height: 100%;
     min-height: 0;
+  }
+  /* Narrow phones (under 360px): the bezel goes, so the screen keeps the column's full width. */
+  @media (max-width: 359.98px) {
+    .df-phone.df-lg .df-device {
+      padding: 0;
+      border-radius: var(--df-r);
+      box-shadow:
+        0 0 0 1px #000,
+        var(--shadow-2);
+    }
+    .df-phone.df-lg .df-screen {
+      height: var(--df-ph);
+    }
+  }
+  @media (max-width: 359.98px) {
+    .df-phone.df-lg .df-island {
+      top: 10px;
+    }
   }
   .df-island {
     position: absolute;

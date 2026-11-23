@@ -27,6 +27,7 @@ gate "copy tells"     npm run -s tastelint
 gate "craft (art. 12)" npm run -s craft
 gate "private leak"   bash -c '! grep -rIl --include="*" -e "private/" dist/ 2>/dev/null | grep -q .'
 gate "internal links" npm run -s links
+gate "resume pdf"     npm run -s resume:check
 gate "e2e+a11y+shots" npx playwright test
 if [[ $QUICK == 0 ]]; then
   gate "lighthouse"   npx lhci autorun --config=lighthouserc.cjs
