@@ -8,6 +8,7 @@ import {
   useId,
   useRef,
   useState,
+  type FocusEvent,
   type KeyboardEvent,
   type PointerEvent,
 } from 'react';
@@ -41,6 +42,7 @@ export default function BillableMini() {
   const goalId = `${base}-goal`;
   const controlsId = `${base}-controls`;
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayButtonRef = useRef<HTMLButtonElement>(null);
@@ -58,9 +60,11 @@ export default function BillableMini() {
   // Tear the game down if the island unmounts.
   useEffect(() => () => handleRef.current?.destroy(), []);
 
-  // Focus follows state: into the game while playing, onto the overlay button otherwise.
+  // Focus follows state: into the game while playing, onto the overlay button otherwise. A pause
+  // from focus leaving the game (below) leaves focus where the visitor sent it.
   useEffect(() => {
     if (status === 'playing') canvasRef.current?.focus();
+    if (status === 'paused' && !rootRef.current?.contains(document.activeElement)) return;
     if (status === 'paused' || status === 'cleared' || status === 'error')
       overlayButtonRef.current?.focus();
   }, [status]);
@@ -144,6 +148,18 @@ export default function BillableMini() {
     handleRef.current?.replay();
   }
 
+  // Pause when focus leaves the game (WO-025): Tab past it, or a click elsewhere on the page.
+  // Focus moving within it (the Pause button, the on-screen pad) doesn't count. Checked a tick
+  // later, once React has moved focus itself (Resume hands focus back to the canvas).
+  function onBlur(e: FocusEvent<HTMLDivElement>) {
+    if (statusRef.current !== 'playing') return;
+    if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return;
+    setTimeout(() => {
+      const root = rootRef.current;
+      if (root && !root.contains(document.activeElement)) pause();
+    }, 0);
+  }
+
   function onCanvasKey(e: KeyboardEvent<HTMLCanvasElement>) {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -171,7 +187,13 @@ export default function BillableMini() {
   const live = status === 'playing' || status === 'paused';
 
   return (
-    <div className="bm" data-hydrated={hydrated ? '' : undefined} data-status={status}>
+    <div
+      className="bm"
+      ref={rootRef}
+      data-hydrated={hydrated ? '' : undefined}
+      data-status={status}
+      onBlur={onBlur}
+    >
       <div className="bm-main">
         <p className="bm-hud">
           <span className="bm-stat">

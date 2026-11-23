@@ -288,7 +288,8 @@ export default function AirlineDemo() {
           <div className={`sky-home${counted ? '' : ' is-first'}`}>
             <p className="sky-hello">Good evening, {member.first}</p>
 
-            <section
+            <div
+              role="group"
               className="sky-mcard"
               data-side={pass ? 'pass' : 'front'}
               aria-label="Member card"
@@ -329,9 +330,9 @@ export default function AirlineDemo() {
                   {member.name} · {member.number}
                 </span>
               </div>
-            </section>
+            </div>
 
-            <section className="sky-meter" aria-label={`Progress to ${member.next}`}>
+            <div role="group" className="sky-meter" aria-label={`Progress to ${member.next}`}>
               <div className="sky-meter-head">
                 <strong>
                   {fmt(toNext)} SQM to {member.next}
@@ -359,7 +360,7 @@ export default function AirlineDemo() {
                   {member.next} · {fmt(platinum.at / 1000)}k
                 </span>
               </div>
-            </section>
+            </div>
 
             <ul className="sky-actions" aria-label="Quick actions">
               <li>
@@ -396,7 +397,8 @@ export default function AirlineDemo() {
               </li>
             </ul>
 
-            <section
+            <div
+              role="group"
               className="sky-trip"
               aria-label={next.reward ? 'Your reward trip' : 'Next trip'}
             >
@@ -438,13 +440,13 @@ export default function AirlineDemo() {
                   <dd>{next.boards}</dd>
                 </div>
               </dl>
-            </section>
+            </div>
           </div>
         )}
 
         {tab === 'status' && (
           <div className="sky-status">
-            <section className="sky-hero" aria-label="Qualifying progress">
+            <div role="group" className="sky-hero" aria-label="Qualifying progress">
               <div
                 className="sky-ring"
                 role="progressbar"
@@ -471,7 +473,7 @@ export default function AirlineDemo() {
                   {fmt(toNext)} more for {member.next}. Status qualifying miles reset Dec 31.
                 </span>
               </div>
-            </section>
+            </div>
 
             <ol className="sky-ladder" aria-label="Tiers and their perks">
               {tiers.map((t) => {

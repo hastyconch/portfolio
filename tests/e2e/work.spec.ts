@@ -84,6 +84,66 @@ test('work wheel is never trapped', async ({ page, isMobile }) => {
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 400);
 });
 
+// WO-025: the wide demos' frames don't trap the wheel. With the pointer over the Scheduler or the
+// Pipeline, the page keeps scrolling: a frame its content fits doesn't scroll at all, and there is
+// no overscroll containment.
+const WIDE = ['.df-screen:has(.sch-app)', '.df-screen:has(.pl)'];
+
+test('work wheel passes over demos', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'a mouse wheel');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  for (const sel of WIDE) {
+    const screen = page.locator(`#work ${sel}`);
+    await screen.scrollIntoViewIfNeeded();
+    await expect(screen.locator('astro-island')).not.toHaveAttribute('ssr');
+    const box = (await screen.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, Math.max(box.y + 60, 200));
+    const start = await page.evaluate(() => window.scrollY);
+    for (let i = 0; i < 10; i++) {
+      await page.mouse.wheel(0, 100);
+      await page.waitForTimeout(60);
+    }
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), { message: `wheel over ${sel}` })
+      .toBeGreaterThanOrEqual(start + 800);
+  }
+});
+
+test('work swipe passes over demos', async ({ page, context, isMobile }) => {
+  test.skip(!isMobile, 'a touch swipe on a phone');
+  await page.goto('/');
+  const screen = page.locator(`#work ${WIDE[0]}`);
+  const article = page.locator('#work article').filter({ has: page.locator('.sch-app') });
+  await article.getByRole('button', { name: /^Try the demo/ }).click();
+  await expect(screen.locator('astro-island')).not.toHaveAttribute('ssr');
+  // Put a point 150px into the expanded scheduler at y = 600, then swipe up 300px from there.
+  await page.evaluate((sel) => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    const top = document.querySelector(sel)!.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(0, top + 150 - 600);
+  }, `#work ${WIDE[0]}`);
+  const start = await page.evaluate(() => window.scrollY);
+  expect(
+    await page.evaluate(() => !!document.elementFromPoint(187, 600)?.closest('.df-screen')),
+    'the swipe starts over the demo',
+  ).toBe(true);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: 187, y: 600 }],
+  });
+  for (let i = 1; i <= 15; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: 187, y: 600 - i * 20 }],
+    });
+    await page.waitForTimeout(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 200);
+});
+
 test('skill badges are text, not controls', async ({ page }) => {
   await page.goto('/');
   const badges = page.locator('#work .wk-badges li');
@@ -98,6 +158,73 @@ test('skill badges are text, not controls', async ({ page }) => {
   await expect(
     page.getByRole('list', { name: 'Skills Airline loyalty program' }).getByRole('listitem'),
   ).toHaveCount(4);
+});
+
+// WO-025: skill tags are quiet (a neutral hairline, no accent edge), so the phone "Try the demo"
+// button is the one thing that reads as a control. Its name is "Try the demo: {name}" and its one
+// line is the description.
+test('work demo button and tags', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const accent = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--ln-accent)';
+    document.querySelector('#work')!.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+  const borders = await page.locator('#work .wk-badges li').evaluateAll((lis) =>
+    lis.flatMap((li) => {
+      const s = getComputedStyle(li);
+      return ['Top', 'Right', 'Bottom', 'Left'].map((side) => ({
+        width: s.getPropertyValue(`border-${side.toLowerCase()}-width`),
+        color: s.getPropertyValue(`border-${side.toLowerCase()}-color`),
+      }));
+    }),
+  );
+  expect(borders.length).toBeGreaterThan(0);
+  for (const b of borders) {
+    expect(b.color, 'tag border is not the accent').not.toBe(accent);
+    expect(b.width, 'tag border is a hairline').toBe('1px');
+  }
+
+  if (!isMobile) return;
+  const button = page.locator('#work [data-wk-try]').first();
+  await expect(button).toHaveAccessibleName('Try the demo: Grocer loyalty app');
+  await expect(button).toHaveAccessibleDescription('Load offers, build a list, earn points.');
+  await expect(button).toContainText('Try the demo');
+  await expect(button).not.toContainText('↓');
+  for (const b of await page.locator('#work [data-wk-try]').all()) {
+    await expect(b).toHaveAccessibleName(/^Try the demo: \S/);
+    const box = (await b.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+// WO-025: the demos add no region landmarks. Their inner groupings are named groups, and the
+// phone wrapper is a group only once revealed; on wider screens it has no role or name at all.
+test('work demos add no landmarks', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const stray = () =>
+    page.evaluate(
+      () =>
+        document.querySelectorAll(
+          '#work .wk-demo :is(section[aria-label], section[aria-labelledby], [role="region"])',
+        ).length,
+    );
+  if (isMobile) {
+    for (const b of await page.locator('#work [data-wk-try]').all()) await b.click();
+  } else {
+    await expect(page.locator('#work .wk-demo:is([role], [aria-label])')).toHaveCount(0);
+  }
+  for (const demo of await page.locator('#work .wk-live .wk-demo').all()) {
+    await demo.scrollIntoViewIfNeeded();
+    await expect(demo.locator('astro-island').first()).not.toHaveAttribute('ssr');
+  }
+  expect(await stray()).toBe(0);
+  await expect(page.locator('#work .wk-demo').getByRole('region')).toHaveCount(0);
+  await expect(page.locator('#work .wk-demo[role="region"]')).toHaveCount(0);
+  if (isMobile) await expect(page.locator('#work .wk-demo[role="group"]')).toHaveCount(3);
 });
 
 // WO-024: on phones only the first demo shows inline; the others wait behind "Try the demo" and
@@ -140,15 +267,30 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   await page.waitForLoadState('networkidle');
   expect(chunks, 'collapsed demo code requested before Try the demo').toEqual([]);
 
-  // Press the first one: the demo shows, takes focus, and its code loads and hydrates.
+  // Press the first one: the demo shows, takes focus, and its code loads and hydrates. The page
+  // doesn't jump past the engagement (WO-025): its title stays on screen, clear of the header.
   const id = await buttons.first().getAttribute('aria-controls');
   const first = page.locator(`[aria-controls="${id}"]`);
   const region = page.locator(`#${id}`);
+  const article = page.locator('#work article').filter({ has: region });
+  await first.scrollIntoViewIfNeeded();
   const loaded = page.waitForRequest((r) => LATER_DEMOS.test(r.url()));
   await first.click();
   await expect(region).toBeVisible();
   await expect(region).toBeFocused();
-  await expect(region).toHaveAttribute('role', 'region');
+  await expect(region).toHaveAttribute('role', 'group');
+  await expect(region).toHaveAccessibleName('Grocer loyalty app demo');
+  const nav = await navHeight(page);
+  const title = article.locator('.wk-title');
+  await expect(title).toBeInViewport();
+  await expect
+    .poll(() => title.evaluate((t) => Math.round(t.getBoundingClientRect().top)))
+    .toBeGreaterThanOrEqual(nav);
+  await page.waitForTimeout(800); // a smooth scroll settles
+  const top = await title.evaluate((t) => t.getBoundingClientRect().top);
+  expect(top, 'title clear of the header').toBeGreaterThanOrEqual(nav);
+  expect(top, 'title on screen').toBeLessThan(812 - 40);
+  await expect(region).toBeFocused();
   await loaded;
   await expect(region.locator('astro-island')).not.toHaveAttribute('ssr');
   await expect(first).toBeHidden();

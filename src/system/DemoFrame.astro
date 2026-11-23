@@ -29,7 +29,7 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
       </div>
     )}
     {kind === 'phone' && <span class="df-island" aria-hidden="true" />}
-    <div class="df-screen">
+    <div class="df-screen" data-df-screen={!coming && kind !== 'phone' ? '' : undefined}>
       {coming ? (
         <div class="df-soon">
           <span class="df-soon-k label">{label}</span>
@@ -42,6 +42,43 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
   </div>
   {caption && <figcaption class="df-cap">{caption}</figcaption>}
 </figure>
+
+<script>
+  // WO-025: a live desktop or diagram screen that its content fits does not scroll. Sub-pixel
+  // rounding (1219.3px of content in a 1219px box) or a demo's last few pixels of bottom padding
+  // would otherwise leave a 1 to 3px scroll range, and Chrome latches a whole wheel or swipe
+  // gesture to that box: the page stops under the pointer. Content that is really taller than its
+  // frame (short laptop windows) still scrolls inside it, then hands the gesture back to the page.
+  const SLACK = 4; // px of overflow treated as fitting
+  const fit = (screen: HTMLElement) => {
+    // Measure as a scroller: under `overflow: clip` the box is not one.
+    delete screen.dataset.fits;
+    if (screen.scrollHeight - screen.clientHeight <= SLACK) {
+      screen.scrollTop = 0;
+      screen.dataset.fits = '';
+    }
+  };
+  const screens = [...document.querySelectorAll<HTMLElement>('[data-df-screen]')];
+  if (screens.length && 'ResizeObserver' in window) {
+    const ro = new ResizeObserver((entries) => {
+      const seen = new Set<HTMLElement>();
+      for (const e of entries) {
+        const screen = e.target.closest<HTMLElement>('[data-df-screen]');
+        if (screen && !seen.has(screen)) {
+          seen.add(screen);
+          fit(screen);
+        }
+      }
+    });
+    for (const screen of screens) {
+      ro.observe(screen);
+      // The demo's own root (an astro-island is display: contents, so look one level in).
+      for (const el of screen.querySelectorAll(':scope > *, :scope > astro-island > *')) {
+        ro.observe(el);
+      }
+    }
+  }
+</script>
 
 <style>
   .df {
@@ -189,7 +226,10 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
   }
   /* Live desktop and diagram demos size to their content; only the "coming" plate keeps 16:10.
      They fill their container's width, and when the container has a definite height the frame
-     stops there and the screen scrolls inside it (contained, so the page doesn't take over). */
+     stops there and the screen scrolls inside it. No overscroll containment (WO-025): at the end
+     of the demo the wheel or swipe goes on to the page. A screen whose content fits (to within a
+     few pixels of rounding or the demo's own bottom padding) is marked `data-fits` by the script
+     below and clips instead of scrolling, so a gesture over it never latches onto the frame. */
   .df-desktop:not(.df-coming),
   .df-diagram:not(.df-coming) {
     display: flex;
@@ -211,7 +251,10 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
     min-height: 0;
     aspect-ratio: auto;
     overflow: auto;
-    overscroll-behavior: contain;
+  }
+  .df-desktop:not(.df-coming) .df-screen[data-fits],
+  .df-diagram:not(.df-coming) .df-screen[data-fits] {
+    overflow: clip;
   }
   .df-titlebar,
   .df-cap {
