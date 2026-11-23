@@ -350,6 +350,112 @@ test('music heading matches sections', async ({ page }) => {
   expect(parseFloat(lead.size)).toBeLessThan(parseFloat(music.size));
 });
 
+// WO-030: the title leads, the call-out reads as a link, names are clean, the pager is flush.
+const rootPx = (page: Page, token: string) =>
+  page.evaluate((t) => {
+    const probe = document.createElement('div');
+    probe.style.fontSize = `var(${t})`;
+    document.body.append(probe);
+    const px = parseFloat(getComputedStyle(probe).fontSize);
+    probe.remove();
+    return px;
+  }, token);
+const fontPx = (page: Page, selector: string) =>
+  page
+    .locator(selector)
+    .first()
+    .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+
+test('music heading leads', async ({ page }, info) => {
+  await page.goto('/');
+  const title = await fontPx(page, '#music-h');
+  const lead = await fontPx(page, '#music .mu-story-lead');
+  expect(lead).toBeLessThan(title);
+  // A dek: at most --text-lg on laptops, --text-md on phones.
+  const cap = await rootPx(page, info.project.name === 'mobile' ? '--text-md' : '--text-lg');
+  expect(lead).toBeLessThanOrEqual(cap);
+  // Capped at the measure (60ch in its own font).
+  const [width, measure] = await page.locator('#music .mu-story-lead').evaluate((el) => {
+    const probe = document.createElement('span');
+    probe.style.cssText = 'position: absolute; width: 60ch';
+    el.append(probe);
+    const m = probe.getBoundingClientRect().width;
+    probe.remove();
+    return [el.getBoundingClientRect().width, m];
+  });
+  expect(width).toBeLessThanOrEqual(measure + 1);
+});
+
+test('music call-out is a link', async ({ page }) => {
+  await page.goto('/');
+  const panel = '#music .mu-panel:not([hidden])';
+  const call = await fontPx(page, `${panel} .mu-call-a`);
+  expect(call).toBeLessThan(await fontPx(page, `${panel} .mu-title`));
+  const weight = await page
+    .locator(`${panel} .mu-call-a`)
+    .evaluate((el) => Number(getComputedStyle(el).fontWeight));
+  expect(weight).toBeLessThanOrEqual(600);
+});
+
+// Every link, button and tab name in an ARIA snapshot, checked for a space before a colon. (A
+// node with children is quoted: - 'link "Name":'.)
+const strayNames = async (page: Page, selector: string) => {
+  const snap = await page.locator(selector).ariaSnapshot();
+  const names = [...snap.matchAll(/^\s*- '?(?:link|button|tab|tabpanel|article) "([^"]*)"/gm)].map(
+    (m) => m[1],
+  );
+  expect(names.length, `named controls in ${selector}`).toBeGreaterThan(0);
+  return names.filter((n) => /\s:/.test(n));
+};
+
+test('music names have no stray space', async ({ page }) => {
+  await page.goto('/');
+  for (const id of await tabIds(page)) {
+    await page.locator(`#mu-tab-${id}`).click();
+    expect(await strayNames(page, '#music'), `Music with ${id} selected`).toEqual([]);
+    await expect(page.locator(`#mu-panel-${id} a[data-song-link]`)).toHaveAccessibleName(
+      new RegExp(`^Read [^:]*\\S: ${escape(titleOf(id))}$`),
+    );
+  }
+  for (const id of songIds) {
+    await page.goto(`/music/${id}/`);
+    expect(await strayNames(page, 'main'), `/music/${id}/`).toEqual([]);
+  }
+});
+
+test('music pager aligns', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Laptop layout (1440 × 900).');
+  // A song with a previous track (the pager's first link is then "Previous track").
+  for (const id of songIds) {
+    await page.goto(`/music/${id}/`);
+    if ((await page.locator('a.sg-pg[rel="prev"]').count()) > 0) break;
+  }
+  const edges = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('.sg-pg')].map((a) => {
+      const range = document.createRange();
+      range.selectNodeContents(a.querySelector('.sg-pg-k')!);
+      const text = range.getBoundingClientRect();
+      const rule = a.getBoundingClientRect();
+      return {
+        label: text.width ? (a.querySelector('.sg-pg-k')?.textContent ?? '') : '',
+        textLeft: text.left,
+        textRight: text.right,
+        ruleLeft: rule.left,
+        ruleRight: rule.right,
+        next: a.classList.contains('sg-pg-next'),
+        border: getComputedStyle(a).borderTopWidth,
+      };
+    }),
+  );
+  const [prev, next] = edges;
+  expect(prev.label).toBe('Previous track');
+  expect(parseFloat(prev.border)).toBeGreaterThan(0);
+  expect(Math.abs(prev.textLeft - prev.ruleLeft)).toBeLessThanOrEqual(1);
+  // The next link is right-aligned: flush with the right end of its rule.
+  expect(next.next).toBe(true);
+  expect(Math.abs(next.textRight - next.ruleRight)).toBeLessThanOrEqual(1);
+});
+
 test('music phone strip shows the panel', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', 'Phone layout (375 × 812).');
   await page.goto('/');
@@ -505,7 +611,7 @@ test('music no-js shows every song', async ({ browser }, info) => {
   });
   const page = await ctx.newPage();
   await page.goto('/');
-  const panels = page.locator('#music [role="tabpanel"]');
+  const panels = page.locator('#music .mu-panel');
   await expect(panels).toHaveCount(songIds.length);
   for (const panel of await panels.all()) {
     await panel.scrollIntoViewIfNeeded();
@@ -515,8 +621,12 @@ test('music no-js shows every song', async ({ browser }, info) => {
     await expect(panel.locator('button.pl-play')).toBeHidden();
     for (const link of await panel.locator('a.pl-link').all()) await expect(link).toBeVisible();
   }
-  // The tabs need the script, so they are left out.
-  await expect(page.locator('#music [role="tablist"]')).toBeHidden();
+  // The tabs need the script, so they are left out. WO-030: so are the tab roles: the panels are
+  // plain articles, not tab panels without tabs.
+  await expect(page.locator('#music [data-tabs]')).toBeHidden();
+  await expect(page.locator('#music [role="tabpanel"], #music [role="tab"]')).toHaveCount(0);
+  await expect(page.locator('#music [role="tablist"]')).toHaveCount(0);
+  await expect(panels.first()).toHaveRole('article');
   await ctx.close();
 });
 
@@ -546,4 +656,15 @@ test('music players', async ({ page }) => {
   // The song page still shows every service.
   await page.goto(`/music/${songIds[0]}/`);
   await expect(page.locator('.pl-player')).toHaveCount(2);
+  // WO-030: a service with no link yet says only that (no player that "loads on click").
+  for (const id of songIds) {
+    await page.goto(`/music/${id}/`);
+    await expect(page.locator('.pl-player')).toHaveCount(2);
+    for (const soon of await page.locator('.pl-play.is-soon').all()) {
+      await expect(soon).toContainText('Link coming');
+      await expect(soon).not.toContainText(/loads on click/i);
+    }
+  }
+  await page.goto('/music/roadhouse/');
+  await expect(page.locator('.sg')).not.toContainText(/loads on click/i);
 });

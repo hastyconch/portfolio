@@ -5,7 +5,8 @@
 // panel has the sleeve (small, beside the title, under the strip on phones), one line of credits
 // and release, a link to the song's page (full lyrics, notes on the lines and story; no lyric
 // lines here) and click-to-load players. SongArt and Players are shared with the song pages. The
-// selected song is kept in the URL (#song-<id>). Without scripting every panel shows, stacked.
+// selected song is kept in the URL (#song-<id>). Without scripting every panel shows, stacked, as
+// a plain article: the script adds the tab roles (WO-030), so there are no tab panels without tabs.
 import type { Music, Song } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
@@ -64,16 +65,12 @@ const [lead, ...story] = music.story.map(say);
     </header>
 
     <div class="mu-stage">
-      <div class="mu-tabs" role="tablist" aria-label="Songs" data-tabs>
+      <div class="mu-tabs" data-tabs>
         {songs.map((s, i) => (
           <button
             type="button"
-            role="tab"
             class="mu-tab"
             id={`mu-tab-${s.id}`}
-            aria-controls={`mu-panel-${s.id}`}
-            aria-selected={i === 0 ? 'true' : 'false'}
-            tabindex={i === 0 ? 0 : -1}
             data-song={s.id}
             data-c1={s.data.artColors[0]}
             style={`--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`}
@@ -112,11 +109,10 @@ const [lead, ...story] = music.story.map(say);
               : 'Read about this song';
         const release = [say(d.credits), d.release].filter(Boolean).join(' · ');
         return (
-          <div
+          <article
             class="mu-panel"
-            role="tabpanel"
             id={`mu-panel-${s.id}`}
-            aria-labelledby={`mu-tab-${s.id}`}
+            aria-labelledby={`mu-title-${s.id}`}
             data-initial={i === 0 ? '' : undefined}
             style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
           >
@@ -130,7 +126,9 @@ const [lead, ...story] = music.story.map(say);
                     </span>
                     {d.status === 'placeholder' && <Placeholder />}
                   </p>
-                  <h3 class="mu-title">{d.title}</h3>
+                  <h3 class="mu-title" id={`mu-title-${s.id}`}>
+                    {d.title}
+                  </h3>
                   <p class="mu-release">{release}</p>
                 </div>
                 <div class="mu-about">
@@ -138,9 +136,13 @@ const [lead, ...story] = music.story.map(say);
                   <p>{say(d.meaning)}</p>
                 </div>
                 <p class="mu-call">
-                  <a class="mu-call-a" href={`/music/${s.id}/`} data-song-link>
+                  <a
+                    class="mu-call-a"
+                    href={`/music/${s.id}/`}
+                    aria-label={`${cta}: ${d.title}`}
+                    data-song-link
+                  >
                     {cta}
-                    <span class="visually-hidden">: {d.title}</span>
                   </a>
                   <span class="mu-call-arrow" aria-hidden="true">
                     →
@@ -149,20 +151,31 @@ const [lead, ...story] = music.story.map(say);
                 <Players song={s} onlyAvailable />
               </div>
             </div>
-          </div>
+          </article>
         );
       })}
     </div>
     <script is:inline>
       // Every panel is in the HTML, visible, so without scripting all the songs show, stacked.
       // With scripting, CSS hides all but the first until this runs (no shift before first
-      // paint); this then picks the song from the URL (#song-<id>) and hands over to `hidden`.
-      // It runs as the page is parsed, before the module scripts (SongArt only loads the cover
-      // of a panel that isn't hidden).
+      // paint); this then makes the strip a tablist (the roles and their links), picks the song
+      // from the URL (#song-<id>) and hands over to `hidden`. It runs as the page is parsed,
+      // before the module scripts (SongArt only loads the cover of a panel that isn't hidden).
       (() => {
         const stage = document.currentScript?.previousElementSibling;
-        if (!stage) return;
-        const tabs = [...stage.querySelectorAll('[role="tab"]')];
+        const list = stage?.querySelector('[data-tabs]');
+        if (!stage || !list) return;
+        list.setAttribute('role', 'tablist');
+        list.setAttribute('aria-label', 'Songs');
+        const tabs = [...list.querySelectorAll('[data-song]')];
+        for (const t of tabs) {
+          const panel = document.getElementById(`mu-panel-${t.dataset.song}`);
+          t.setAttribute('role', 'tab');
+          if (!panel) continue;
+          t.setAttribute('aria-controls', panel.id);
+          panel.setAttribute('role', 'tabpanel');
+          panel.setAttribute('aria-labelledby', t.id);
+        }
         let id = '';
         try {
           id = decodeURIComponent(/^#song-(.+)$/.exec(location.hash)?.[1] ?? '');
@@ -377,9 +390,11 @@ const [lead, ...story] = music.story.map(say);
     gap: var(--space-3);
     max-width: var(--measure);
   }
-  /* The lead is larger than the rest of the story but at the body weight, so "Music" leads. */
+  /* A dek under the title: the body size on phones, one step up on laptops, at the body weight
+     and a shorter measure, so "Music" leads (WO-030). */
   .mu-story-lead {
-    font-size: var(--text-lg);
+    max-width: 60ch;
+    font-size: var(--text-md);
     font-weight: 400;
     line-height: var(--leading-normal);
   }
@@ -575,10 +590,11 @@ const [lead, ...story] = music.story.map(say);
     border-radius: var(--radius-1);
     transition: background-color var(--dur-quick) var(--ease-out);
   }
+  /* A link, not a title: the body size, under the song title's (WO-030). */
   .mu-call-a {
     font-family: var(--ln-display);
-    font-size: var(--text-lg);
-    font-weight: 700;
+    font-size: var(--text-md);
+    font-weight: 600;
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-title);
     color: var(--ln-ink);
@@ -602,7 +618,7 @@ const [lead, ...story] = music.story.map(say);
   .mu-call-arrow {
     pointer-events: none;
     color: var(--ln-accent);
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: 700;
     line-height: 1;
     transition: translate var(--dur-quick) var(--ease-out);
@@ -679,7 +695,7 @@ const [lead, ...story] = music.story.map(say);
       padding-top: var(--space-8);
     }
     .mu-story-lead {
-      font-size: var(--text-xl);
+      font-size: var(--text-lg);
     }
     /* Laptops: the selected song on the left, the tracklist on the right. */
     .mu-stage {
