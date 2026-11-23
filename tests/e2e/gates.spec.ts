@@ -39,6 +39,30 @@ test('hero first screen on phones', async ({ page, isMobile }) => {
   await expect(hero.getByRole('link', { name: /See the work/ })).toHaveAttribute('href', '#work');
 });
 
+// WO-028: on a laptop the first screen shows the work. At 1440 x 900 the Work title is in the first
+// viewport; at 1366 x 768 the name, headline and hero links still are.
+test('hero shows the work above the fold', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'laptop layout');
+  const inView = async (sel: string, height: number) => {
+    const el = page.locator(sel);
+    await expect(el).toBeVisible();
+    const box = (await el.boundingBox())!;
+    expect(box.y, `${sel} top`).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height, `${sel} is in the first ${height}px`).toBeLessThanOrEqual(height);
+  };
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  await inView('#work-h', 900);
+
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const sel of ['#hero .hero-name', '#hero .hero-headline', '#hero .hero-links']) {
+    await inView(sel, 768);
+  }
+});
+
 test('contact links are honest', async ({ page }) => {
   for (const route of ['/', '/projects/billable/']) {
     await page.goto(route);
@@ -101,9 +125,29 @@ test('resume pdf', async ({ page, request }) => {
   expect(pdf).toMatch(/\/Marked\s+true/);
   expect(pdf).toContain('/StructTreeRoot');
   expect(pdfValues(pdf, 'Title')).toContain('Nakul Iyer, Résumé');
+  // WO-030: the tag tree starts with H1 (the name), so "Résumé" is an H2 under it. A depth-first
+  // walk from the StructTreeRoot over the structure elements' /K references.
+  const objects = new Map(
+    [...pdf.matchAll(/(?:^|\n)(\d+) 0 obj\s*([\s\S]*?)\nendobj/g)].map((m) => [m[1], m[2]]),
+  );
+  const headings: string[] = [];
+  const walk = (id: string, depth = 0) => {
+    const obj = objects.get(id) ?? '';
+    const tag = /\/S\s*\/(H[1-6])\b/.exec(obj)?.[1];
+    if (tag) headings.push(tag);
+    const kids = /\/K\s*(\[[^\]]*\]|\d+ 0 R)/.exec(obj)?.[1] ?? '';
+    if (depth < 100) for (const [, kid] of kids.matchAll(/(\d+) 0 R/g)) walk(kid, depth + 1);
+  };
+  walk(/\/StructTreeRoot\s+(\d+) 0 R/.exec(pdf)?.[1] ?? '');
+  expect(headings[0], 'first heading tag').toBe('H1');
+  expect(
+    headings.filter((h) => h === 'H1'),
+    'one H1',
+  ).toHaveLength(1);
+  expect(headings[1], 'then "Résumé"').toBe('H2');
 
   await page.goto('/');
-  const link = page.locator('#resume').getByRole('link', { name: 'Download PDF' });
+  const link = page.locator('#resume').getByRole('link', { name: 'Download résumé (PDF)' });
   await expect(link).toHaveAttribute('href', '/resume.pdf');
   await expect(link).toHaveAttribute('download', 'Nakul-Iyer-Resume.pdf');
   await expect(page.locator('#resume').getByRole('button', { name: 'Print résumé' })).toBeVisible();

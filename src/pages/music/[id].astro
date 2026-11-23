@@ -187,7 +187,8 @@ const allSongs = `/#song-${song.id}`;
   .sg-pg {
     display: grid;
     gap: var(--space-1);
-    padding: var(--space-5) var(--space-1);
+    /* Flush with the rule (WO-030); the press tint bleeds past the text instead (below). */
+    padding: var(--space-5) 0;
     border-top: var(--ln-hairline);
     color: var(--ln-ink);
     text-decoration: none;
@@ -212,8 +213,12 @@ const allSongs = `/#song-${song.id}`;
   .sg-pg:focus-visible .sg-pg-t {
     text-decoration-color: currentColor;
   }
+  /* As in the footer: shadows bleed the tint past the flush text, so the rule keeps its length. */
   .sg-pg:active {
     background: var(--ln-hl);
+    box-shadow:
+      calc(var(--space-2) * -1) 0 var(--ln-hl),
+      var(--space-2) 0 var(--ln-hl);
   }
   .sg-pg:active .sg-pg-t {
     color: var(--ln-ink-2);

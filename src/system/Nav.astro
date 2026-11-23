@@ -28,7 +28,11 @@ const links = [
 ].map((l) => ({ ...l, href: `${base}#${l.id}` }));
 const here = links.find((l) => l.id === section);
 
-const { work, projects } = await getSiteContent();
+const { work, projects, songs, features } = await getSiteContent();
+// A song page stays dark in both schemes, tinted by the song (music/[id].astro). The header takes
+// the same band, so there is no cream strip over it (WO-029).
+const songId = Astro.url.pathname.match(/^\/music\/([^/]+)\/?$/)?.[1];
+const song = [...songs, ...features].find((s) => s.id === songId);
 // Home: Work's demo engagements, then the compact list. Labels are the crumb's short names.
 const featured = work.filter((w) => w.data.demo !== 'none');
 const stops = home
@@ -70,7 +74,13 @@ const thumbs = cur
   : [];
 ---
 
-<header class="np" data-home={home ? '' : undefined} data-deep={cur ? '' : undefined}>
+<header
+  class:list={['np', { 'ln-dark': song }]}
+  data-home={home ? '' : undefined}
+  data-deep={cur ? '' : undefined}
+  data-band={song ? '' : undefined}
+  style={song ? `--c1: ${song.data.artColors[0]}` : undefined}
+>
   <div class="np-bar">
     <nav class="np-crumbs" aria-label="Breadcrumb">
       <ol>
@@ -304,7 +314,9 @@ const thumbs = cur
     };
     observe();
     addEventListener('resize', observe, { passive: true });
+    // Current as soon as scrolling stops, and once the page has loaded (a deep link's jump).
     addEventListener('scrollend', update, { passive: true });
+    addEventListener('load', update);
   }
 
   // New crumb text arrives as one short slide and fade (an instant swap under reduced motion).
@@ -493,6 +505,13 @@ const thumbs = cur
     border-bottom: var(--ln-hairline);
     /* It holds still while a page changes underneath it (cross-document view transitions). */
     view-transition-name: site-header;
+  }
+  /* A song page: the song's band, in the dark palette (.ln-dark), whatever the scheme. */
+  .np[data-band] {
+    background: color-mix(in srgb, var(--c1) 12%, var(--ln-bg));
+    /* --ln-hairline resolves its colour on :root (cream in light mode); re-resolve it here, so
+       the header's edge, the Menu button and the menu's rules take the band's own. */
+    --ln-hairline: 1px solid var(--ln-rule);
   }
   /* The header holds still: its scroll margin cancels the root's scroll padding (liner.css), so
      focusing or clicking anything in it never scrolls the page to "reveal" it. */
@@ -995,6 +1014,13 @@ const thumbs = cur
     }
     /* Home: the section only; the engagement stepper and list are for wider screens. */
     .np[data-home] .np-c-item {
+      display: none;
+    }
+  }
+  /* The narrowest phones: the count gives way so the project keeps its name (WO-029). The jump
+     list still says where it sits among the others. */
+  @media (max-width: 359px) {
+    .np[data-deep] .np-step {
       display: none;
     }
   }

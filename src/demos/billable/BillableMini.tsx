@@ -57,6 +57,15 @@ export default function BillableMini() {
 
   useEffect(() => setHydrated(true), []);
 
+  // WO-029: a tap on Play that landed before hydration. The case study's page marks the island
+  // pending (projects/billable.astro); start the game now, as the tap asked.
+  useEffect(() => {
+    const island = rootRef.current?.closest('astro-island');
+    if (!island?.hasAttribute('data-pending')) return;
+    island.removeAttribute('data-pending');
+    void play();
+  }, []);
+
   // Tear the game down if the island unmounts.
   useEffect(() => () => handleRef.current?.destroy(), []);
 

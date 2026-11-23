@@ -447,3 +447,63 @@ test('phone menu closes on focus out', async ({ page, isMobile }) => {
   expect(await open()).toBe(false);
   await expect(toggle).toBeFocused();
 });
+
+// WO-029: a cold deep link jumps to its section instead of scrolling through the page, and the
+// crumb names that section by then. Smooth scrolling stays for in-page links after the load.
+test('cold deep links jump', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'measured on a phone, where the page is longest');
+  await page.addInitScript(() => {
+    const w = window as unknown as { __at150?: { y: number; crumb: string } };
+    addEventListener('load', () =>
+      setTimeout(() => {
+        const li = document.querySelector<HTMLElement>('.np-c-sec');
+        w.__at150 = {
+          y: Math.round(scrollY),
+          crumb: li && !li.hidden ? li.querySelector('a')!.textContent!.trim() : '',
+        };
+      }, 150),
+    );
+  });
+  for (const [id, label] of [
+    ['contact', 'Contact'],
+    ['projects', 'Projects'],
+  ]) {
+    await page.goto('about:blank'); // a cold load each time, not a same-page fragment change
+    await page.goto(`/#${id}`);
+    const at150 = await page
+      .waitForFunction(() => (window as unknown as { __at150?: object }).__at150)
+      .then((h) => h.jsonValue() as Promise<{ y: number; crumb: string }>);
+    // Nothing moves after that.
+    await page.waitForTimeout(1500);
+    const now = await page.evaluate(() => ({
+      y: Math.round(scrollY),
+      max: document.documentElement.scrollHeight - innerHeight,
+      gap: Math.round(
+        document.getElementById(location.hash.slice(1))!.getBoundingClientRect().top -
+          document.querySelector('.np')!.getBoundingClientRect().bottom,
+      ),
+      smooth: getComputedStyle(document.documentElement).scrollBehavior,
+    }));
+    expect(Math.abs(at150.y - now.y), `#${id}: in place 150ms after load`).toBeLessThanOrEqual(1);
+    expect(at150.crumb, `#${id}: the crumb by then`).toBe(label);
+    // The final place: Contact at the bottom of the page, Projects flush under the header.
+    if (id === 'contact') expect(Math.abs(now.max - now.y)).toBeLessThanOrEqual(1);
+    else expect(Math.abs(now.gap)).toBeLessThanOrEqual(2);
+    expect(now.smooth, 'in-page links glide again').toBe('smooth');
+  }
+});
+
+// WO-029: on the narrowest phones the count gives way, so the project keeps its name.
+test('crumb keeps its name at 320', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'the folded crumb is for phones');
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto('/projects/travel-planner/');
+  const name = crumbs(page).locator('.np-item');
+  await expect(name).toBeVisible();
+  expect((await name.boundingBox())!.width, 'the project name').toBeGreaterThanOrEqual(40);
+  const bar = await page.locator('.np-bar').boundingBox();
+  expect(bar!.height).toBeLessThanOrEqual(61);
+  // From 360px up, the count is back.
+  await page.setViewportSize({ width: 360, height: 640 });
+  await expect(crumbs(page).locator('.np-count')).toBeVisible();
+});

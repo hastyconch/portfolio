@@ -154,6 +154,10 @@ let lineNo = 0;
     font-weight: 500;
     line-height: var(--leading-normal);
     padding-block: 0.12rem;
+    /* A hanging indent, so a line that wraps reads as a continuation, not a new line (WO-030).
+       An annotated line's highlight (.ly-hl) is inline, so its summary carries the indent. */
+    padding-left: 1em;
+    text-indent: -1em;
   }
   .ly-s {
     display: block;
