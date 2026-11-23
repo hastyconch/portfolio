@@ -17,9 +17,21 @@ test('pipeline demo steps by keyboard', async ({ page }) => {
   await expect(live).toHaveAttribute('aria-live', 'polite');
   await expect(live).toHaveText(/^Step 1 of 5: Meeting transcript in/);
 
-  const back = d.getByRole('button', { name: 'Back' });
+  const back = d.getByRole('button', { name: 'Back', exact: true });
   const act = d.locator('.pl-next');
   await expect(back).toHaveAttribute('aria-disabled', 'true');
+  // WO-028: the name is exactly "Back", with no leading space, in Chrome's own tree (Playwright
+  // trims names, so ask the browser). The visible arrow is hidden from it.
+  const { nodes } = await (
+    await page.context().newCDPSession(page)
+  ).send('Accessibility.getFullAXTree');
+  const backs = nodes
+    .filter((n) => !n.ignored && n.role?.value === 'button')
+    .map((n) => String(n.name?.value ?? ''))
+    .filter((name) => /Back/.test(name));
+  expect(backs.length).toBeGreaterThan(0);
+  for (const name of backs) expect(name).toBe('Back');
+  await expect(back.locator('[aria-hidden="true"]')).toHaveText('←');
 
   // Walk to the action button with Tab and perform each TPM action with Enter.
   await back.focus();

@@ -13,6 +13,9 @@
 // WO-025: the button is a button (outlined, "Try the demo: {name}", its one line as the
 // description), revealing does not jump the page, and the demos add no region landmarks: the
 // revealed wrapper is a named group, and only once it has been revealed.
+// WO-028: on phones every demo waits behind its button, the first one too, so Work is a run of
+// stories and Projects comes sooner. The button is filled with the accent and centred ("Try the
+// demo: {name} ▸"); the skill tags beside it are plain text in a hairline, with no fill.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -49,12 +52,12 @@ const others = work.filter((w) => w.data.demo === 'none');
     <SideHead title="Work" id="work-h" lead={lead} layout="aside" />
 
     <ol class="wk-list">
-      {featured.map((w, i) => {
+      {featured.map((w) => {
         const d = w.data;
         const hid = `work-${w.id}`;
         const live = LIVE.has(d.demo);
         const wide = live && isWide(d.demoFrame);
-        const tryIt = live && i > 0 ? TRY[d.demo] : undefined;
+        const tryIt = live ? TRY[d.demo] : undefined;
         return (
           <li class:list={['wk', live && 'wk-live', wide && 'wk-wide']}>
             <article aria-labelledby={hid} class:list={[tryIt && 'wk-collapse']}>
@@ -84,10 +87,7 @@ const others = work.filter((w) => w.data.demo === 'none');
                     aria-label={`Try the demo: ${tryIt.name}`}
                     aria-describedby={`${hid}-try-d`}
                   >
-                    {/* The name is the visible text with a colon for the ear; the space keeps
-                        the visible text two words apart for label-in-name checks. */}
-                    <span class="wk-try-k">Try the demo</span>{' '}
-                    <span class="wk-try-n">{tryIt.name}</span>
+                    Try the demo: {tryIt.name} <span aria-hidden="true">▸</span>
                   </button>
                   <p class="wk-try-d" id={`${hid}-try-d`}>
                     {tryIt.line}
@@ -341,8 +341,10 @@ const others = work.filter((w) => w.data.demo === 'none');
     outline-offset: var(--space-2);
   }
 
-  /* Try the demo (phones): an outlined button in the demo's place, with its one line under it,
-     until it is pressed. The accent outline and label set it apart from the neutral skill tags. */
+  /* Try the demo (phones): a filled accent button in the demo's place, label centred, with its
+     one line under it, until it is pressed. The one filled control in Work, so it reads as a
+     button and the plain skill tags don't. Hover and focus shift the fill towards the ink
+     (contrast rises in both schemes); press shifts it further and scales. */
   .wk-try {
     display: none;
     grid-area: demo;
@@ -350,46 +352,44 @@ const others = work.filter((w) => w.data.demo === 'none');
     margin-top: var(--space-5);
   }
   .wk-try-b {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 var(--space-2);
+    display: block;
     width: 100%;
     min-height: 48px;
     padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--ln-accent);
+    border: 0;
     border-radius: var(--radius-2);
-    background: transparent;
-    color: var(--ln-ink);
+    background: var(--ln-accent);
+    color: var(--ln-accent-ink);
     font: inherit;
-    text-align: left;
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    text-align: center;
+    text-wrap: balance;
     cursor: pointer;
     transition:
       background-color var(--dur-quick) var(--ease-out),
-      border-color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
   .wk-try-b:hover,
   .wk-try-b:focus-visible {
-    background: var(--ln-hl-hover);
+    background: color-mix(in oklch, var(--ln-accent) 85%, var(--ln-ink));
   }
   .wk-try-b:active {
-    background: var(--ln-hl-hover);
-    border-color: var(--ln-ink);
+    background: color-mix(in oklch, var(--ln-accent) 75%, var(--ln-ink));
     scale: var(--press-scale);
-  }
-  .wk-try-k {
-    font-weight: 700;
-    color: var(--ln-accent);
-  }
-  .wk-try-n {
-    font-weight: 600;
   }
   body.ln .wk-try-d {
     margin: 0;
     font-size: var(--text-sm);
     line-height: var(--leading-snug);
     color: var(--ln-ink-2);
+  }
+  /* Phones: with every demo behind its button, an engagement is a story and a button, so it
+     takes a step less padding (WO-028). */
+  @media (max-width: 759.98px) {
+    .wk article {
+      padding-block: var(--space-6);
+    }
   }
   @media (max-width: 759.98px) and (scripting: enabled) {
     .wk-collapse:not([data-open]) .wk-try {
@@ -400,10 +400,9 @@ const others = work.filter((w) => w.data.demo === 'none');
     }
   }
 
-  /* Skills: badges, a row on phones and a stack in the side column on wider screens. Quiet: a
-     tinted neutral plate and a neutral hairline (no accent edge since WO-025, so the one
-     tappable thing, "Try the demo", doesn't read as a tag), set in the UI face at a firmer weight
-     than the copy. Not interactive, so no states. */
+  /* Skills: tags, a row on phones and a stack in the side column on wider screens. Plain (WO-028):
+     a neutral hairline, no fill and the regular UI weight, so they read as labels and the one
+     filled control, "Try the demo", is the thing to tap. Not interactive, so no states. */
   .wk-skills {
     grid-area: skills;
     margin-top: var(--space-6);
@@ -424,9 +423,8 @@ const others = work.filter((w) => w.data.demo === 'none');
     padding: var(--space-1) var(--space-2);
     border: var(--ln-hairline);
     border-radius: var(--radius-1);
-    background: var(--ln-badge);
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: 500;
     line-height: var(--leading-snug);
     color: var(--ln-ink);
   }
