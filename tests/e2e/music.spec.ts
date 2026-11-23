@@ -95,7 +95,8 @@ test.describe('music', () => {
 
     const { name, named } = music.collaborator;
     if (named) {
-      for (const [i, text] of shown.entries()) await expect(paragraphs.nth(i)).toHaveText(text);
+      for (const [i, text] of music.story.entries())
+        await expect(paragraphs.nth(i)).toHaveText(text);
       if (music.story.join(' ').includes(name)) await expect(story).toContainText(name);
     } else {
       // Unnamed collaborator: the name appears nowhere in the section, only "a friend".
