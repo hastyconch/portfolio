@@ -3,8 +3,8 @@
 // backdrop from the app's own palette, then the copy. The title comes first so titles line up
 // across the rail whatever tags a card carries. The whole card links to the case study.
 // Owner-supplied apps without screenshots yet show a designed "Screenshots coming" frame.
-// WO-019: `thumb` renders only the cover art, at 40px, for the header's project jump list. The
-// card's art carries `data-art`, so a navigation can name it for the card-to-hero morph.
+// WO-019: the art carries `data-art`, so a navigation to the case study can name it for the
+// card-to-hero morph (a cross-document view transition; see Shell.astro).
 import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 import type { Project } from '../lib/content';
@@ -12,10 +12,8 @@ import Placeholder from './Placeholder.astro';
 
 interface Props {
   project: Project;
-  /** just the cover art, 40px wide (the header's jump list) */
-  thumb?: boolean;
 }
-const { project, thumb = false } = Astro.props;
+const { project } = Astro.props;
 const d = project.data;
 const stackHint = d.stack
   .slice(0, 3)
@@ -33,77 +31,62 @@ const slotted = cover?.slot
   : undefined;
 const shot = cover?.image ?? slotted?.[1].default;
 const frame = cover?.frame ?? 'browser';
-// The thumb sits inside a link, so it is built from spans.
-const Root = thumb ? Fragment : 'li';
-const Box = thumb ? 'span' : 'div';
 ---
 
-<Root {...(thumb ? {} : { class: 'pc' })}>
-  <Box
-    class:list={['pc-art', `pa-${frame}`, thumb && 'pc-thumb']}
+<li class="pc">
+  <div
+    class:list={['pc-art', `pa-${frame}`]}
     style={`--bd: ${cover?.backdrop ?? d.accent}`}
-    data-art={thumb ? undefined : project.id}
+    data-art={project.id}
     aria-hidden="true"
   >
-    <Box class="pa-dev">
+    <div class="pa-dev">
       {shot ? (
         <Image
           src={shot}
           alt=""
-          widths={
-            thumb
-              ? [80]
-              : frame === 'phone'
-                ? [120, 240]
-                : frame === 'game'
-                  ? [400, 800]
-                  : [320, 640]
-          }
+          widths={frame === 'phone' ? [120, 240] : frame === 'game' ? [400, 800] : [320, 640]}
           sizes={
-            thumb
-              ? '40px'
-              : frame === 'phone'
-                ? '(min-width: 900px) 110px, 49px'
-                : frame === 'game'
-                  ? '(min-width: 900px) 244px, 108px'
-                  : '(min-width: 900px) 302px, 133px'
+            frame === 'phone'
+              ? '(min-width: 900px) 110px, 49px'
+              : frame === 'game'
+                ? '(min-width: 900px) 244px, 108px'
+                : '(min-width: 900px) 302px, 133px'
           }
           loading="lazy"
           decoding="async"
         />
       ) : (
-        <Box class="pa-soon">
+        <div class="pa-soon">
           <span class="pa-sk" />
           <span class="pa-sk" />
           <span class="pa-sk" />
-          {!thumb && <span class="pa-soon-t">Screenshots coming</span>}
-        </Box>
+          <span class="pa-soon-t">Screenshots coming</span>
+        </div>
       )}
-    </Box>
-  </Box>
-  {!thumb && (
-    <div class="pc-body">
-      <h3 class="pc-title">
-        <a class="pc-link" href={`/projects/${project.id}/`}>
-          {d.title}
-        </a>
-      </h3>
-      <p class="pc-k">
-        <span class="pc-cat">{d.category}</span>
-        <span class="ln-num">{d.year}</span>
-        {d.featured && <span class="pc-feat">Featured</span>}
-        {cover?.mockup && <span class="pc-feat">Mock-up</span>}
-        {d.status === 'placeholder' && <Placeholder />}
-      </p>
-      <p class="pc-tag">{d.tagline}</p>
-      <p class="pc-meta">{d.platforms.join(' · ')}</p>
-      <p class="pc-stack">
-        <span class="visually-hidden">Stack: </span>
-        {stackHint}
-      </p>
     </div>
-  )}
-</Root>
+  </div>
+  <div class="pc-body">
+    <h3 class="pc-title">
+      <a class="pc-link" href={`/projects/${project.id}/`}>
+        {d.title}
+      </a>
+    </h3>
+    <p class="pc-k">
+      <span class="pc-cat">{d.category}</span>
+      <span class="ln-num">{d.year}</span>
+      {d.featured && <span class="pc-feat">Featured</span>}
+      {cover?.mockup && <span class="pc-feat">Mock-up</span>}
+      {d.status === 'placeholder' && <Placeholder />}
+    </p>
+    <p class="pc-tag">{d.tagline}</p>
+    <p class="pc-meta">{d.platforms.join(' · ')}</p>
+    <p class="pc-stack">
+      <span class="visually-hidden">Stack: </span>
+      {stackHint}
+    </p>
+  </div>
+</li>
 
 <style>
   .pc {
@@ -252,28 +235,6 @@ const Box = thumb ? 'span' : 'div';
       line-height: var(--leading-snug);
       color: var(--ln-ink-2);
     }
-  }
-
-  /* Thumb: the same composition at 40px, for the jump list. The device's padding and shadow
-     scale down so the screen still reads. */
-  .pc-thumb {
-    display: block;
-    flex: none;
-    width: 40px;
-    border-radius: var(--radius-1);
-  }
-  .pc-thumb .pa-dev {
-    box-shadow: none;
-  }
-  .pc-thumb.pa-phone .pa-dev,
-  .pc-thumb.pa-game .pa-dev {
-    padding: 1px;
-    border-radius: var(--radius-1);
-  }
-  .pc-thumb .pa-dev :global(img),
-  .pc-thumb .pa-soon {
-    display: block;
-    border-radius: 0;
   }
 
   /* Body */

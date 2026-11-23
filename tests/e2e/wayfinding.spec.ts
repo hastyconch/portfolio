@@ -140,7 +140,7 @@ test('project switcher', async ({ page, isMobile }) => {
   await expect(current).toContainText('Billable.');
   await expect(current).toBeFocused();
   // Every entry shows its cover art and its format.
-  await expect(jump.locator('.pc-thumb')).toHaveCount(projects);
+  await expect(jump.locator('.np-thumb')).toHaveCount(projects);
   await expect(jump.locator('.np-jump-f').first()).toHaveText(/\S/);
 
   // Escape closes it and focus returns to the trigger.
