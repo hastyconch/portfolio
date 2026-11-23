@@ -182,6 +182,8 @@
   .sch-body {
     grid-template-columns: minmax(0, 1fr) 19.5rem;
     align-items: start;
+    /* tighter top and bottom so the laptop pane keeps slack for heavier fonts (Linux CI) */
+    padding-block: var(--dk-2);
   }
 }
 .sch-main {
@@ -493,6 +495,7 @@
 }
 .sch-help {
   font-size: var(--dk-fs-xs);
+  line-height: var(--dk-lh-snug);
   color: var(--sch-muted);
 }
 /* Scroll cue on narrow screens: a hint, and a fade on whichever edge has more columns. */
