@@ -136,7 +136,7 @@ way between case studies is the pager at the very bottom, or the long trip back 
 - [ ] The view-transition CSS is present and wrapped in reduced-motion no-preference; no duplicate `view-transition-name` on any page [e2e:wayfinding no duplicate transition names]
 - [ ] 375 × 812: no horizontal overflow; the header stays one line [e2e:gates]
 - [ ] axe clean, light and dark; Lighthouse budgets on home, a case study and a song page [lighthouse]
-- [ ] craft and copy gates pass [gates]
+- [ ] craft and copy gates pass [check]
 - [ ] Owner sign-off on the preview [owner]
 
 ## Out of scope
