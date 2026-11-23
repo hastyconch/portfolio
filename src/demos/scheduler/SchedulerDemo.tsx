@@ -1,7 +1,15 @@
 // Invented ICU nurse scheduler (constitution art. 3 + 6): mock staff, mock rules, no network.
 // Concept A (week grid + live rule checker) with concept B (guided "fill the open shift")
 // running inside it. The grid follows the ARIA grid pattern with a roving tabindex.
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from 'react';
 import {
   DAYS,
   NEXT_SHIFT,
@@ -9,6 +17,7 @@ import {
   OPEN_DAY,
   OTHERS,
   OPEN_SHIFT,
+  OVERTIME_AFTER,
   RULES,
   SHIFT_GLYPH,
   SHIFT_WORD,
@@ -28,6 +37,7 @@ import {
   type Issue,
   type Shift,
 } from './rules';
+import '../kit.css';
 import './scheduler.css';
 
 const COVER_ROWS = ['D', 'N'] as const;
@@ -220,15 +230,47 @@ export default function SchedulerDemo() {
     (cells.current[r] ??= [])[c] = el;
   };
 
+  // Header figures, computed from the live week.
+  const slots = DAYS.length * 2;
+  const covered = DAYS.reduce(
+    (n, _, c) =>
+      n + (['D', 'N'] as const).filter((s) => coverageOf(week, s, c) >= TARGET[s]).length,
+    0,
+  );
+  const overtime = NURSES.reduce(
+    (n, _, r) => n + Math.max(0, hoursOf(week, r) - OVERTIME_AFTER),
+    0,
+  );
+  const blocks = issues.filter((i) => i.severity === 'block').length;
+
   return (
     <div className="sch-app" role="group" aria-label="Demo: nurse scheduler (mock data)">
       <header className="sch-bar">
-        <div>
+        <span className="sch-mark" aria-hidden="true">
+          <Glyph name="cal" />
+        </span>
+        <div className="sch-heading">
           <p className="sch-title" id={`${id}-title`}>
             ICU, Unit C · Week roster
           </p>
-          <p className="sch-sub">Mock data · invented staff and rules</p>
+          <p className="sch-sub">Mon 10 to Sun 16 March · mock data, invented staff and rules</p>
         </div>
+        <dl className="sch-kpis">
+          <div className={covered < slots ? 'is-bad' : 'is-ok'}>
+            <dt>Covered</dt>
+            <dd>
+              {covered}/{slots}
+            </dd>
+          </div>
+          <div className={overtime ? 'is-warn' : undefined}>
+            <dt>Overtime</dt>
+            <dd>{overtime}h</dd>
+          </div>
+          <div className={blocks ? 'is-bad' : 'is-ok'}>
+            <dt>Problems</dt>
+            <dd>{blocks}</dd>
+          </div>
+        </dl>
         <button type="button" className="sch-btn" onClick={reset}>
           Reset
         </button>
@@ -262,7 +304,10 @@ export default function SchedulerDemo() {
                       scope="col"
                       className={gap && c === gap.day ? 'is-open' : undefined}
                     >
-                      <span aria-hidden="true">{d.short}</span>
+                      <span aria-hidden="true">
+                        {d.short}
+                        <span className="sch-date">{10 + c}</span>
+                      </span>
                       <span className="sch-vh">{d.full}</span>
                     </th>
                   ))}
@@ -275,10 +320,20 @@ export default function SchedulerDemo() {
                   return (
                     <tr role="row" key={n.name}>
                       <th role="rowheader" scope="row" className="sch-nurse">
-                        <span className="sch-name">{n.name}</span>
-                        <span className={`sch-hours${ot ? ' is-warn' : ''}`}>
-                          {hours}h{ot ? ' · OT' : ''}
-                          {n.extraNote && <span className="sch-extra"> incl. {n.extraNote}</span>}
+                        <span className="dk-av" style={avatar(r)} aria-hidden="true">
+                          {n.name[0]}
+                        </span>
+                        <span className="sch-who">
+                          <span className="sch-name">{n.name}</span>
+                          <span className={`sch-hours${ot ? ' is-warn' : ''}`}>
+                            <span
+                              className="sch-meter"
+                              aria-hidden="true"
+                              style={{ '--h': Math.min(hours, 48) / 48 } as CSSProperties}
+                            />
+                            {hours}h{ot ? ' · OT' : ''}
+                            {n.extraNote && <span className="sch-extra"> incl. {n.extraNote}</span>}
+                          </span>
                         </span>
                       </th>
                       {week[r].map((s, c) => {
@@ -291,21 +346,24 @@ export default function SchedulerDemo() {
                             role="gridcell"
                             tabIndex={tab(r, c)}
                             aria-label={nurseCellLabel(week, r, c, cellIssues)}
-                            className={`sch-cell is-${s}${cellIssues ? ' is-bad' : ''}`}
+                            className={`sch-cell is-${s}${cellIssues ? ' is-bad' : ''}${leave ? ' is-leave' : ''}${gap && c === gap.day ? ' in-open' : ''}`}
                             onClick={() => {
                               focusCell(r, c);
                               cycle(r, c);
                             }}
                             onKeyDown={(e) => onCellKey(e, r, c)}
                           >
-                            <span className="sch-glyph" aria-hidden="true">
-                              {SHIFT_GLYPH[s]}
-                            </span>
-                            {leave && (
-                              <span className="sch-tag" aria-hidden="true">
-                                leave
+                            <span className="sch-pill">
+                              {s !== 'O' && <Glyph name={s === 'D' ? 'sun' : 'moon'} />}
+                              <span className="sch-glyph" aria-hidden="true">
+                                {SHIFT_GLYPH[s]}
                               </span>
-                            )}
+                              {leave && (
+                                <span className="sch-tag" aria-hidden="true">
+                                  leave
+                                </span>
+                              )}
+                            </span>
                             {cellIssues && (
                               <span className="sch-flag" aria-hidden="true">
                                 !
@@ -322,10 +380,15 @@ export default function SchedulerDemo() {
                   return (
                     <tr role="row" key={shift} className={`sch-cover${i === 0 ? ' is-first' : ''}`}>
                       <th role="rowheader" scope="row" className="sch-nurse">
-                        <span className="sch-name">
-                          {shift === 'D' ? 'Day cover' : 'Night cover'}
+                        <span className="sch-cover-ico" aria-hidden="true">
+                          <Glyph name={shift === 'D' ? 'sun' : 'moon'} />
                         </span>
-                        <span className="sch-hours">target {TARGET[shift]}</span>
+                        <span className="sch-who">
+                          <span className="sch-name">
+                            {shift === 'D' ? 'Day cover' : 'Night cover'}
+                          </span>
+                          <span className="sch-hours">target {TARGET[shift]}</span>
+                        </span>
                       </th>
                       {DAYS.map((_, c) => {
                         const have = coverageOf(week, shift, c);
@@ -350,6 +413,11 @@ export default function SchedulerDemo() {
                             <span className="sch-tag" aria-hidden="true">
                               {open ? 'open' : `+${others} more`}
                             </span>
+                            <span className="sch-dots" aria-hidden="true">
+                              {Array.from({ length: TARGET[shift] }, (_, k) => (
+                                <span key={k} className={k < have ? 'is-on' : undefined} />
+                              ))}
+                            </span>
                             {bad && !open && (
                               <span className="sch-flag" aria-hidden="true">
                                 !
@@ -364,96 +432,39 @@ export default function SchedulerDemo() {
               </tbody>
             </table>
           </div>
-          <p className="sch-help" id={`${id}-help`}>
-            D day 07–19 · N night 19–07 · – off · ! rule problem. Arrow keys move;{' '}
-            {taskDone
-              ? 'Enter or Space (or a click) cycles Day → Night → Off.'
-              : 'cells unlock once the open shift is filled.'}{' '}
-            Cover counts the whole unit: the RNs above plus colleagues not shown (“+3 more”), whose
-            shifts are fixed in this demo.
-          </p>
-        </div>
 
-        <div className="sch-side">
-          <section className="sch-panel sch-task" aria-labelledby={`${id}-task`}>
-            {!gap ? (
-              <>
-                <p className="sch-kicker">All shifts covered</p>
-                <h4 id={`${id}-task`}>Every shift meets its target</h4>
-                <p>
-                  Edit any cell: Enter, Space or a click cycles Day → Night → Off, and the rule
-                  check updates live. Take someone off a shift and this panel finds who can cover
-                  it. Reset restores the scenario.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="sch-kicker">{taskDone ? 'New gap' : 'Open shift'}</p>
-                <h4 id={`${id}-task`}>
-                  {gapWord(gap)}, ICU: {gapHave} of {TARGET[gap.shift]} RNs
-                </h4>
-                <p>Choose a nurse. Candidates are ranked by the unit’s rules.</p>
-                <ol className="sch-cands">
-                  {candidates.map((cand) => {
-                    const n = NURSES[cand.nurse];
-                    const blocked = cand.blocks.length > 0;
-                    const reasons = [...cand.blocks, ...cand.warns].map((i) => i.reason);
-                    const [lead, ...also] = reasons.length ? reasons : ['Eligible.'];
-                    const why = `${id}-why-${cand.nurse}`;
-                    return (
-                      <li key={n.name} className={`sch-cand${blocked ? ' is-blocked' : ''}`}>
-                        <div className="sch-cand-head">
-                          <strong>{n.name}</strong>
-                          <span className="sch-cand-hours">
-                            {cand.hoursNow}h → {cand.hoursAfter}h
-                          </span>
-                        </div>
-                        <p className="sch-reason" id={why}>
-                          <span
-                            className={`sch-lead${blocked ? ' is-block' : cand.warns.length ? ' is-warn' : ' is-ok'}`}
-                          >
-                            {lead}
-                          </span>
-                          {also.map((a) => (
-                            <span key={a} className="sch-also">
-                              {' '}
-                              Also {a.charAt(0).toLowerCase() + a.slice(1)}
-                            </span>
-                          ))}
-                        </p>
-                        <button
-                          type="button"
-                          className="sch-btn sch-assign"
-                          aria-disabled={blocked || undefined}
-                          aria-describedby={why}
-                          onClick={() => assign(cand)}
-                        >
-                          {blocked ? `Can’t assign ${n.name}` : `Assign ${n.name}`}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-                {candidates.length > 0 && candidates.every((c) => c.blocks.length) && (
-                  <p className="sch-note">
-                    No one can cover this without breaking a rule. Free someone up in the grid.
-                  </p>
-                )}
-                {busy.length > 0 && (
-                  <p className="sch-note">
-                    {busy.length > 2
-                      ? `${busy.slice(0, -1).join(', ')} and ${busy.at(-1)}`
-                      : busy.join(' and ')}{' '}
-                    already work {DAYS[gap.day].short}.
-                  </p>
-                )}
-              </>
-            )}
-          </section>
+          <div className="sch-foot">
+            <ul className="sch-legend" aria-hidden="true">
+              <li className="is-D">
+                <Glyph name="sun" /> Day 07–19
+              </li>
+              <li className="is-N">
+                <Glyph name="moon" /> Night 19–07
+              </li>
+              <li className="is-O">– Off</li>
+              <li className="is-bad">! Rule problem</li>
+            </ul>
+            <p className="sch-help" id={`${id}-help`}>
+              <span className="sch-vh">D day 07–19 · N night 19–07 · – off · ! rule problem. </span>
+              Arrow keys move;{' '}
+              {taskDone
+                ? 'Enter or Space (or a click) cycles Day → Night → Off.'
+                : 'cells unlock once the open shift is filled.'}{' '}
+              Cover counts the whole unit: the RNs above plus colleagues not shown (“+3 more”),
+              whose shifts are fixed in this demo.
+            </p>
+          </div>
 
-          <section className="sch-panel" aria-labelledby={`${id}-rules`}>
-            <h4 id={`${id}-rules`}>Rule check</h4>
-            <p className="sch-status">{summarise(issues)}</p>
+          <section className="sch-rulebar" aria-labelledby={`${id}-rules`}>
+            <h4 id={`${id}-rules`}>
+              <Glyph name={issues.length ? 'alert' : 'check'} />
+              Rule check
+            </h4>
+            <p
+              className={`sch-status${blocks ? ' is-block' : issues.length ? ' is-warn' : ' is-ok'}`}
+            >
+              {summarise(issues)}
+            </p>
             {issues.length > 0 && (
               <ul className="sch-issues">
                 {issues.map((i) => (
@@ -476,11 +487,152 @@ export default function SchedulerDemo() {
             </details>
           </section>
         </div>
+
+        <section className="sch-task" aria-labelledby={`${id}-task`}>
+          {!gap ? (
+            <div className="sch-allset">
+              <span className="sch-allset-mark" aria-hidden="true">
+                <Glyph name="check" />
+              </span>
+              <p className="sch-kicker">All shifts covered</p>
+              <h4 id={`${id}-task`}>Every shift meets its target</h4>
+              <p>
+                Edit any cell: Enter, Space or a click cycles Day → Night → Off, and the rule check
+                updates live. Take someone off a shift and this panel finds who can cover it. Reset
+                restores the scenario.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="sch-task-head">
+                <p className="sch-kicker">{taskDone ? 'New gap' : 'Open shift'}</p>
+                <h4 id={`${id}-task`}>
+                  {gapWord(gap)}, ICU: {gapHave} of {TARGET[gap.shift]} RNs
+                </h4>
+                <p className="sch-note">
+                  Choose a nurse. Candidates are ranked by the unit’s rules.
+                </p>
+              </div>
+              <ol className="sch-cands">
+                {candidates.map((cand) => {
+                  const n = NURSES[cand.nurse];
+                  const blocked = cand.blocks.length > 0;
+                  const reasons = [...cand.blocks, ...cand.warns].map((i) => i.reason);
+                  const [lead, ...also] = reasons.length ? reasons : ['Eligible.'];
+                  const why = `${id}-why-${cand.nurse}`;
+                  const tone = blocked ? 'block' : cand.warns.length ? 'warn' : 'ok';
+                  return (
+                    <li key={n.name} className={`sch-cand is-${tone}`}>
+                      <span className="dk-av" style={avatar(cand.nurse)} aria-hidden="true">
+                        {n.name[0]}
+                      </span>
+                      <div className="sch-cand-head">
+                        <strong>{n.name}</strong>
+                        <span className="sch-cand-hours">
+                          {cand.hoursNow}h → {cand.hoursAfter}h
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="sch-btn sch-assign"
+                        aria-disabled={blocked || undefined}
+                        aria-describedby={why}
+                        onClick={() => assign(cand)}
+                      >
+                        {blocked ? `Can’t assign ${n.name}` : `Assign ${n.name}`}
+                      </button>
+                      <p className="sch-reason" id={why}>
+                        <span className={`sch-lead is-${tone}`}>
+                          <Glyph
+                            name={tone === 'ok' ? 'check' : tone === 'warn' ? 'alert' : 'block'}
+                          />
+                          {lead}
+                        </span>
+                        {also.map((a) => (
+                          <span key={a} className="sch-also">
+                            {' '}
+                            Also {a.charAt(0).toLowerCase() + a.slice(1)}
+                          </span>
+                        ))}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ol>
+              {candidates.length > 0 && candidates.every((c) => c.blocks.length) && (
+                <p className="sch-note">
+                  No one can cover this without breaking a rule. Free someone up in the grid.
+                </p>
+              )}
+              {busy.length > 0 && (
+                <p className="sch-note">
+                  {busy.length > 2
+                    ? `${busy.slice(0, -1).join(', ')} and ${busy.at(-1)}`
+                    : busy.join(' and ')}{' '}
+                  already work {DAYS[gap.day].short}.
+                </p>
+              )}
+            </>
+          )}
+        </section>
       </div>
 
       <p className="sch-vh" role="status" aria-live="polite">
         {announce}
       </p>
     </div>
+  );
+}
+
+// Avatar tints, one per nurse; white initials hold 4.5:1 on each.
+const TINTS = ['#6d28d9', '#0f766e', '#b45309', '#be123c', '#1d4ed8', '#4d7c0f'];
+const avatar = (r: number) => ({ '--av': TINTS[r % TINTS.length] }) as CSSProperties;
+
+const GLYPHS = {
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" />
+    </>
+  ),
+  moon: <path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" />,
+  cal: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15" rx="2" />
+      <path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" />
+    </>
+  ),
+  check: <path d="M5 12.5 9.5 17 19 7.5" />,
+  alert: (
+    <>
+      <path d="M12 4 21 19.5H3z" />
+      <path d="M12 10v4M12 17v.5" />
+    </>
+  ),
+  block: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M6 18 18 6" />
+    </>
+  ),
+};
+
+function Glyph({ name }: { name: keyof typeof GLYPHS }) {
+  return (
+    <svg
+      className="sch-ico"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {GLYPHS[name]}
+    </svg>
   );
 }

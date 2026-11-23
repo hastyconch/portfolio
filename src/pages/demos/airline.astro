@@ -1,0 +1,70 @@
+---
+// Harness for the airline loyalty demo (WO-016): the demo alone in a 336×630 phone screen, as the
+// Work section frames it, so it can be reviewed and tested on its own. Not indexed.
+import Base from '../../layouts/Base.astro';
+import AirlineDemo from '../../demos/airline/AirlineDemo.tsx';
+import '../../system/tokens.css';
+---
+
+<Base title="Airline loyalty demo" description="Airline loyalty phone demo (mock data)." noindex>
+  <div class="harness">
+    <h1>Airline loyalty demo</h1>
+    <p>Invented brand, mock data. Every control works by keyboard.</p>
+    <div class="screen">
+      <AirlineDemo client:visible />
+    </div>
+    <p>
+      <a href="/">Back to the portfolio</a>
+    </p>
+  </div>
+</Base>
+
+<style>
+  :global(body) {
+    --h-bg: #f4f4f2;
+    --h-fg: #1b1b1b;
+    --h-link: #0b4f8a;
+    color: var(--h-fg);
+    background: var(--h-bg);
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(body) {
+      --h-bg: #141414;
+      --h-fg: #ededed;
+      --h-link: #8cc4ff;
+    }
+  }
+  .harness {
+    display: grid;
+    justify-items: center;
+    gap: 1rem;
+    padding: 1.5rem 1rem 3rem;
+  }
+  h1 {
+    margin: 0;
+    font-size: var(--text-xl);
+  }
+  p {
+    margin: 0;
+  }
+  a {
+    color: var(--h-link);
+  }
+  .screen {
+    width: 336px;
+    max-width: 100%;
+    height: 630px;
+    /* as the Work section's phone frame: a 36px status strip in the app's header colour */
+    padding-top: 36px;
+    background: linear-gradient(#3d2c5e 0 40px, #f6f3fb 40px);
+    /* phone screen: the bezel ring adds to the container radius */
+    border-radius: calc(var(--radius-3) * 2 + 4px);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 10px #0d0d0d,
+      var(--shadow-3);
+  }
+  .screen > :global(*) {
+    height: 100%;
+  }
+</style>

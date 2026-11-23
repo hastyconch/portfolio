@@ -1,5 +1,6 @@
 ---
-// Review harness for the pipeline demo (WO-010): full width, then in a 360px side column.
+// Review harness for the pipeline demo (WO-010, WO-016): first in a laptop pane (1160 × 500, the
+// frame the Work section gives it at 1440 × 900), then in a 360px side column.
 import Base from '../../layouts/Base.astro';
 import PipelineDemo from '../../demos/pipeline/PipelineDemo.tsx';
 import '../../system/tokens.css';
@@ -12,8 +13,8 @@ import '../../system/liner.css';
     <p>AI-assisted program management, step by step. Mock data only.</p>
 
     <section aria-labelledby="h-full">
-      <h2 id="h-full">Full width</h2>
-      <div class="h-full">
+      <h2 id="h-full">Laptop pane, 1160 × 500</h2>
+      <div class="h-full" data-pane="1160x500">
         <PipelineDemo client:visible />
       </div>
     </section>
@@ -37,8 +38,9 @@ import '../../system/liner.css';
 <style>
   .h-wrap {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
-    max-width: 940px;
+    max-width: 1192px;
     margin-inline: auto;
     padding: 2rem 1rem 4rem;
   }
@@ -56,7 +58,15 @@ import '../../system/liner.css';
     margin: 0;
   }
   .h-full {
-    max-width: 900px;
+    width: 1160px;
+    max-width: 100%;
+  }
+  /* The pane only has a fixed height where it is full size; narrower, it grows with its content. */
+  @media (min-width: 1192px) {
+    .h-full {
+      height: 500px;
+      overflow: auto;
+    }
   }
   .h-side {
     max-width: 360px;
