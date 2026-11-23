@@ -1,9 +1,11 @@
 ---
 // Section header: a plain title and, optionally, a lead sentence and actions (slot).
-// Two shapes so sections don't all open the same way:
+// Two shapes:
 //   "aside": the title sits in a narrow left column beside the lead (Work, aligned to its
-//            sector / company / role column);
-//   "stack": the title over the lead, actions on the right (Projects, Résumé).
+//            sector / company / role column). Actions, if any, end the lead's row (Projects'
+//            rail arrows). WO-027: Work and Projects share this one pattern.
+//   "stack": the title over the lead, actions on the right (Résumé).
+// Phones stack both shapes.
 interface Props {
   title: string;
   id: string;
@@ -11,9 +13,10 @@ interface Props {
   layout?: 'aside' | 'stack';
 }
 const { title, id, lead, layout = 'stack' } = Astro.props;
+const acts = Astro.slots.has('default');
 ---
 
-<header class:list={['sh', `sh-${layout}`]}>
+<header class:list={['sh', `sh-${layout}`, acts && 'sh-acts']}>
   <h2 id={id} class="sh-title">
     {title}
   </h2>
@@ -42,6 +45,14 @@ const { title, id, lead, layout = 'stack' } = Astro.props;
       grid-template-columns: 11rem minmax(0, 1fr);
       column-gap: 2.5rem;
       align-items: baseline;
+    }
+    .sh-aside.sh-acts {
+      grid-template-columns: 11rem minmax(0, 1fr) auto;
+    }
+    .sh-aside > :global(:not(.sh-title, .sh-lead)) {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: center;
     }
     .sh-stack {
       grid-template-columns: minmax(0, 1fr) auto;

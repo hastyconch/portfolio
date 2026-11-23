@@ -16,6 +16,7 @@ const { projects } = Astro.props;
     <SideHead
       title="Projects"
       id="projects-h"
+      layout="aside"
       lead="Apps, games and tools I've built on my own time. Each one has a case study: the problem, what it does today and the stack."
     >
       <div class="rail-btns">
@@ -162,9 +163,14 @@ const { projects } = Astro.props;
       color: var(--ln-ink-3);
       cursor: default;
     }
+    /* A grid of 290px columns, one card each, with six shared rows the cards subgrid into
+       (ProjectCard), so every card's lines sit level (WO-027). */
     .rail {
-      display: flex;
-      gap: var(--space-6);
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 290px;
+      grid-template-rows: repeat(6, auto);
+      gap: 0 var(--space-6);
       max-width: none;
       overflow-x: auto;
       overscroll-behavior-x: contain;

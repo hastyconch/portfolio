@@ -256,6 +256,14 @@ body.ln .label {
     var(--shadow-2);
   position: relative;
 }
+/* On a dark band (Music) black vinyl on near-black reads as a ghost ring: a faint rim in the
+   line token gives the record its edge (WO-027). The hero's record is unchanged. */
+.ln-dark .ln-vinyl {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.16),
+    0 0 0 1px var(--ln-rule),
+    var(--shadow-2);
+}
 .ln-vinyl::before {
   /* sheen */
   content: '';
