@@ -1,8 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// WO-015: on laptops each demo engagement is one pane, one viewport tall below the sticky nav,
-// and the page settles on the next pane (proximity snapping). Phones and reduced motion scroll
-// freely. Skill badges are text, never focusable.
+// WO-015: on laptops each demo engagement is one pane, one viewport tall below the sticky nav.
+// The page scrolls freely: WO-023 removed the vertical snap. Skill badges are text, never focusable.
 
 async function navHeight(page: Page) {
   return page.evaluate(() =>
