@@ -1,33 +1,37 @@
-/* Neutral clinical-software look with its own palette (AA in both colour schemes).
-   It sits inside the site's desktop window frame without borrowing the site's theme. */
+/* Neutral clinical-software look with its own palette (AA in both colour schemes). It sits
+   inside the site's desktop window frame without borrowing the site's theme, and is laid out to
+   fit a laptop pane (about 1200 × 560) without scrolling. Scales come from ../kit.css. */
 .sch-app {
   --sch-bg: #f4f6f8;
   --sch-surface: #ffffff;
+  --sch-sunk: #eef1f5;
   --sch-ink: #17202b;
   --sch-muted: #4b5563;
-  --sch-rule: #c5ccd6;
+  --sch-rule: #d3d9e1;
   --sch-accent: #0b6480;
+  --sch-accent-soft: #e2f0f4;
   --sch-on-accent: #ffffff;
   --sch-focus: #17202b;
-  --sch-day-bg: #fdf1d4;
-  --sch-day-ink: #5a3b00;
-  --sch-night-bg: #dde6f6;
+  --sch-day-bg: #fcefcf;
+  --sch-day-ink: #573a00;
+  --sch-night-bg: #dce5f6;
   --sch-night-ink: #1e3768;
   --sch-bad: #b42318;
+  --sch-bad-soft: #fdecea;
   --sch-warn: #8a4b00;
   --sch-ok: #166534;
+  --sch-hatch: rgb(23 32 43 / 0.1);
   container: sch / inline-size;
   position: relative;
-  height: 100%;
-  overflow: auto;
+  min-height: 100%;
   font-family:
     system-ui,
     -apple-system,
     'Segoe UI',
     Roboto,
     sans-serif;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: var(--dk-fs-md);
+  line-height: var(--dk-lh-normal);
   text-align: left;
   color: var(--sch-ink);
   background: var(--sch-bg);
@@ -36,10 +40,12 @@
   .sch-app {
     --sch-bg: #11161c;
     --sch-surface: #19212a;
+    --sch-sunk: #151c24;
     --sch-ink: #e5e9ef;
     --sch-muted: #a3adba;
-    --sch-rule: #3a4553;
+    --sch-rule: #36414f;
     --sch-accent: #6cc4dd;
+    --sch-accent-soft: #163541;
     --sch-on-accent: #08222b;
     --sch-focus: #e5e9ef;
     --sch-day-bg: #3a2e10;
@@ -47,8 +53,10 @@
     --sch-night-bg: #1f2f4d;
     --sch-night-ink: #d3e0ff;
     --sch-bad: #ff9b8f;
+    --sch-bad-soft: #3a1c1a;
     --sch-warn: #f3bd62;
     --sch-ok: #7fd99a;
+    --sch-hatch: rgb(229 233 239 / 0.12);
   }
 }
 .sch-app *,
@@ -57,7 +65,7 @@
   box-sizing: border-box;
 }
 .sch-app :focus-visible {
-  outline: 3px solid var(--sch-focus);
+  outline: var(--dk-focus) solid var(--sch-focus);
   outline-offset: 2px;
 }
 .sch-vh {
@@ -68,69 +76,129 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
-.sch-app p,
-.sch-app h4,
-.sch-app ol,
-.sch-app ul {
+.sch-app :is(p, h4, ol, ul, dl, dd) {
   margin: 0;
 }
+.sch-app :is(ol, ul) {
+  padding: 0;
+  list-style: none;
+}
+.sch-ico {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+}
 
-/* Top bar */
+/* Top bar: the unit, the week, three live figures and Reset. */
 .sch-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: var(--dk-2) var(--dk-4);
+  padding: var(--dk-2) var(--dk-4);
   border-bottom: 1px solid var(--sch-rule);
   background: var(--sch-surface);
 }
+.sch-mark {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-xl);
+  color: var(--sch-on-accent);
+  background: var(--sch-accent);
+}
+.sch-heading {
+  flex: 1;
+  min-width: 12rem;
+}
 .sch-title {
+  font-size: var(--dk-fs-lg);
   font-weight: 700;
-  font-size: 15px;
+  line-height: var(--dk-lh-snug);
 }
 .sch-sub {
-  font-size: 12px;
+  font-size: var(--dk-fs-xs);
   color: var(--sch-muted);
 }
+.sch-kpis {
+  display: flex;
+}
+.sch-kpis div {
+  display: grid;
+  padding: 0 var(--dk-4);
+  border-left: 1px solid var(--sch-rule);
+}
+.sch-kpis dt {
+  font-size: var(--dk-fs-xs);
+  color: var(--sch-muted);
+}
+.sch-kpis dd {
+  font-size: var(--dk-fs-xl);
+  font-weight: 700;
+  line-height: var(--dk-lh-snug);
+  font-variant-numeric: tabular-nums;
+}
+.sch-kpis .is-bad dd {
+  color: var(--sch-bad);
+}
+.sch-kpis .is-warn dd {
+  color: var(--sch-warn);
+}
+.sch-kpis .is-ok dd {
+  color: var(--sch-ok);
+}
 .sch-btn {
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 2.25rem;
+  padding: 0 var(--dk-4);
   border: 1px solid var(--sch-accent);
-  border-radius: 6px;
+  border-radius: var(--dk-r2);
   font: inherit;
   font-weight: 600;
   color: var(--sch-accent);
   background: transparent;
   cursor: pointer;
+  transition:
+    background-color var(--dk-quick) var(--dk-ease),
+    scale var(--dk-quick) var(--dk-ease);
+}
+.sch-btn:is(:hover, :focus-visible) {
+  background: var(--sch-accent-soft);
+}
+.sch-btn:active {
+  scale: var(--dk-press);
 }
 
-/* Layout: stacked below 720px, grid + side panel above */
+/* Layout: stacked when narrow; roster beside a candidate column when wide. */
 .sch-body {
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--dk-3);
+  padding: var(--dk-3);
 }
-@container sch (min-width: 720px) {
+@container sch (min-width: 760px) {
   .sch-body {
-    grid-template-columns: minmax(0, 1fr) 16.5rem;
+    grid-template-columns: minmax(0, 1fr) 19.5rem;
     align-items: start;
+    /* tighter top and bottom so the laptop pane keeps slack for heavier fonts (Linux CI) */
+    padding-block: var(--dk-2);
   }
 }
-.sch-main,
-.sch-side {
+.sch-main {
   display: grid;
-  gap: 12px;
+  gap: var(--dk-2);
   min-width: 0;
 }
 
-/* Grid */
+/* Roster grid */
 .sch-gridwrap {
   /* positioned so visually hidden header text is clipped with the grid, not the page */
   position: relative;
   overflow-x: auto;
   border: 1px solid var(--sch-rule);
-  border-radius: 8px;
+  border-radius: var(--dk-r3);
   background: var(--sch-surface);
 }
 .sch-grid {
@@ -140,46 +208,81 @@
   font-variant-numeric: tabular-nums;
 }
 .sch-grid th {
+  font-size: var(--dk-fs-xs);
   font-weight: 600;
-  font-size: 12px;
   color: var(--sch-muted);
 }
 .sch-grid thead th {
-  padding: 4px 2px;
+  padding: var(--dk-1) 2px;
+  border-radius: var(--dk-r1);
   text-align: center;
 }
+.sch-date {
+  margin-left: var(--dk-1);
+  font-weight: 400;
+}
 .sch-grid thead th.is-open {
-  color: var(--sch-ink);
-  box-shadow: inset 0 -3px 0 var(--sch-accent);
+  color: var(--sch-accent);
+  background: var(--sch-accent-soft);
+  box-shadow: inset 0 -2px 0 var(--sch-accent);
 }
 .sch-corner,
 .sch-nurse {
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 6.5rem;
+  min-width: 9.5rem;
   background: var(--sch-surface);
+  /* cover the border-spacing gaps too, so cells scrolling underneath don't peek through */
+  box-shadow: 0 0 0 3px var(--sch-surface);
 }
 .sch-grid .sch-corner {
   text-align: left;
-  padding-left: 6px;
+  padding-left: var(--dk-2);
 }
 .sch-nurse {
-  padding: 2px 6px;
+  padding: 0 var(--dk-2) 0 var(--dk-1);
   text-align: left;
+  white-space: nowrap;
+}
+.sch-nurse > * {
+  vertical-align: middle;
+}
+.sch-nurse .dk-av {
+  width: 1.625rem;
+  height: 1.625rem;
+}
+.sch-who {
+  display: inline-grid;
+  margin-left: var(--dk-2);
+  line-height: var(--dk-lh-snug);
 }
 .sch-name {
-  display: block;
-  font-size: 14px;
+  font-size: var(--dk-fs-md);
   color: var(--sch-ink);
 }
 .sch-hours {
-  display: block;
   font-weight: 500;
+}
+.sch-meter {
+  display: inline-block;
+  width: 1.75rem;
+  height: 4px;
+  margin-right: var(--dk-1);
+  border-radius: var(--dk-rf);
+  vertical-align: middle;
+  background: linear-gradient(
+    90deg,
+    var(--sch-accent) calc(var(--h) * 100%),
+    var(--sch-rule) calc(var(--h) * 100%)
+  );
 }
 .sch-hours.is-warn {
   color: var(--sch-warn);
   font-weight: 700;
+}
+.sch-hours.is-warn .sch-meter {
+  background: var(--sch-warn);
 }
 .sch-extra {
   font-weight: 400;
@@ -187,22 +290,33 @@
 }
 .sch-cell {
   position: relative;
-  min-width: 44px;
-  height: 44px;
-  padding: 0 4px;
-  border: 2px solid transparent;
-  border-radius: 6px;
+  min-width: 2.75rem;
+  height: 2.125rem;
+  padding: 0 2px;
+  border-radius: var(--dk-r2);
   text-align: center;
   vertical-align: middle;
   cursor: pointer;
+  transition: box-shadow var(--dk-quick) var(--dk-ease);
+}
+.sch-cell:is(:hover, :focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--sch-accent);
+}
+.sch-cell:active {
+  box-shadow: inset 0 0 0 3px var(--sch-accent);
 }
 .sch-cell:focus-visible {
-  outline: 3px solid var(--sch-focus);
   outline-offset: 1px;
 }
-.sch-glyph {
+.sch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
   font-weight: 700;
-  font-size: 15px;
+}
+.sch-glyph {
+  font-size: var(--dk-fs-md);
+  font-weight: 700;
 }
 .sch-cell.is-D {
   color: var(--sch-day-ink);
@@ -214,118 +328,362 @@
 }
 .sch-cell.is-O {
   color: var(--sch-muted);
-  border-color: var(--sch-rule);
-  border-style: dashed;
+}
+.sch-cell.is-O:is(:hover, :focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--sch-accent);
+}
+.sch-cell.is-O.in-open {
+  background: var(--sch-accent-soft);
+}
+.sch-cell.is-leave {
+  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--sch-hatch) 5px 7px);
 }
 .sch-cell.is-bad {
-  border: 2px solid var(--sch-bad);
+  box-shadow: inset 0 0 0 2px var(--sch-bad);
 }
 .sch-tag {
-  display: block;
-  font-size: 10px;
+  font-size: var(--dk-fs-xs);
   font-weight: 600;
   line-height: 1;
-  letter-spacing: 0.02em;
   color: var(--sch-muted);
 }
 .sch-flag {
   position: absolute;
-  top: 1px;
-  right: 4px;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  font-size: var(--dk-fs-xs);
   font-weight: 800;
-  font-size: 12px;
-  color: var(--sch-bad);
+  line-height: 1;
+  color: var(--sch-surface);
+  background: var(--sch-bad);
 }
-.sch-cover.is-first > * {
-  border-top: 2px solid var(--sch-rule);
+
+/* Cover rows: count, colleagues off-screen, and a dot per RN against the target. */
+.sch-cover .sch-nurse {
+  background: var(--sch-surface);
+}
+.sch-cover-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 50%;
+  color: var(--sch-muted);
+  background: var(--sch-sunk);
 }
 .sch-count {
+  height: 2.375rem;
   cursor: default;
   color: var(--sch-ink);
+  background: var(--sch-sunk);
+}
+.sch-count:is(:hover, :focus-visible) {
+  box-shadow: none;
 }
 .sch-count .sch-glyph {
-  font-size: 13px;
+  font-size: var(--dk-fs-sm);
+}
+.sch-dots {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 3px;
+}
+.sch-count:not(.is-bad, .is-open) .sch-dots {
+  display: none;
+}
+.sch-count:not(.is-bad, .is-open) .sch-glyph {
+  font-weight: 600;
+  color: var(--sch-muted);
+}
+.sch-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sch-rule);
+}
+.sch-dots .is-on {
+  background: var(--sch-ok);
+}
+.sch-count.is-bad {
+  box-shadow: inset 0 0 0 2px var(--sch-bad);
 }
 .sch-count.is-open {
-  border: 2px dashed var(--sch-bad);
+  background: var(--sch-bad-soft);
+  box-shadow: none;
+  outline: 2px dashed var(--sch-bad);
+  outline-offset: -2px;
+}
+.sch-count.is-open:focus-visible {
+  outline: var(--dk-focus) solid var(--sch-focus);
+  outline-offset: 1px;
 }
 .sch-count.is-open .sch-tag {
   color: var(--sch-bad);
 }
+.sch-count.is-open .sch-dots span:not(.is-on) {
+  background: var(--sch-bad);
+}
+
+/* Narrow columns: a slimmer name column, the course note on its own line, cover counts kept on
+   one line (the roster scrolls sideways), and the figures spread across the top bar. */
+@container sch (max-width: 559px) {
+  .sch-corner,
+  .sch-nurse {
+    min-width: 7.5rem;
+  }
+  .sch-extra {
+    display: block;
+    white-space: normal;
+  }
+  .sch-count {
+    min-width: 5.5rem;
+    white-space: nowrap;
+  }
+  .sch-kpis {
+    width: 100%;
+  }
+  .sch-kpis div {
+    flex: 1;
+    padding: 0 var(--dk-3);
+  }
+  .sch-kpis div:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* Legend and keyboard help */
+.sch-foot {
+  display: grid;
+  gap: var(--dk-1);
+}
+.sch-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dk-1) var(--dk-2);
+}
+.sch-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
+  padding: 0 var(--dk-2);
+  border-radius: var(--dk-r1);
+  font-size: var(--dk-fs-xs);
+  font-weight: 700;
+}
+.sch-legend .is-D {
+  color: var(--sch-day-ink);
+  background: var(--sch-day-bg);
+}
+.sch-legend .is-N {
+  color: var(--sch-night-ink);
+  background: var(--sch-night-bg);
+}
+.sch-legend .is-O {
+  color: var(--sch-muted);
+  box-shadow: inset 0 0 0 1px var(--sch-rule);
+}
+.sch-legend .is-bad {
+  color: var(--sch-bad);
+  box-shadow: inset 0 0 0 1px var(--sch-bad);
+}
 .sch-help {
-  font-size: 12px;
+  font-size: var(--dk-fs-xs);
+  line-height: var(--dk-lh-snug);
   color: var(--sch-muted);
 }
 /* Scroll cue on narrow screens: a hint, and a fade on whichever edge has more columns. */
 .sch-scrollhint {
-  margin: 0;
-  font-size: 12px;
+  font-size: var(--dk-fs-xs);
   font-weight: 600;
   color: var(--sch-muted);
 }
 .sch-gridwrap[data-more='end'] {
   mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
+/* The start fade begins after the sticky name column, so names and avatars stay solid. */
 .sch-gridwrap[data-more='start'] {
-  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(
+    to right,
+    #000 7.75rem,
+    transparent 7.75rem,
+    #000 calc(7.75rem + 28px)
+  );
 }
 .sch-gridwrap[data-more='both'] {
   mask-image: linear-gradient(
     to right,
-    transparent,
-    #000 28px,
+    #000 7.75rem,
+    transparent 7.75rem,
+    #000 calc(7.75rem + 28px),
     #000 calc(100% - 28px),
     transparent
   );
 }
 
-/* Side panels */
-.sch-panel {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
+/* Rule check: one strip under the roster. The rule list floats above it when opened. */
+.sch-rulebar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dk-1) var(--dk-3);
+  padding: var(--dk-2) var(--dk-3);
   border: 1px solid var(--sch-rule);
-  border-radius: 8px;
+  border-radius: var(--dk-r3);
   background: var(--sch-surface);
 }
-.sch-panel h4 {
-  font-size: 15px;
-  line-height: 1.3;
+.sch-rulebar h4 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
+  font-size: var(--dk-fs-md);
+}
+.sch-status {
+  padding: 0 var(--dk-2);
+  border-radius: var(--dk-rf);
+  font-size: var(--dk-fs-sm);
+  font-weight: 700;
+}
+.sch-status.is-block {
+  color: var(--sch-bad);
+  background: var(--sch-bad-soft);
+}
+.sch-status.is-warn {
+  color: var(--sch-warn);
+  background: var(--sch-day-bg);
+}
+.sch-status.is-ok {
+  color: var(--sch-ok);
+  background: var(--sch-sunk);
+}
+.sch-issues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dk-1) var(--dk-3);
+  font-size: var(--dk-fs-sm);
+}
+.sch-sev {
+  font-size: var(--dk-fs-xs);
+  font-weight: 800;
+  letter-spacing: var(--dk-track-label);
+  text-transform: uppercase;
+}
+.is-block > .sch-sev {
+  color: var(--sch-bad);
+}
+.is-warn > .sch-sev {
+  color: var(--sch-warn);
+}
+.sch-rules {
+  margin-left: auto;
+}
+.sch-rules summary {
+  min-height: 1.75rem;
+  padding: var(--dk-1) var(--dk-2);
+  border-radius: var(--dk-r1);
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  line-height: var(--dk-lh-normal);
+  color: var(--sch-accent);
+  cursor: pointer;
+}
+.sch-rules summary:is(:hover, :focus-visible) {
+  background: var(--sch-accent-soft);
+}
+.sch-rules ul {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--dk-1));
+  z-index: 3;
+  display: grid;
+  gap: var(--dk-1);
+  width: min(26rem, 100%);
+  padding: var(--dk-3) var(--dk-3) var(--dk-3) var(--dk-6);
+  border: 1px solid var(--sch-rule);
+  border-radius: var(--dk-r3);
+  list-style: disc;
+  font-size: var(--dk-fs-sm);
+  color: var(--sch-muted);
+  background: var(--sch-surface);
+  box-shadow: var(--dk-shadow-2);
+}
+
+/* Open shift and its ranked candidates */
+.sch-task {
+  display: grid;
+  gap: var(--dk-2);
+  padding: var(--dk-3);
+  border: 1px solid var(--sch-rule);
+  border-radius: var(--dk-r3);
+  background: var(--sch-surface);
+}
+.sch-task-head {
+  display: grid;
+  gap: 2px;
+}
+.sch-task h4 {
+  font-size: var(--dk-fs-lg);
+  line-height: var(--dk-lh-snug);
 }
 .sch-kicker {
-  font-size: 11px;
+  font-size: var(--dk-fs-xs);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--dk-track-label);
   text-transform: uppercase;
-  color: var(--sch-muted);
+  color: var(--sch-bad);
 }
-.sch-task:not(:has(.sch-cands)) .sch-kicker {
-  color: var(--sch-ok);
+.sch-note {
+  font-size: var(--dk-fs-sm);
+  color: var(--sch-muted);
 }
 .sch-cands {
   display: grid;
-  gap: 8px;
-  padding: 0;
-  list-style: none;
 }
 .sch-cand {
   display: grid;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid var(--sch-rule);
-  border-radius: 6px;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'av head btn'
+    'av why why';
+  align-items: center;
+  gap: 2px var(--dk-2);
+  padding: var(--dk-2) 0;
+  border-top: 1px solid var(--sch-rule);
+}
+.sch-cand .dk-av {
+  grid-area: av;
+  align-self: start;
+  margin-top: 2px;
 }
 .sch-cand-head {
+  grid-area: head;
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--dk-2);
 }
 .sch-cand-hours,
 .sch-also {
-  font-size: 12px;
+  font-size: var(--dk-fs-xs);
   color: var(--sch-muted);
+  font-variant-numeric: tabular-nums;
+}
+.sch-reason {
+  grid-area: why;
+  font-size: var(--dk-fs-sm);
+  line-height: var(--dk-lh-snug);
 }
 .sch-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
   font-weight: 600;
 }
 .sch-lead.is-ok {
@@ -338,9 +696,17 @@
   color: var(--sch-bad);
 }
 .sch-assign {
-  justify-self: start;
+  grid-area: btn;
+  min-height: 2rem;
+  padding: 0 var(--dk-3);
+  font-size: var(--dk-fs-sm);
   color: var(--sch-on-accent);
   background: var(--sch-accent);
+}
+.sch-assign:is(:hover, :focus-visible) {
+  color: var(--sch-on-accent);
+  background: var(--sch-ink);
+  border-color: var(--sch-ink);
 }
 .sch-assign[aria-disabled='true'] {
   color: var(--sch-muted);
@@ -349,42 +715,64 @@
   background: transparent;
   cursor: not-allowed;
 }
-.sch-note,
-.sch-status {
-  font-size: 13px;
+.sch-assign[aria-disabled='true']:is(:hover, :focus-visible) {
   color: var(--sch-muted);
+  background: transparent;
+  border-color: var(--sch-muted);
 }
-.sch-status {
-  font-weight: 600;
-  color: var(--sch-ink);
+.sch-assign[aria-disabled='true']:active {
+  scale: 1;
 }
-.sch-issues {
+.sch-allset {
   display: grid;
-  gap: 6px;
-  padding: 0;
-  list-style: none;
-  font-size: 13px;
+  justify-items: start;
+  gap: var(--dk-2);
 }
-.sch-sev {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.sch-allset .sch-kicker {
+  color: var(--sch-ok);
 }
-.is-block > .sch-sev {
-  color: var(--sch-bad);
-}
-.is-warn > .sch-sev {
-  color: var(--sch-warn);
-}
-.sch-rules summary {
-  min-height: 24px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.sch-rules ul {
-  margin-top: 6px;
-  padding-left: 18px;
-  font-size: 13px;
+.sch-allset p:last-child {
+  font-size: var(--dk-fs-sm);
   color: var(--sch-muted);
+}
+.sch-allset-mark {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: var(--dk-fs-2xl);
+  color: var(--sch-ok);
+  background: var(--sch-sunk);
+}
+
+/* Motion: candidates slide in when a gap opens (no fade, so text contrast never dips); the
+   all-clear mark arrives once. */
+@media (prefers-reduced-motion: no-preference) {
+  .sch-allset-mark {
+    animation: sch-pop var(--dk-slow) var(--dk-ease-pop) both;
+  }
+  .sch-cands li {
+    animation: sch-in var(--dk-base) var(--dk-ease) both;
+  }
+  .sch-cands li:nth-child(2) {
+    animation-delay: var(--dk-stagger);
+  }
+  .sch-cands li:nth-child(3) {
+    animation-delay: calc(var(--dk-stagger) * 2);
+  }
+  .sch-cands li:nth-child(n + 4) {
+    animation-delay: calc(var(--dk-stagger) * 3);
+  }
+}
+@keyframes sch-pop {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+@keyframes sch-in {
+  from {
+    translate: var(--dk-move) 0;
+  }
 }

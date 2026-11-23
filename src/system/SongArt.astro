@@ -2,6 +2,12 @@
 // SongArt: a song's sleeve with the record peeking out (Music is where the record theme lives). Uses the song's `art` image when the
 // owner has supplied it; otherwise the `artColors` gradient sleeve (number, title, year) stands in.
 // Shared by the home Music section and the /music/<id>/ pages.
+//
+// Cover and record appear together, once. With scripting on, the sleeve stays unpainted until its
+// cover image has loaded and decoded; then it shows and the record slides out. (Before WO-018 the
+// drawn stand-in sleeve painted first, the record started sliding, and the real cover popped in on
+// top of it mid-slide, because the image arrived after the panel or page was first painted.)
+// The home tabs dispatch `sa:show` on a panel when they reveal it.
 import type { Song } from '../lib/content';
 import { Image } from 'astro:assets';
 
@@ -21,6 +27,7 @@ const decorative = !d.art || !d.artAlt;
 
 <div
   class="sa"
+  data-sa
   aria-hidden={decorative ? 'true' : undefined}
   style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
 >
@@ -47,10 +54,61 @@ const decorative = !d.art || !d.artAlt;
   )}
 </div>
 
+<script>
+  const show = (sa: HTMLElement) => {
+    // A newer show (a fast tab switch away and back) wins over a slower, older one.
+    const run = String(Number(sa.dataset.run ?? 0) + 1);
+    sa.dataset.run = run;
+    const img = sa.querySelector('img');
+    if (!img) {
+      sa.dataset.state = 'in';
+      return;
+    }
+    sa.dataset.state = 'wait';
+    const reveal = () => {
+      if (sa.dataset.run === run) sa.dataset.state = 'in';
+    };
+    // Lazy art in a panel that was hidden hasn't started loading yet.
+    img.loading = 'eager';
+    const loaded = img.complete
+      ? Promise.resolve()
+      : new Promise<void>((done) => {
+          img.addEventListener('load', () => done(), { once: true });
+          img.addEventListener('error', () => done(), { once: true });
+        });
+    // decode() rejects for a broken image: show the drawn sleeve then.
+    loaded.then(() => img.decode()).then(reveal, reveal);
+  };
+  document.querySelectorAll<HTMLElement>('[data-sa]').forEach((sa) => {
+    if (!sa.closest('[hidden]')) show(sa);
+  });
+  document.addEventListener('sa:show', (e) => {
+    if (e.target instanceof Element)
+      e.target.querySelectorAll<HTMLElement>('[data-sa]').forEach(show);
+  });
+</script>
+
 <style>
   .sa {
     position: relative;
     width: min(100%, 340px);
+    transition: opacity var(--dur-quick) var(--ease-out);
+  }
+  /* Waiting for the cover (see the note at the top). Before the script runs, only where scripting
+     is on; if it never runs, the sleeve shows anyway after a few seconds. */
+  .sa[data-state='wait'] {
+    opacity: 0;
+  }
+  @media (scripting: enabled) {
+    .sa:not([data-state]) {
+      opacity: 0;
+      animation: sa-show var(--dur-quick) var(--ease-out) calc(var(--dur-reveal) * 6) both;
+    }
+  }
+  @keyframes sa-show {
+    to {
+      opacity: 1;
+    }
   }
   .sa-vinyl {
     position: absolute;
@@ -120,8 +178,14 @@ const decorative = !d.art || !d.artAlt;
     font-size: 6cqi;
     font-weight: 700;
   }
-  /* The record slides out of the sleeve; it replays whenever a hidden tab panel is shown. */
+  /* The record slides out of the sleeve as the cover appears (data-state="in"); it replays
+     whenever a hidden tab panel is shown. Without scripting it slides out on first paint. */
   @media (prefers-reduced-motion: no-preference) {
+    .sa[data-state='in'] .sa-vinyl {
+      animation: sa-out calc(var(--dur-reveal) * 2) var(--ease-out) both;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) and (scripting: none) {
     .sa-vinyl {
       animation: sa-out calc(var(--dur-reveal) * 2) var(--ease-out) both;
     }

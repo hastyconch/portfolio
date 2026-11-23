@@ -2,6 +2,9 @@
 // Work: engagements with a demo get the full layout (story, what I did, the live demo inline
 // beside it, after the summary on phones). The rest follow as a compact list, each summary in
 // a disclosure. Sector and role sit inline above each title.
+// WO-015: on laptops each demo engagement is one pane, one viewport tall below the nav, and the
+// page settles on the next one (proximity snapping, set on the root in liner.css). Skills are
+// badges: a deliberate, non-interactive stamp, not a quiet list.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -104,11 +107,16 @@ const others = work.filter((w) => w.data.demo === 'none');
                 )}
               </div>
 
-              <ul class="wk-skills" aria-label={`Skills: ${d.title}`}>
-                {d.skills.map((s) => (
-                  <li>{s}</li>
-                ))}
-              </ul>
+              <div class="wk-skills">
+                <h4 class="wk-skills-h label" id={`${hid}-skills`}>
+                  Skills
+                </h4>
+                <ul class="wk-badges" aria-labelledby={`${hid}-skills ${hid}`}>
+                  {d.skills.map((s) => (
+                    <li>{s}</li>
+                  ))}
+                </ul>
+              </div>
             </article>
           </li>
         );
@@ -166,6 +174,11 @@ const others = work.filter((w) => w.data.demo === 'none');
   }
   .wk {
     border-bottom: var(--ln-hairline);
+    /* A snap point, live only where the root snaps (760px and up, motion allowed). The root's
+       scroll padding already clears the nav plus a little air; this pulls the pane back up so
+       its top meets the nav exactly. */
+    scroll-snap-align: start;
+    scroll-margin-top: calc(var(--ln-header) - var(--ln-scroll-pad, var(--ln-header)));
   }
   .wk article {
     display: grid;
@@ -257,22 +270,35 @@ const others = work.filter((w) => w.data.demo === 'none');
     justify-items: start;
   }
 
-  /* Skills: tags on phones, a quiet list in the side column on wider screens */
+  /* Skills: badges, a row on phones and a stack in the side column on wider screens. A stamp:
+     a tinted neutral plate, a hairline and an accent edge, set in the UI face at a firmer weight
+     than the copy. Not interactive, so no states. */
   .wk-skills {
     grid-area: skills;
+    margin-top: var(--space-6);
+  }
+  body.ln .wk-skills-h {
+    margin: 0 0 var(--space-3);
+  }
+  .wk-badges {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     gap: var(--space-2);
-    margin: var(--space-5) 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
-  .wk-skills li {
-    padding: var(--space-1) var(--space-3);
-    border: var(--ln-hairline);
-    border-radius: var(--radius-full);
+  .wk-badges li {
+    padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
+    border: 1px solid var(--ln-badge-rule);
+    border-left: 3px solid var(--ln-accent);
+    border-radius: var(--radius-1);
+    background: var(--ln-badge);
     font-size: var(--text-xs);
-    color: var(--ln-ink-2);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    color: var(--ln-ink);
   }
 
   /* More client work: a compact list */
@@ -365,14 +391,10 @@ const others = work.filter((w) => w.data.demo === 'none');
     }
     .wk-skills {
       align-self: start;
-      flex-direction: column;
-      gap: var(--space-1);
       margin-top: var(--space-1);
     }
-    .wk-skills li {
-      padding: 0;
-      border: 0;
-      font-size: var(--text-sm);
+    .wk-badges {
+      flex-direction: column;
     }
     .wk-more {
       display: grid;
@@ -422,6 +444,63 @@ const others = work.filter((w) => w.data.demo === 'none');
     .wk-more-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       column-gap: var(--space-6);
+    }
+  }
+
+  /* Laptop panes (WO-015): each demo engagement is one viewport tall below the nav, from
+     1280 × 720 up. Phone panes centre the story beside a phone scaled to the pane; wide panes put
+     the story and what I did side by side over a full-width demo that takes the rest of the
+     pane (its frame scrolls inside if the demo is taller). Shorter windows keep the flowing
+     layout above. */
+  @media (min-width: 1100px) and (min-height: 600px) {
+    .wk-list {
+      --wk-pane: calc(100svh - var(--ln-header));
+      --wk-pad: clamp(var(--space-4), 4svh, var(--space-6));
+    }
+    /* The pane is the list item; the engagement sits centred in it. */
+    .wk {
+      display: grid;
+      align-content: center;
+      min-height: var(--wk-pane);
+    }
+    .wk article {
+      padding-block: var(--wk-pad);
+    }
+    /* Device height: the pane less its padding and the caption under the phone. */
+    .wk-live:not(.wk-wide) .wk-demo {
+      --df-h: calc(var(--wk-pane) - 2 * var(--wk-pad) - var(--space-7));
+    }
+
+    .wk-wide {
+      height: var(--wk-pane);
+      grid-template-rows: minmax(0, 1fr);
+      align-content: stretch;
+    }
+    .wk-wide article {
+      min-height: 0;
+      padding-block: var(--space-5);
+      grid-template-columns: 11rem minmax(0, 1.25fr) minmax(0, 1fr);
+      grid-template-areas:
+        'skills head details'
+        'demo demo demo';
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .wk-wide .wk-head {
+      align-self: start;
+    }
+    /* What I did, compact: a step smaller, so the demo keeps most of the pane. */
+    .wk-wide .wk-details {
+      margin-top: 0;
+      font-size: var(--text-sm);
+      line-height: var(--leading-normal);
+    }
+    .wk-wide .wk-ul {
+      gap: var(--space-1);
+    }
+    .wk-wide .wk-demo {
+      align-self: stretch;
+      min-height: 0;
+      margin-top: var(--space-5);
     }
   }
 </style>

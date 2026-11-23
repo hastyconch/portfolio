@@ -1,6 +1,10 @@
 ---
 // DemoFrame slot: chrome around demos: phone, desktop window or diagram plate.
 // With `coming`, renders a "coming soon" state instead of slotted content.
+// Height budget (WO-015): a layout may set `--df-h` (the device's maximum height). Phones scale
+// down to it, keeping their proportions. Live desktop and diagram frames also honour any
+// definite height their container gives them: the screen scrolls inside the frame instead of
+// the frame growing past it.
 interface Props {
   frame: 'phone' | 'desktop' | 'diagram' | 'none';
   caption?: string;
@@ -56,9 +60,13 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
     background: var(--ln-bg-2);
   }
 
-  /* Phone */
+  /* Phone. The large phone is 360 × 654 (screen + 12px bezel); under a height budget it keeps
+     that ratio (0.55). The floor keeps it usable in very short windows. */
+  .df-phone {
+    --df-ph: clamp(440px, var(--df-h, 654px), 654px);
+  }
   .df-phone .df-device {
-    max-width: 360px;
+    max-width: min(360px, calc(var(--df-ph) * 0.55));
     padding: 12px;
     /* device chrome: outer radius = screen radius + bezel */
     border-radius: calc(var(--df-r) + 12px);
@@ -72,14 +80,18 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
     --df-r: 36px;
   }
   .df-phone.df-lg .df-screen {
-    height: 630px;
+    height: calc(var(--df-ph) - 24px);
     border-radius: var(--df-r);
     padding-top: 36px;
     /* status-bar strip in the demo's own (invented) header colour */
     background: linear-gradient(var(--df-top, #3d2c5e) 0 40px, var(--df-screen, #f6f3fb) 40px);
   }
-  .df-phone.df-lg .df-screen > :global(*) {
+  /* The frame owns the screen's height: the island and the demo inside it fill it exactly (a
+     demo's own minimum would push its tab bar out of a scaled-down phone; its body scrolls). */
+  .df-phone.df-lg .df-screen > :global(*),
+  .df-phone.df-lg .df-screen > :global(*) > :global(*) {
     height: 100%;
+    min-height: 0;
   }
   .df-island {
     position: absolute;
@@ -154,14 +166,35 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
     aspect-ratio: 16 / 10;
     background: transparent;
   }
-  /* Live desktop and diagram demos size to their content; only the "coming" plate keeps 16:10. */
-  .df-desktop:not(.df-coming) .df-screen,
-  .df-diagram:not(.df-coming) .df-screen {
-    aspect-ratio: auto;
-  }
+  /* Live desktop and diagram demos size to their content; only the "coming" plate keeps 16:10.
+     They fill their container's width, and when the container has a definite height the frame
+     stops there and the screen scrolls inside it (contained, so the page doesn't take over). */
   .df-desktop:not(.df-coming),
   .df-diagram:not(.df-coming) {
-    justify-items: stretch;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    min-height: 0;
+  }
+  .df-desktop:not(.df-coming) .df-device,
+  .df-diagram:not(.df-coming) .df-device {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-width: none;
+  }
+  .df-desktop:not(.df-coming) .df-screen,
+  .df-diagram:not(.df-coming) .df-screen {
+    flex: 0 1 auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .df-titlebar,
+  .df-cap {
+    flex: none;
   }
 
   /* Coming soon state */

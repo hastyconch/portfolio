@@ -48,6 +48,39 @@ engineering:
       title: 'Playtested with friends',
       body: 'Friends played early builds; their feedback drove a round of fixes: a stapler that reads as a stapler, gentler hazards, a longer jump.',
     }
+cover:
+  frame: game
+  backdrop: '#5b3a87'
+  image: ../../assets/projects/billable/01-gameplay.webp
+  alt: 'Billable. gameplay: the Associate swings a laptop near a red stapler in an open-plan office at dusk, under the hours, coffee and wellbeing bar.'
+gallery:
+  title: 'Screens'
+  intro: 'Captured from the game running on my laptop. Every sprite is drawn in code.'
+  items:
+    - {
+        image: ../../assets/projects/billable/02-title.webp,
+        alt: 'The title screen: the Billable. logo over a night skyline, with the controls listed below.',
+        caption: 'The title screen.',
+        shape: wide,
+      }
+    - {
+        image: ../../assets/projects/billable/03-character-select.webp,
+        alt: 'Character select: the Rainmaker, the Associate and the Analyst, each with toughness, speed and reach bars and a special move.',
+        caption: 'Three classes, each with a coffee-powered special.',
+        shape: wide,
+      }
+    - {
+        image: ../../assets/projects/billable/04-open-plan.webp,
+        alt: 'The Rainmaker punching through an open-plan floor full of motivational signs, as a new enemy is introduced at the top of the screen.',
+        caption: 'Every enemy arrives with a quip.',
+        shape: wide,
+      }
+    - {
+        image: ../../assets/projects/billable/05-boss-dialogue.webp,
+        alt: "A boss introduction: a dialogue box with the Senior Manager's portrait asking the Associate about their utilization.",
+        caption: 'A boss intro, in the dialogue box.',
+        shape: wide,
+      }
 demo: billable
 accent: '#2f7d32'
 order: 1

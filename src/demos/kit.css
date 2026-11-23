@@ -1,0 +1,96 @@
+/* Demo kit: the scales every demo shares (constitution art. 12). Each demo is an invented product
+   with its own colours, but type, space, radius, elevation and motion come from here, so the
+   demos stay inside the craft budget. Values follow the site tokens (tokens.css) where those exist;
+   the type steps are tuned for app UI inside a 336px phone and a dense desktop pane, where the
+   site's 17px body and viewport-based titles would not fit. */
+:where(.sky-app, .gro-app, .sch-app, .pl, .bm) {
+  /* Type: eight steps, 12px floor (labels), 13px captions, 14px UI text. */
+  --dk-fs-xs: 0.75rem; /* 12  labels, chips */
+  --dk-fs-sm: 0.8125rem; /* 13  captions, meta */
+  --dk-fs-md: 0.875rem; /* 14  UI text */
+  --dk-fs-lg: 0.9375rem; /* 15  body in the apps */
+  --dk-fs-xl: 1.0625rem; /* 17  item titles */
+  --dk-fs-2xl: 1.375rem; /* 22  screen titles */
+  --dk-fs-3xl: 1.875rem; /* 30  big numbers */
+  --dk-fs-4xl: 2.375rem; /* 38  the one hero number per screen */
+
+  --dk-lh-tight: 1.1;
+  --dk-lh-snug: 1.25;
+  --dk-lh-normal: 1.45;
+
+  --dk-track-tight: -0.02em;
+  --dk-track-label: 0.08em;
+
+  /* Space: the 4px grid. */
+  --dk-1: 0.25rem;
+  --dk-2: 0.5rem;
+  --dk-3: 0.75rem;
+  --dk-4: 1rem;
+  --dk-5: 1.25rem;
+  --dk-6: 1.5rem;
+
+  /* Radius: inner, element, container, sheet, full (chips, avatars, meters only). */
+  --dk-r1: 4px;
+  --dk-r2: 8px;
+  --dk-r3: 12px;
+  --dk-r4: 16px;
+  --dk-rf: 9999px;
+
+  /* Elevation: things that float. Two layers each. */
+  --dk-shadow-1: 0 1px 1px rgb(16 12 28 / 0.06), 0 1px 3px rgb(16 12 28 / 0.1);
+  --dk-shadow-2: 0 1px 2px rgb(16 12 28 / 0.1), 0 8px 20px rgb(16 12 28 / 0.16);
+  --dk-shadow-3: 0 2px 4px rgb(16 12 28 / 0.14), 0 20px 44px rgb(16 12 28 / 0.3);
+
+  /* Motion: one ease, short times, close faster than open. */
+  --dk-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dk-ease-exit: cubic-bezier(0.3, 0, 0.6, 0.6);
+  --dk-ease-pop: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --dk-quick: 150ms;
+  --dk-base: 250ms;
+  --dk-slow: 400ms;
+  --dk-reveal: 700ms;
+  --dk-stagger: 40ms;
+  --dk-move: 8px;
+  --dk-move-lg: 12px;
+  --dk-press: 0.97;
+
+  --dk-focus: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.sky-app, .gro-app, .sch-app, .pl, .bm) {
+    --dk-move: 0px;
+    --dk-move-lg: 0px;
+    --dk-press: 1;
+    --dk-stagger: 0ms;
+    --dk-base: 150ms;
+    --dk-slow: 150ms;
+    --dk-reveal: 150ms;
+  }
+}
+
+/* Visually hidden, for names and live regions. */
+.dk-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Avatars: initials on a tinted disc. The tint comes from --av. */
+.dk-av {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: var(--dk-fs-xs);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #fff;
+  background: var(--av, #4b5563);
+}

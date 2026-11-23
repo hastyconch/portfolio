@@ -1,285 +1,690 @@
-/* Invented "Pantry Lane" brand, deliberately not any real grocer's palette. */
+/* Invented "Pantry Lane" brand: deep teal, beet and a sunny reward yellow. Deliberately not any
+   real grocer's palette. The app keeps its own light UI on a light or dark page. Scales come
+   from ../kit.css. */
 .gro-app {
-  /* The app has its own light UI: keep native controls light even on a dark page. */
   color-scheme: light;
   --gro-ink: #17201d;
+  --gro-ink-2: #4a5853;
   --gro-teal: #134e4a;
+  --gro-teal-2: #0c3533;
+  --gro-teal-soft: #e0eeea;
   --gro-beet: #9d174d;
-  --gro-beet-soft: #fce7f3;
-  --gro-muted: #4a5853;
+  --gro-beet-2: #7c1140;
+  --gro-beet-soft: #fbe7ef;
+  --gro-sun: #f5c451;
+  --gro-sun-soft: #fdf3d3;
+  --gro-sun-ink: #4a3500;
   --gro-bg: #f3f6f4;
-  --gro-card: #ffffff;
-  --gro-rule: #dbe4e0;
+  --gro-card: #fff;
+  --gro-line: #dbe4e0;
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 560px;
+  min-height: 0;
+  overflow: hidden;
   font-family:
     system-ui,
     -apple-system,
     'Segoe UI',
     Roboto,
     sans-serif;
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: var(--dk-fs-lg);
+  line-height: var(--dk-lh-normal);
   color: var(--gro-ink);
   background: var(--gro-bg);
   text-align: left;
 }
+.gro-app *,
+.gro-app *::before,
+.gro-app *::after {
+  box-sizing: border-box;
+}
+.gro-app :is(p, h3, ul, ol) {
+  margin: 0;
+}
+.gro-app :is(ul, ol) {
+  padding: 0;
+  list-style: none;
+}
+.gro-ico {
+  display: block;
+  flex: none;
+}
+.gro-sub {
+  font-size: var(--dk-fs-sm);
+  color: var(--gro-ink-2);
+}
+.gro-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
+  font-size: var(--dk-fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--dk-track-label);
+  text-transform: uppercase;
+  color: var(--gro-ink-2);
+}
+.gro-h {
+  font-size: var(--dk-fs-xl);
+  font-weight: 700;
+  line-height: var(--dk-lh-snug);
+}
+.gro-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dk-2);
+}
+.gro-card {
+  padding: var(--dk-3) var(--dk-4);
+  border: 1px solid var(--gro-line);
+  border-radius: var(--dk-r4);
+  background: var(--gro-card);
+}
+
+/* App bar: continues the phone's teal status strip. */
 .gro-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
+  gap: var(--dk-2);
+  padding: var(--dk-2) var(--dk-4);
   color: #fff;
   background: var(--gro-teal);
 }
 .gro-logo {
-  font-size: 18px;
+  width: 28px;
+  height: 28px;
 }
 .gro-brand {
   flex: 1;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: var(--dk-fs-xl);
+  font-weight: 800;
+  letter-spacing: var(--dk-track-tight);
 }
 .gro-chip {
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
+  padding: 0 var(--dk-2);
+  border-radius: var(--dk-rf);
+  font-size: var(--dk-fs-xs);
   font-weight: 700;
-  color: #422006;
-  background: #fde68a;
+  color: var(--gro-sun-ink);
+  background: var(--gro-sun);
 }
+
 .gro-panel {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  scrollbar-width: thin;
+}
+
+/* Home */
+.gro-home {
+  display: grid;
+  gap: var(--dk-4);
+  padding: var(--dk-1) var(--dk-4) var(--dk-4);
+  background: linear-gradient(var(--gro-teal) 0 5.5rem, transparent 5.5rem);
 }
 .gro-hello {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-.gro-intro {
-  margin: 0;
-  color: var(--gro-muted);
-}
-.gro-card {
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--gro-card);
-  box-shadow: 0 1px 2px rgb(23 32 29 / 0.08);
+  font-weight: 600;
+  color: #fff;
 }
 .gro-balance {
   display: grid;
-  gap: 2px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--gro-teal), #1d6b63);
+  grid-template-columns: 5.5rem 1fr;
+  align-items: center;
+  gap: var(--dk-3) var(--dk-4);
+  border: 0;
+  box-shadow: var(--dk-shadow-2);
 }
-.gro-balance .gro-sub,
-.gro-balance .gro-label {
-  color: #d5ece8;
+.gro-ring {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
 }
-.gro-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--gro-muted);
+.gro-ring > svg {
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+  fill: none;
+  stroke-width: 10;
+}
+.gro-ring-track {
+  stroke: var(--gro-beet-soft);
+}
+.gro-ring-fill {
+  stroke: var(--gro-beet);
+  stroke-linecap: round;
+  stroke-dasharray: calc(var(--p) * 100) 100;
+}
+.gro-ring-in {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: var(--dk-fs-xl);
+  font-weight: 800;
+  color: var(--gro-beet);
+  font-variant-numeric: tabular-nums;
+}
+.gro-balance-text {
+  display: grid;
+  min-width: 0;
 }
 .gro-points {
-  font-size: 34px;
+  font-size: var(--dk-fs-3xl);
+  font-weight: 800;
+  line-height: var(--dk-lh-tight);
+  letter-spacing: var(--dk-track-tight);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
 }
-.gro-sub {
-  display: block;
-  font-size: 13px;
-  color: var(--gro-muted);
+.gro-next {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--dk-2);
+  padding: var(--dk-2) var(--dk-3);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-sm);
+  color: var(--gro-teal-2);
+  background: var(--gro-teal-soft);
 }
-.gro-row {
+.gro-next.is-ready {
+  color: var(--gro-sun-ink);
+  background: var(--gro-sun-soft);
+}
+
+.gro-last {
+  display: grid;
+  gap: var(--dk-2);
+}
+.gro-earned {
+  display: grid;
+  gap: var(--dk-1);
+  font-size: var(--dk-fs-md);
+}
+.gro-earned li {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  gap: var(--dk-3);
 }
-.gro-bar {
-  height: 10px;
-  margin: 10px 0 6px;
-  border-radius: 999px;
-  background: var(--gro-rule);
-  overflow: hidden;
+.gro-earned li span:last-child {
+  font-weight: 700;
+  color: var(--gro-teal);
+  font-variant-numeric: tabular-nums;
 }
-.gro-bar span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
+
+/* Offer cards: a snap carousel on Home, a two-column grid on Offers. */
+.gro-picks {
+  display: grid;
+  gap: var(--dk-2);
+}
+.gro-carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 9.5rem;
+  gap: var(--dk-3);
+  margin: 0 calc(-1 * var(--dk-4)) !important;
+  padding: var(--dk-1) var(--dk-4) var(--dk-2) !important;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--dk-4);
+  scrollbar-width: none;
+}
+.gro-offer {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  align-content: start;
+  gap: var(--dk-1);
+  padding: var(--dk-2) var(--dk-2) var(--dk-3);
+  border: 1px solid var(--gro-line);
+  border-radius: var(--dk-r4);
+  background: var(--gro-card);
+  scroll-snap-align: start;
+  transition:
+    border-color var(--dk-quick) var(--dk-ease),
+    box-shadow var(--dk-quick) var(--dk-ease);
+}
+.gro-offer.is-on {
+  border-color: var(--gro-beet);
+  box-shadow: inset 0 0 0 1px var(--gro-beet);
+}
+.gro-offer-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 5rem;
+  margin-bottom: var(--dk-1);
+  border-radius: var(--dk-r2);
+  background: var(--art, var(--gro-teal-soft));
+}
+.gro-art-cereal {
+  --art: #fdf0d9;
+}
+.gro-art-yogurt {
+  --art: #e3efec;
+}
+.gro-art-berries {
+  --art: #f2e8f6;
+}
+.gro-art-coffee {
+  --art: #f1e7dc;
+}
+.gro-prod {
+  width: 4rem;
+  height: 4rem;
+}
+.gro-pts {
+  position: absolute;
+  top: var(--dk-1);
+  right: var(--dk-1);
+  padding: 0 var(--dk-2);
+  border-radius: var(--dk-rf);
+  font-size: var(--dk-fs-xs);
+  font-weight: 800;
+  color: #fff;
   background: var(--gro-beet);
+}
+.gro-offer-t {
+  padding: 0 var(--dk-1);
+  font-size: var(--dk-fs-md);
+  line-height: var(--dk-lh-snug);
+}
+.gro-offer .gro-sub {
+  padding: 0 var(--dk-1);
+  font-size: var(--dk-fs-xs);
+}
+.gro-offer.is-done .gro-offer-art {
+  filter: grayscale(0.7);
+}
+.gro-summary {
+  padding: var(--dk-2) var(--dk-3);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-md);
+  background: var(--gro-teal-soft);
+}
+
+.gro-offers {
+  display: grid;
+  gap: var(--dk-3);
+  padding: var(--dk-3) var(--dk-4) var(--dk-4);
+}
+.gro-offers-head {
+  display: grid;
+  gap: var(--dk-1);
+}
+.gro-intro {
+  font-size: var(--dk-fs-md);
+  color: var(--gro-ink-2);
+}
+.gro-potential {
+  font-size: var(--dk-fs-md);
+}
+.gro-potential strong {
+  color: var(--gro-beet);
+}
+.gro-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--dk-3);
 }
 
 /* Buttons */
 .gro-cta,
 .gro-load,
 .gro-link {
-  border-radius: 12px;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background-color var(--dk-quick) var(--dk-ease),
+    color var(--dk-quick) var(--dk-ease),
+    scale var(--dk-quick) var(--dk-ease);
 }
 .gro-cta {
-  min-height: 44px;
+  min-height: 2.75rem;
+  padding: 0 var(--dk-4);
   border: 0;
+  border-radius: var(--dk-r3);
   color: #fff;
   background: var(--gro-beet);
 }
+.gro-cta:is(:hover, :focus-visible) {
+  background: var(--gro-beet-2);
+}
 .gro-link {
-  min-height: 36px;
-  padding: 0 10px;
+  min-height: 2.25rem;
+  padding: 0 var(--dk-1);
   border: 0;
+  border-radius: var(--dk-r1);
+  font-size: var(--dk-fs-md);
   color: var(--gro-beet);
   background: transparent;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.gro-link:is(:hover, :focus-visible) {
+  color: var(--gro-beet-2);
+  text-decoration-thickness: 2px;
+}
 .gro-load {
-  min-height: 36px;
-  min-width: 84px;
-  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dk-1);
+  min-height: 2.25rem;
+  margin-top: var(--dk-1);
   border: 2px solid var(--gro-beet);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-md);
   color: var(--gro-beet);
   background: var(--gro-card);
+}
+.gro-load:is(:hover, :focus-visible) {
+  background: var(--gro-beet-soft);
 }
 .gro-load[aria-pressed='true'] {
   color: #fff;
   background: var(--gro-beet);
 }
-.gro-cta:focus-visible,
-.gro-load:focus-visible,
-.gro-link:focus-visible,
-.gro-list input:focus-visible,
-.gro-tabs button:focus-visible {
-  outline: 3px solid var(--gro-teal);
-  outline-offset: 2px;
+.gro-load[aria-pressed='true']:is(:hover, :focus-visible) {
+  background: var(--gro-beet-2);
 }
-
-/* Offers */
-.gro-stack {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 10px;
+.gro-cta:active,
+.gro-load:active,
+.gro-link:active {
+  scale: var(--dk-press);
 }
-.gro-offer {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+.gro-earned-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-}
-.gro-offer.is-on {
-  box-shadow: inset 0 0 0 2px var(--gro-beet);
-}
-.gro-pts {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  font-size: 14px;
-  font-weight: 800;
-  color: #831843;
-  background: var(--gro-beet-soft);
-}
-.gro-offer-t {
-  display: block;
-  font-size: 14px;
-  line-height: 1.3;
+  justify-content: center;
+  gap: var(--dk-1);
+  min-height: 2.25rem;
+  margin-top: var(--dk-1);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-md);
+  font-weight: 700;
+  color: var(--gro-teal);
+  background: var(--gro-teal-soft);
 }
 
-/* List */
-.gro-list,
-.gro-ingredients {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
+/* Lists */
+.gro-lists {
+  display: grid;
+  gap: var(--dk-3);
+  padding: var(--dk-3) var(--dk-4) var(--dk-4);
+}
+.gro-listcard {
+  display: grid;
+  gap: var(--dk-2);
+}
+.gro-basketbar {
+  height: 0.375rem;
+  border-radius: var(--dk-rf);
+  background: var(--gro-teal-soft);
+  overflow: hidden;
+}
+.gro-basketbar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gro-teal);
+  transition: width var(--dk-base) var(--dk-ease);
+}
+.gro-aisle {
+  --aisle: var(--gro-ink-2);
+  display: grid;
+  gap: var(--dk-1);
+}
+.gro-aisle-produce {
+  --aisle: #2f7d32;
+}
+.gro-aisle-dairy {
+  --aisle: #1d5fa8;
+}
+.gro-aisle-bakery {
+  --aisle: #94580a;
+}
+.gro-aisle-pantry {
+  --aisle: #7a4f2c;
+}
+.gro-aisle-h {
+  display: flex;
+  align-items: center;
+  gap: var(--dk-2);
+  margin-top: var(--dk-1) !important;
+  font-size: var(--dk-fs-xs);
+  font-weight: 800;
+  letter-spacing: var(--dk-track-label);
+  text-transform: uppercase;
+  color: var(--aisle);
+}
+.gro-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--aisle);
 }
 .gro-list li {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px 8px;
-  padding: 6px 0;
-  border-top: 1px solid var(--gro-rule);
+  gap: 2px var(--dk-2);
+  padding: var(--dk-1) 0 var(--dk-1) var(--dk-3);
+  border-left: 3px solid var(--aisle);
+}
+.gro-list li + li {
+  border-top: 1px solid var(--gro-line);
 }
 .gro-list label {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   align-items: center;
-  gap: 10px;
-  min-height: 32px;
+  gap: var(--dk-3);
+  min-height: 2.25rem;
   cursor: pointer;
 }
 .gro-list input {
   flex: none;
-  width: 22px;
-  height: 22px;
+  display: grid;
+  place-items: center;
+  width: 1.375rem;
+  height: 1.375rem;
   margin: 0;
-  accent-color: var(--gro-teal);
+  border: 2px solid var(--gro-ink-2);
+  border-radius: var(--dk-r1);
+  appearance: none;
+  background: var(--gro-card);
+  cursor: pointer;
+  transition:
+    background-color var(--dk-quick) var(--dk-ease),
+    border-color var(--dk-quick) var(--dk-ease);
+}
+.gro-list input::after {
+  content: '';
+  width: 0.375rem;
+  height: 0.6875rem;
+  margin-top: -2px;
+  border: solid #fff;
+  border-width: 0 2.5px 2.5px 0;
+  rotate: 45deg;
+  scale: 0;
+  transition: scale var(--dk-quick) var(--dk-ease-pop);
+}
+.gro-list input:checked {
+  border-color: var(--gro-teal);
+  background: var(--gro-teal);
+}
+.gro-list input:checked::after {
+  scale: 1;
 }
 .gro-list .is-done .gro-item {
-  color: var(--gro-muted);
+  color: var(--gro-ink-2);
   text-decoration: line-through;
 }
 .gro-flag,
 .gro-onlist {
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 var(--dk-2);
+  border-radius: var(--dk-rf);
+  font-size: var(--dk-fs-xs);
   font-weight: 700;
   white-space: nowrap;
 }
 .gro-flag {
-  color: #78350f;
-  background: #fef3c7;
+  color: #713b0c;
+  background: #fdeccb;
+}
+.gro-flag.is-loaded {
+  color: var(--gro-beet-2);
+  background: var(--gro-beet-soft);
 }
 .gro-onlist {
-  color: #14532d;
-  background: #dcfce7;
+  color: var(--gro-teal-2);
+  background: var(--gro-teal-soft);
+}
+.gro-hint {
+  margin-top: -2px !important;
+}
+.gro-empty {
+  padding: var(--dk-3);
+  border: 1px dashed var(--gro-line);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-md);
+  color: var(--gro-ink-2);
+  text-align: center;
+}
+.gro-checkout {
+  display: grid;
+  gap: var(--dk-2);
+  margin-top: var(--dk-2);
+  padding-top: var(--dk-3);
+  border-top: 1px solid var(--gro-line);
+  text-align: center;
+}
+
+/* Receipt: a paper slip with torn edges. */
+.gro-receipt {
+  display: grid;
+  gap: var(--dk-3);
+  padding: var(--dk-5) var(--dk-4);
+  background: var(--gro-card);
+  box-shadow: var(--dk-shadow-1);
+  mask:
+    linear-gradient(#000 0 0) 0 6px / 100% calc(100% - 12px) no-repeat,
+    radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px) 0 0 / 12px 6px repeat-x,
+    radial-gradient(circle at 6px 6px, transparent 5px, #000 5.5px) 0 100% / 12px 6px repeat-x;
+}
+.gro-receipt-head {
+  display: grid;
+  justify-items: center;
+  padding-bottom: var(--dk-2);
+  border-bottom: 1px dashed var(--gro-line);
+  text-align: center;
+}
+.gro-receipt .gro-earned {
+  font-variant-numeric: tabular-nums;
+}
+.gro-total {
+  margin-top: var(--dk-1);
+  padding-top: var(--dk-2);
+  border-top: 1px dashed var(--gro-line);
+  font-weight: 700;
+}
+.gro-bal span:last-child {
+  color: var(--gro-ink) !important;
+}
+.gro-unlock {
+  display: flex;
+  align-items: center;
+  gap: var(--dk-3);
+  padding: var(--dk-3);
+  border-radius: var(--dk-r3);
+  font-size: var(--dk-fs-md);
+  color: var(--gro-sun-ink);
+  background: var(--gro-sun);
+}
+.gro-unlock strong {
+  display: block;
+  font-size: var(--dk-fs-xl);
 }
 
 /* Recipe */
 .gro-recipe {
-  display: grid;
-  gap: 4px;
+  margin: var(--dk-3) var(--dk-4) var(--dk-4);
+  padding: 0;
+  overflow: hidden;
+}
+.gro-recipe-art {
+  position: relative;
+  height: 8rem;
 }
 .gro-dish {
-  height: 96px;
-  margin-bottom: 8px;
-  border-radius: 10px;
-  background:
-    radial-gradient(circle at 42% 44%, #7c2d5b 0 6px, transparent 7px),
-    radial-gradient(circle at 52% 36%, #3f3a8f 0 5px, transparent 6px),
-    radial-gradient(circle at 58% 54%, #7c2d5b 0 6px, transparent 7px),
-    radial-gradient(circle at 47% 60%, #3f3a8f 0 5px, transparent 6px),
-    radial-gradient(ellipse 22% 34% at 50% 50%, #ead9b8 0 97%, transparent 100%),
-    radial-gradient(ellipse 27% 42% at 50% 52%, #ffffff 0 97%, transparent 100%), #d8e8e2;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.gro-tag {
+  position: absolute;
+  top: var(--dk-2);
+  left: var(--dk-2);
+  padding: 0 var(--dk-2);
+  border-radius: var(--dk-rf);
+  font-size: var(--dk-fs-xs);
+  font-weight: 700;
+  color: var(--gro-teal-2);
+  background: rgb(255 255 255 / 0.92);
+}
+.gro-recipe-body {
+  display: grid;
+  gap: var(--dk-2);
+  padding: var(--dk-3) var(--dk-4) var(--dk-4);
 }
 .gro-recipe-t {
-  font-size: 17px;
+  font-size: var(--dk-fs-xl);
+  line-height: var(--dk-lh-snug);
+}
+.gro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dk-1) var(--dk-3);
+  font-size: var(--dk-fs-sm);
+  color: var(--gro-ink-2);
+}
+.gro-meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
+}
+.gro-meta-pts {
+  font-weight: 700;
+  color: var(--gro-beet);
 }
 .gro-ingredients {
-  margin-bottom: 10px;
+  margin-bottom: var(--dk-1) !important;
 }
 .gro-ingredients li {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  padding: 6px 0;
-  border-top: 1px solid var(--gro-rule);
+  gap: var(--dk-1) var(--dk-2);
+  padding: var(--dk-1) 0;
+  border-top: 1px solid var(--gro-line);
+  font-size: var(--dk-fs-md);
 }
-.gro-ingredients li > :first-child {
+.gro-qty {
+  width: 3.25rem;
+  font-size: var(--dk-fs-sm);
+  color: var(--gro-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.gro-ing {
   flex: 1;
 }
 
@@ -287,64 +692,92 @@
 .gro-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid var(--gro-rule);
+  border-top: 1px solid var(--gro-line);
   background: var(--gro-card);
 }
 .gro-tabs button {
-  min-height: 52px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 3.5rem;
+  padding: var(--dk-1) 0;
   border: 0;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--dk-fs-xs);
   font-weight: 600;
-  color: var(--gro-muted);
+  color: var(--gro-ink-2);
   background: transparent;
   cursor: pointer;
+  transition: color var(--dk-quick) var(--dk-ease);
+}
+.gro-tab-ico {
+  position: relative;
+  padding: 3px var(--dk-4);
+  border-radius: var(--dk-rf);
+  transition: background-color var(--dk-base) var(--dk-ease);
+}
+.gro-badge {
+  position: absolute;
+  top: -2px;
+  right: var(--dk-2);
+  min-width: 1.125rem;
+  padding: 0 var(--dk-1);
+  border-radius: var(--dk-rf);
+  font-size: var(--dk-fs-xs);
+  font-weight: 800;
+  line-height: var(--dk-lh-normal);
+  color: #fff;
+  background: var(--gro-beet);
+}
+.gro-tabs button:is(:hover, :focus-visible) {
+  color: var(--gro-teal);
+}
+.gro-tabs button:active {
+  color: var(--gro-teal-2);
 }
 .gro-tabs button[aria-selected='true'] {
   font-weight: 800;
   color: var(--gro-teal);
-  box-shadow: inset 0 3px 0 var(--gro-beet);
+}
+.gro-tabs button[aria-selected='true'] .gro-tab-ico {
+  background: var(--gro-teal-soft);
 }
 
-.gro-sr {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+/* Focus: one ring, everywhere in the app. */
+.gro-app :focus-visible {
+  outline: var(--dk-focus) solid var(--gro-teal);
+  outline-offset: 2px;
 }
 
-.gro-hint {
-  margin: 0.15rem 0 0.35rem;
+/* Motion: first-view ring fill, offer load pop, receipt arrival. Off under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .gro-home.is-first .gro-ring-fill {
+    animation: gro-ring var(--dk-reveal) var(--dk-ease) both;
+  }
+  .gro-load[aria-pressed='true'] .gro-ico {
+    animation: gro-pop var(--dk-base) var(--dk-ease-pop) both;
+  }
+  .gro-receipt {
+    animation: gro-rise var(--dk-slow) var(--dk-ease) both;
+  }
+  .gro-unlock {
+    animation: gro-pop var(--dk-slow) var(--dk-ease-pop) var(--dk-base) both;
+  }
 }
-.gro-list + .gro-cta,
-.gro-list ~ .gro-cta {
-  margin-top: 0.85rem;
-  width: 100%;
+@keyframes gro-ring {
+  from {
+    stroke-dasharray: 0 100;
+  }
 }
-.gro-earned {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-  font-size: 0.875rem;
+@keyframes gro-pop {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
 }
-.gro-earned li {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-.gro-earned li span:last-child {
-  font-weight: 700;
-  color: var(--gro-teal);
-  font-variant-numeric: tabular-nums;
-}
-.gro-earned-chip {
-  flex: none;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--gro-teal);
-  padding: 0.35rem 0.6rem;
+@keyframes gro-rise {
+  from {
+    opacity: 0;
+    translate: 0 var(--dk-move-lg);
+  }
 }

@@ -14,6 +14,7 @@ import {
 import posterUrl from './poster.png?url&no-inline';
 import { touchInput, type Action } from './touch';
 import type { GameHandle, GameHost } from './host';
+import '../kit.css';
 import './billable.css';
 
 type Status = 'poster' | 'loading' | 'playing' | 'paused' | 'cleared' | 'error';
@@ -173,10 +174,10 @@ export default function BillableMini() {
     <div className="bm" data-hydrated={hydrated ? '' : undefined} data-status={status}>
       <div className="bm-main">
         <p className="bm-hud">
-          <span>
+          <span className="bm-stat">
             Billable Hours <strong>{hours}</strong>
           </span>
-          <span>
+          <span className="bm-stat">
             Wellbeing{' '}
             <strong>
               {hp}/{MAX_HP}
@@ -290,27 +291,39 @@ export default function BillableMini() {
         <dl className="bm-keys" id={controlsId}>
           <div>
             <dt>Move</dt>
-            <dd>Arrow keys or A / D</dd>
+            <dd>
+              <kbd>Arrow keys</kbd> or <kbd>A</kbd> / <kbd>D</kbd>
+            </dd>
           </div>
           <div>
             <dt>Jump</dt>
-            <dd>Space or Z (hold to jump higher)</dd>
+            <dd>
+              <kbd>Space</kbd> or <kbd>Z</kbd> (hold to jump higher)
+            </dd>
           </div>
           <div>
             <dt>Attack</dt>
-            <dd>X (laptop swing)</dd>
+            <dd>
+              <kbd>X</kbd> (laptop swing)
+            </dd>
           </div>
           <div>
             <dt>Pogo</dt>
-            <dd>Hold Down or S in the air</dd>
+            <dd>
+              Hold <kbd>Down</kbd> or <kbd>S</kbd> in the air
+            </dd>
           </div>
           <div>
             <dt>Drop through a desk</dt>
-            <dd>Down + Jump</dd>
+            <dd>
+              <kbd>Down</kbd> + <kbd>Jump</kbd>
+            </dd>
           </div>
           <div>
             <dt>Pause</dt>
-            <dd>Esc (returns focus to the page)</dd>
+            <dd>
+              <kbd>Esc</kbd> (returns focus to the page)
+            </dd>
           </div>
           <div>
             <dt>Touch</dt>
