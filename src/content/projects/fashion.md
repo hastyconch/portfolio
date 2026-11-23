@@ -49,6 +49,39 @@ engineering:
       title: 'Database-level security, tested',
       body: 'Row-level security rules are covered by tests that run against an in-process Postgres.',
     }
+cover:
+  frame: phone
+  backdrop: '#9d174d'
+  slot: '01-today'
+  alt: "Fashion Companion on a phone: today's outfits."
+gallery:
+  title: 'Screens'
+  intro: "The app's main screens."
+  items:
+    - {
+        slot: '01-today',
+        alt: "Today's three outfits (Easy, Balanced and Stretch) for the occasion and the forecast.",
+        caption: 'Three outfits for today.',
+        shape: tall,
+      }
+    - {
+        slot: '02-closet',
+        alt: 'The closet: every piece, tagged by category, colour and season.',
+        caption: 'The closet, tagged by AI.',
+        shape: tall,
+      }
+    - {
+        slot: '03-add-item',
+        alt: 'Adding a piece: a photo, and the tags the AI suggests.',
+        caption: 'Adding a piece: photo in, tags out.',
+        shape: tall,
+      }
+    - {
+        slot: '04-style',
+        alt: 'The style brief written from the quiz, ready to edit.',
+        caption: 'The style brief.',
+        shape: tall,
+      }
 demo: fashion
 accent: '#9d174d'
 order: 4

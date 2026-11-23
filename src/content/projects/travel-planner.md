@@ -54,6 +54,39 @@ engineering:
       title: 'Receipts to settlement',
       body: 'A companion app uses Claude to read receipts line by line; its ledger imports straight into the cost splitter.',
     }
+cover:
+  frame: phone
+  backdrop: '#1a5c44'
+  slot: '01-dashboard'
+  alt: 'Travel Planner on a phone: the daily dashboard.'
+gallery:
+  title: 'Screens'
+  intro: "The app's main screens."
+  items:
+    - {
+        slot: '01-dashboard',
+        alt: "The daily dashboard: the day's plan with the forecast and AI tips.",
+        caption: 'The daily dashboard, with the forecast.',
+        shape: tall,
+      }
+    - {
+        slot: '02-day-map',
+        alt: 'A day on the map, with walking and driving routes between stops.',
+        caption: 'A day on the map, with routes.',
+        shape: tall,
+      }
+    - {
+        slot: '03-assistant',
+        alt: 'The assistant editing the schedule after a request to clear an afternoon.',
+        caption: 'Asking the assistant to change the plan.',
+        shape: tall,
+      }
+    - {
+        slot: '04-costs',
+        alt: 'The cost splitter: shared expenses and who owes whom.',
+        caption: 'The cost splitter, settling up.',
+        shape: tall,
+      }
 demo: travel
 accent: '#1a5c44'
 order: 2

@@ -1,7 +1,10 @@
 ---
-// ProjectCard: a flat swatch of the project's accent, then the copy. The title comes first so
-// titles line up across the rail whatever tags a card carries. The whole card links to the
-// case study.
+// ProjectCard: the project's real screen in a device frame (phone, browser or game) on a
+// backdrop from the app's own palette, then the copy. The title comes first so titles line up
+// across the rail whatever tags a card carries. The whole card links to the case study.
+// Owner-supplied apps without screenshots yet show a designed "Screenshots coming" frame.
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
 import type { Project } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -14,10 +17,52 @@ const stackHint = d.stack
   .slice(0, 3)
   .map((s) => s.tech.split(/\s[·(]/)[0].trim())
   .join(' · ');
+
+// Owner drop-ins: src/assets/projects/<id>/<slot>.(png|jpg|webp), see the README there.
+const dropins = import.meta.glob<{ default: ImageMetadata }>(
+  '../assets/projects/*/*.{png,jpg,jpeg,webp}',
+  { eager: true },
+);
+const cover = d.cover;
+const slotted = cover?.slot
+  ? Object.entries(dropins).find(([k]) => k.includes(`/projects/${project.id}/${cover.slot}.`))
+  : undefined;
+const shot = cover?.image ?? slotted?.[1].default;
+const frame = cover?.frame ?? 'browser';
 ---
 
-<li class="pc" style={`--art: ${d.accent}`}>
-  <div class="pc-art" aria-hidden="true"></div>
+<li class="pc">
+  <div
+    class:list={['pc-art', `pa-${frame}`]}
+    style={`--bd: ${cover?.backdrop ?? d.accent}`}
+    aria-hidden="true"
+  >
+    <div class="pa-dev">
+      {shot ? (
+        <Image
+          src={shot}
+          alt=""
+          widths={frame === 'phone' ? [120, 240] : frame === 'game' ? [400, 800] : [320, 640]}
+          sizes={
+            frame === 'phone'
+              ? '(min-width: 900px) 110px, 49px'
+              : frame === 'game'
+                ? '(min-width: 900px) 244px, 108px'
+                : '(min-width: 900px) 302px, 133px'
+          }
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div class="pa-soon">
+          <span class="pa-sk" />
+          <span class="pa-sk" />
+          <span class="pa-sk" />
+          <span class="pa-soon-t">Screenshots coming</span>
+        </div>
+      )}
+    </div>
+  </div>
   <div class="pc-body">
     <h3 class="pc-title">
       <a class="pc-link" href={`/projects/${project.id}/`}>
@@ -28,6 +73,7 @@ const stackHint = d.stack
       <span class="pc-cat">{d.category}</span>
       <span class="ln-num">{d.year}</span>
       {d.featured && <span class="pc-feat">Featured</span>}
+      {cover?.mockup && <span class="pc-feat">Mock-up</span>}
       {d.status === 'placeholder' && <Placeholder />}
     </p>
     <p class="pc-tag">{d.tagline}</p>
@@ -43,7 +89,7 @@ const stackHint = d.stack
   .pc {
     position: relative;
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 128px minmax(0, 1fr);
     gap: var(--space-4);
     align-items: start;
     /* rail cards stretch to the tallest; keep the extra space at the bottom so titles align */
@@ -79,13 +125,113 @@ const stackHint = d.stack
     background: var(--ln-hl);
   }
 
-  /* Cover: a flat swatch of the project's accent */
+  /* Cover: the app's own screen in a device frame, on a backdrop tinted from its palette.
+     Sizes are in container units so the same composition works at 128px and at 290px. */
   .pc-art {
-    aspect-ratio: 1;
-    border-radius: var(--radius-1);
-    background: var(--art);
+    position: relative;
+    container-type: inline-size;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-2);
+    background: color-mix(in srgb, var(--bd) 24%, var(--ln-bg-2));
     outline: 1px solid color-mix(in srgb, var(--ln-ink) 10%, transparent);
     outline-offset: -1px;
+  }
+  .pa-dev {
+    position: absolute;
+    /* device material: the same near-black in both schemes, like real hardware */
+    background: #18181b;
+    box-shadow: var(--shadow-1);
+  }
+  .pa-dev :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+  }
+  /* Phone: rises from the bottom edge. Concentric corners: 12 = 8 + 4. */
+  .pa-phone .pa-dev {
+    left: 50%;
+    top: 12%;
+    width: 38%;
+    aspect-ratio: 390 / 844;
+    translate: -50% 0;
+    padding: var(--space-1);
+    border-radius: var(--radius-3);
+  }
+  .pa-phone .pa-dev :global(img),
+  .pa-phone .pa-soon {
+    border-radius: var(--radius-2);
+  }
+  /* Browser: a window that runs off the right and bottom edges. */
+  .pa-browser .pa-dev {
+    left: 9%;
+    top: 13%;
+    width: 104%;
+    aspect-ratio: 16 / 10;
+    padding-top: 5cqi;
+    border-radius: var(--radius-2) 0 0 0;
+  }
+  .pa-browser .pa-dev::before {
+    content: '';
+    position: absolute;
+    top: 1.75cqi;
+    left: 2.5cqi;
+    width: 1.5cqi;
+    height: 1.5cqi;
+    border-radius: 50%;
+    background: #52525b;
+    box-shadow:
+      2.5cqi 0 #52525b,
+      5cqi 0 #52525b;
+  }
+  /* Game: a screen in a thick bezel, centred. Concentric corners: 12 = 4 + 8. */
+  .pa-game .pa-dev {
+    left: 50%;
+    top: 50%;
+    width: 84%;
+    aspect-ratio: 16 / 9;
+    translate: -50% -50%;
+    padding: var(--space-2);
+    border-radius: var(--radius-3);
+  }
+  .pa-game .pa-dev :global(img) {
+    border-radius: var(--radius-1);
+    image-rendering: pixelated;
+  }
+
+  /* Screenshots coming: a quiet sketch of a screen, not a broken image. */
+  .pa-soon {
+    display: grid;
+    align-content: start;
+    gap: 4cqi;
+    height: 100%;
+    padding: 5cqi 4cqi;
+    background: color-mix(in srgb, var(--bd) 10%, var(--ln-bg-3));
+  }
+  .pa-sk {
+    height: 3cqi;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--bd) 28%, var(--ln-bg-3));
+  }
+  .pa-sk:first-child {
+    width: 60%;
+    height: 5cqi;
+    background: color-mix(in srgb, var(--bd) 60%, var(--ln-bg-3));
+  }
+  .pa-soon-t {
+    display: none;
+  }
+  @container (min-width: 200px) {
+    .pa-soon-t {
+      display: block;
+      margin-top: 4cqi;
+      font-size: var(--text-2xs);
+      font-weight: 700;
+      line-height: var(--leading-snug);
+      color: var(--ln-ink-2);
+    }
   }
 
   /* Body */
@@ -136,7 +282,7 @@ const stackHint = d.stack
       gap: var(--space-4);
       padding: 0;
       border-bottom: 0;
-      width: 260px;
+      width: 290px;
       flex: none;
       scroll-snap-align: start;
     }
@@ -144,15 +290,31 @@ const stackHint = d.stack
       background: none;
     }
     .pc-art {
-      aspect-ratio: 4 / 3;
+      border-radius: var(--radius-3);
+    }
+    .pa-dev {
       transition: translate var(--dur-base) var(--ease-out);
     }
-    .pc:is(:hover, :focus-within) .pc-art {
-      translate: 0 calc(var(--move-sm) * -1);
+    .pc:is(:hover, :focus-within) .pa-phone .pa-dev {
+      translate: -50% calc(var(--move-md) * -1);
     }
-    .pc:active .pc-art {
-      translate: 0;
+    .pc:is(:hover, :focus-within) .pa-browser .pa-dev {
+      translate: calc(var(--move-md) * -1) calc(var(--move-md) * -1);
+    }
+    .pc:is(:hover, :focus-within) .pa-game .pa-dev {
+      translate: -50% calc(-50% - var(--move-sm));
+    }
+    .pc:active .pa-dev {
       transition-duration: var(--dur-quick);
+    }
+    .pc:active .pa-phone .pa-dev {
+      translate: -50% 0;
+    }
+    .pc:active .pa-browser .pa-dev {
+      translate: 0 0;
+    }
+    .pc:active .pa-game .pa-dev {
+      translate: -50% -50%;
     }
     body.ln .pc-title {
       font-size: var(--text-xl);

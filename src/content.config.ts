@@ -82,14 +82,29 @@ const projects = defineCollection({
       accent: z.string(), // brand-ish colour for cards; must pass contrast when used for text
       order: z.number(),
       featured: z.boolean().default(false),
-      // Optional process gallery (screenshots), e.g. the making-of story for this site.
+      // The project's own screen, shown on its card and as the case-study hero, in a device
+      // frame on a backdrop from the app's palette. `image` is a committed screenshot; `slot`
+      // names a file the owner drops into src/assets/projects/<id>/ (see the README there).
+      // With neither, the frame shows a designed "Screenshots coming" state.
+      cover: z
+        .object({
+          frame: z.enum(['phone', 'browser', 'game']),
+          backdrop: z.string(), // a colour from the app's own palette
+          image: image().optional(),
+          slot: z.string().optional(),
+          alt: z.string(),
+          mockup: z.boolean().default(false), // a designed mock-up, labelled as one
+        })
+        .optional(),
+      // Optional gallery of screenshots: the app's screens, or the making-of story for this site.
       gallery: z
         .object({
           title: z.string(),
           intro: z.string(),
           items: z.array(
             z.object({
-              image: image(),
+              image: image().optional(),
+              slot: z.string().optional(), // owner drop-in file name, as for `cover`
               alt: z.string(),
               caption: z.string(),
               shape: z.enum(['full', 'wide', 'tall']).default('wide'),
