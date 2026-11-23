@@ -119,3 +119,26 @@ test('projects is one pane', async ({ page, isMobile }) => {
   expect(head!.y).toBeGreaterThanOrEqual(60);
   expect(card!.y + card!.height).toBeLessThanOrEqual(900);
 });
+
+// WO-023: the rail keeps its place. Open the 6th card, go Back, and the rail is where you left it.
+test('projects rail keeps its place', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'the rail scrolls sideways on laptops');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.locator('#projects').evaluate((s) => s.scrollIntoView({ behavior: 'instant' }));
+  const rail = page.locator('#rail');
+  const fwd = page.getByRole('button', { name: 'Scroll projects forward' });
+  await fwd.click();
+  await fwd.click();
+  const card = page.locator('#rail .pc-link').nth(5);
+  await card.scrollIntoViewIfNeeded();
+  const left = await rail.evaluate((r) => r.scrollLeft);
+  expect(left).toBeGreaterThan(0);
+  const href = await card.getAttribute('href');
+  await card.click();
+  await expect(page).toHaveURL(new RegExp(`${href}$`));
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect.poll(() => rail.evaluate((r) => r.scrollLeft)).toBeGreaterThanOrEqual(left - 4);
+  expect(Math.abs((await rail.evaluate((r) => r.scrollLeft)) - left)).toBeLessThanOrEqual(4);
+});

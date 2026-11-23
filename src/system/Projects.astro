@@ -41,24 +41,53 @@ const { projects } = Astro.props;
   const rail = document.getElementById('rail');
   const btns = document.querySelectorAll<HTMLButtonElement>('[data-rail]');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  // An arrow at the end of the rail says so with aria-disabled and ignores activation. It stays
+  // focusable, so focus never falls to the page when the last step is taken (WO-023).
+  const off = (b: HTMLButtonElement) => b.getAttribute('aria-disabled') === 'true';
   function sync() {
     if (!rail) return;
     const max = rail.scrollWidth - rail.clientWidth - 2;
     btns.forEach((b) => {
       const dir = Number(b.dataset.rail);
-      b.disabled = dir < 0 ? rail.scrollLeft <= 2 : rail.scrollLeft >= max;
+      const end = dir < 0 ? rail.scrollLeft <= 2 : rail.scrollLeft >= max;
+      if (end) b.setAttribute('aria-disabled', 'true');
+      else b.removeAttribute('aria-disabled');
     });
   }
   btns.forEach((b) =>
     b.addEventListener('click', () => {
-      if (!rail) return;
+      if (!rail || off(b)) return;
       const step = Math.max(320, rail.clientWidth * 0.8) * Number(b.dataset.rail);
       rail.scrollBy({ left: step, behavior: reduce.matches ? 'auto' : 'smooth' });
     }),
   );
   rail?.addEventListener('scroll', sync, { passive: true });
   addEventListener('resize', sync);
-  sync();
+
+  // The rail keeps its place when you come back to the page (Back from a case study): its
+  // position is saved for this path on the way out and restored at once, without a smooth scroll.
+  const key = `rail:${location.pathname}`;
+  function restore() {
+    if (!rail) return;
+    let x: number;
+    try {
+      x = Number(sessionStorage.getItem(key));
+    } catch {
+      return;
+    }
+    if (x > 0) rail.scrollTo({ left: x, behavior: 'instant' });
+    sync();
+  }
+  addEventListener('pagehide', () => {
+    if (!rail) return;
+    try {
+      sessionStorage.setItem(key, String(Math.round(rail.scrollLeft)));
+    } catch {
+      // storage can be unavailable (private windows); the rail then starts at the beginning
+    }
+  });
+  addEventListener('pageshow', restore);
+  restore();
 </script>
 
 <style>
@@ -66,8 +95,8 @@ const { projects } = Astro.props;
     padding-bottom: var(--space-8);
   }
   /* One section per screen (WO-021): on laptops Projects is one pane below the nav, heading and
-     rail together, and the page settles on it like a Work pane (the root snaps only at 760px and
-     up with motion allowed). Taller content grows the pane rather than clipping it. */
+     rail together. A jump lands it flush under the header (.ln-sec). Taller content grows the
+     pane rather than clipping it. */
   @media (min-width: 1100px) and (min-height: 600px) {
     .projects {
       display: grid;
@@ -76,8 +105,6 @@ const { projects } = Astro.props;
       align-content: center;
       min-height: calc(100svh - var(--ln-header));
       padding-block: clamp(var(--space-4), 4svh, var(--space-6));
-      scroll-snap-align: start;
-      scroll-margin-top: calc(var(--ln-header) - var(--ln-scroll-pad, var(--ln-header)));
     }
     /* Auto margins would size the rail to its cards (fit-content) in the grid; no margins let it
        stretch to the column and scroll inside it. */
@@ -118,15 +145,15 @@ const { projects } = Astro.props;
         color var(--dur-quick) var(--ease-out),
         scale var(--dur-quick) var(--ease-out);
     }
-    .rail-btn:hover:not(:disabled),
-    .rail-btn:focus-visible:not(:disabled) {
+    .rail-btn:hover:not([aria-disabled='true']),
+    .rail-btn:focus-visible:not([aria-disabled='true']) {
       background: var(--ln-ink);
       color: var(--ln-bg);
     }
-    .rail-btn:active:not(:disabled) {
+    .rail-btn:active:not([aria-disabled='true']) {
       scale: var(--press-scale);
     }
-    .rail-btn:disabled {
+    .rail-btn[aria-disabled='true'] {
       color: var(--ln-ink-3);
       cursor: default;
     }
