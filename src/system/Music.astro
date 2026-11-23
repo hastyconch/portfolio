@@ -25,17 +25,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const first = songs[0]?.data.artColors ?? ['#3b1f5e', '#e07a5f'];
 const placeholder =
   music.status === 'placeholder' || songs.some((s) => s.data.status === 'placeholder');
-// The section shows the songs itself, so a story sentence that only points at them
-// ("Below are the songs…") is left out.
-const notUi = (p: string) =>
-  p
-    .split(/(?<=[.!?])\s+/)
-    .filter((s) => !/^Below\b/i.test(s))
-    .join(' ');
-const [lead, ...story] = music.story
-  .map(say)
-  .map(notUi)
-  .filter((p) => p.trim());
+const [lead, ...story] = music.story.map(say);
 ---
 
 <section
@@ -457,8 +447,9 @@ const [lead, ...story] = music.story
     align-items: center;
     gap: var(--space-2) var(--space-3);
   }
+  /* One step under the section title, so "Music" leads and the song is the panel's focus. */
   body.ln .mu-title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
     font-weight: 800;
     line-height: var(--leading-tight);
   }

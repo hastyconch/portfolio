@@ -89,16 +89,8 @@ test.describe('music', () => {
     await page.goto('/');
     const story = page.locator('#music [data-story]');
     const paragraphs = story.locator('.mu-story-lead, .mu-story-p');
-    // WO-022: a sentence that only describes the UI ("Below are the songs…") is left out.
-    const shown = music.story
-      .map((p) =>
-        p
-          .split(/(?<=[.!?])\s+/)
-          .filter((s) => !/^Below\b/i.test(s))
-          .join(' '),
-      )
-      .filter((p) => p.trim());
-    await expect(paragraphs).toHaveCount(shown.length);
+    await expect(paragraphs).toHaveCount(music.story.length);
+    // WO-022: no sentence that only describes the UI.
     await expect(story).not.toContainText(/Below are the songs/i);
 
     const { name, named } = music.collaborator;
