@@ -144,6 +144,68 @@ test('card lines align', async ({ page, isMobile }) => {
   expect(Math.max(...all) - Math.min(...all), all.join(', ')).toBeLessThanOrEqual(1);
 });
 
+// WO-029: "Featured" sits only on a card with real cover art, never over "Screenshots coming".
+test('featured only with art', async ({ page }) => {
+  await page.goto('/');
+  const featured = page
+    .locator('#rail > li')
+    .filter({ has: page.locator('.pc-feat', { hasText: /^Featured$/ }) });
+  expect(await featured.count(), 'some card is featured').toBeGreaterThan(0);
+  for (const card of await featured.all()) {
+    await expect(card.locator('.pc-art img')).toHaveCount(1);
+    await expect(card.locator('.pa-soon')).toHaveCount(0);
+  }
+  // The Mock-up chip is unchanged.
+  await expect(page.locator('#rail .pc-feat', { hasText: /^Mock-up$/ })).toHaveCount(1);
+});
+
+// WO-029: on phones the rule under the Projects lead is inset to the gutter like the cards' rules.
+// On a case study, the pager's labels end where their rule ends.
+test('rule and pager align', async ({ page, isMobile }) => {
+  if (isMobile) {
+    await page.goto('/');
+    const r = await page.locator('#rail').evaluate((rail) => {
+      const box = rail.getBoundingClientRect();
+      const cs = getComputedStyle(rail);
+      const rule = getComputedStyle(rail, '::before');
+      const card = rail.querySelector('li')!.getBoundingClientRect();
+      return {
+        border: cs.borderTopWidth,
+        rule: rule.borderTopWidth,
+        left: box.left + parseFloat(cs.paddingLeft),
+        right: box.right - parseFloat(cs.paddingRight),
+        card: { left: card.left, right: card.right },
+        gutter: document.querySelector('#projects-h')!.getBoundingClientRect().left,
+      };
+    });
+    expect(r.border, 'no edge-to-edge border').toBe('0px');
+    expect(r.rule).toBe('1px');
+    expect(Math.abs(r.left - r.gutter), 'starts at the gutter').toBeLessThanOrEqual(1);
+    expect(Math.abs(r.left - r.card.left)).toBeLessThanOrEqual(1);
+    expect(Math.abs(r.right - r.card.right)).toBeLessThanOrEqual(1);
+    expect(r.right).toBeLessThan(375);
+    return;
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/projects/billable/');
+  const pg = page.locator('.cs-pager .cs-pg-next');
+  const e = await pg.evaluate((a) => {
+    const text = (el: Element) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect();
+    };
+    const box = a.getBoundingClientRect();
+    return {
+      rule: { left: box.left, right: box.right },
+      k: text(a.querySelector('.cs-pg-k')!).right,
+      t: text(a.querySelector('.cs-pg-t')!).right,
+    };
+  });
+  expect(Math.abs(e.k - e.rule.right), '"Next project" ends at its rule').toBeLessThanOrEqual(1);
+  expect(Math.abs(e.t - e.rule.right), 'the title ends at its rule').toBeLessThanOrEqual(1);
+});
+
 // WO-023: the rail keeps its place. Open the 6th card, go Back, and the rail is where you left it.
 test('projects rail keeps its place', async ({ page, isMobile }) => {
   test.skip(!!isMobile, 'the rail scrolls sideways on laptops');

@@ -58,6 +58,29 @@ test('header is solid', async ({ page }) => {
   }
 });
 
+// WO-029: a song page is dark in both schemes, and its header takes the same band, so there is no
+// cream strip over it in light mode. The name and the progress bar still show against it.
+test('song header matches the band', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/music/roadhouse/');
+    const c = await page.evaluate(() => {
+      const css = (sel: string) => getComputedStyle(document.querySelector(sel)!);
+      return {
+        header: css('header.np').backgroundColor,
+        band: css('article.sg').backgroundColor,
+        bar: css('.np-progress span').backgroundColor,
+        ink: css('.np-brand').color,
+        height: Math.round(document.querySelector('header.np')!.getBoundingClientRect().height),
+      };
+    });
+    expect(c.header, `${scheme}: header against the band`).toBe(c.band);
+    expect(c.bar, scheme).not.toBe(c.header);
+    expect(c.ink, scheme).not.toBe(c.header);
+    expect(c.height, `${scheme}: header height`).toBeLessThanOrEqual(61);
+  }
+});
+
 // WO-021 (taste-skill): nothing fades in because the page scrolled. Scroll-linked animations are
 // allowed only for the reading-progress bar in the header.
 for (const route of ['/', '/projects/billable/', '/music/roadhouse/']) {

@@ -177,7 +177,7 @@ const contents = [
         </section>
 
         {d.gallery && gallery && (
-          <section id="gallery" class="cs-sec cs-gallery" aria-labelledby="gallery-h">
+          <section id="gallery" class="cs-sec cs-gallery" aria-label={d.gallery.title}>
             <h2 id="gallery-h" class="cs-h">
               {d.gallery.title}
             </h2>
@@ -700,10 +700,11 @@ const contents = [
     display: grid;
     padding-bottom: var(--space-8);
   }
+  /* The labels start and end where their rule does (WO-029, as the footer rows in WO-027). */
   .cs-pg {
     display: grid;
     gap: var(--space-1);
-    padding: var(--space-5) var(--space-1);
+    padding: var(--space-5) 0;
     border-top: var(--ln-hairline);
     text-decoration: none;
     transition: background-color var(--dur-quick) var(--ease-out);
@@ -833,7 +834,8 @@ const contents = [
 
   /* The gallery renders only as it nears the viewport, and on phones it is a swipeable row
      (one screen and the edge of the next): together that keeps its lazy screenshots from
-     competing with the hero for the first paint (LCP budget). */
+     competing with the hero for the first paint (LCP budget). Its heading is skipped with it,
+     and drops out of the accessibility tree, so the section is named by aria-label (WO-029). */
   .cs-gallery {
     min-width: 0;
     content-visibility: auto;

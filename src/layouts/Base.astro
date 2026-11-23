@@ -26,6 +26,20 @@ const {
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
+    {/* A deep link (/#contact) jumps straight to its place instead of scrolling through the page
+        (WO-029): the root's smooth scrolling is off until the load has settled, then in-page
+        links glide again. */}
+    <script is:inline>
+      if (location.hash) {
+        const s = document.documentElement.style;
+        s.scrollBehavior = 'auto';
+        addEventListener('load', () =>
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => s.removeProperty('scroll-behavior')),
+          ),
+        );
+      }
+    </script>
     <slot name="head" />
   </head>
   <body class={bodyClass}>
