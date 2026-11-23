@@ -3,8 +3,9 @@
 // record slides out once) beside the name, set as the site's one display moment: Bricolage's
 // condensed width with tight tracking. Then what I do, in plain words.
 // WO-024: on phones the cover is capped at about 60% of the width, so the name, headline and
-// links all sit in the first screen. A contact link that isn't real yet (not http(s) or
-// mailto) shows as plain text, marked "to come".
+// links all sit in the first screen. WO-026: the link row holds only links that work: Résumé,
+// See the work, and Email and LinkedIn once they are real (http(s) or mailto). A contact that
+// isn't real yet appears in the footer only.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -12,8 +13,10 @@ interface Props {
   profile: Profile;
 }
 const { profile } = Astro.props;
-const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
 const real = (href: string) => /^(https?|mailto):/.test(href);
+const contacts = ['email', 'linkedin'].flatMap((k) =>
+  profile.links.filter((l) => l.label.toLowerCase() === k && real(l.href)),
+);
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
@@ -40,16 +43,11 @@ const real = (href: string) => /^(https?|mailto):/.test(href);
         <a class="ln-link" href="#resume">
           Résumé
         </a>
-        {email &&
-          (real(email.href) ? (
-            <a class="ln-link" href={email.href}>
-              Email
-            </a>
-          ) : (
-            <span class="hero-soon">
-              Email <span class="hero-soon-k">to come</span>
-            </span>
-          ))}
+        {contacts.map((l) => (
+          <a class="ln-link" href={l.href}>
+            {l.label}
+          </a>
+        ))}
         <a class="hero-quiet" href="#work">
           See the work <span aria-hidden="true">↓</span>
         </a>
@@ -192,13 +190,6 @@ const real = (href: string) => /^(https?|mailto):/.test(href);
     align-items: center;
     gap: var(--space-2);
     min-height: 44px;
-  }
-  /* Not a link yet: plain text, with a quiet note. */
-  .hero-soon {
-    color: var(--ln-ink-3);
-  }
-  .hero-soon-k {
-    font-size: var(--text-xs);
   }
   /* See the work: quieter than the accent links beside it. */
   .hero-quiet {

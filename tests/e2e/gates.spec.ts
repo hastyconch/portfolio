@@ -17,14 +17,15 @@ test('hero first screen on phones', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'phone layout');
   await page.goto('/');
   const hero = page.locator('#hero');
-  const email = profile.links.find((l) => l.label === 'Email')!;
+  // WO-026: the link row holds only working links (Email and LinkedIn once they are real).
+  const contacts = profile.links.filter(
+    (l) => ['Email', 'LinkedIn'].includes(l.label) && isReal(l.href),
+  );
   const items = [
     hero.getByRole('heading', { level: 1 }),
     hero.locator('.hero-headline'),
     hero.getByRole('link', { name: 'Résumé' }),
-    isReal(email.href)
-      ? hero.getByRole('link', { name: 'Email' })
-      : hero.locator('.hero-links .hero-soon', { hasText: 'Email' }),
+    ...contacts.map((l) => hero.getByRole('link', { name: l.label, exact: true })),
     hero.getByRole('link', { name: /See the work/ }),
   ];
   for (const el of items) {
@@ -60,22 +61,59 @@ test('contact links are honest', async ({ page }) => {
       if (!isReal(l.href))
         await expect(page.locator('#contact .ft-soon', { hasText: l.label })).toBeVisible();
     }
+    // WO-026: the hero has no placeholder contact item: a contact that isn't real yet is in the
+    // footer only, and every item in the hero's link row is a working link.
+    if (route === '/') {
+      const row = page.locator('#hero .hero-links');
+      await expect(row.locator(':scope > :not(a[href])')).toHaveCount(0);
+      await expect(row).not.toContainText(/to come/i);
+      for (const l of profile.links.filter((x) => !isReal(x.href)))
+        await expect(row).not.toContainText(l.label);
+    }
     if (profile.status === 'placeholder')
       await expect(page.locator('#contact .ln-ph')).toHaveText('Some links to come');
   }
 });
 
+// A PDF string, literal "(…)" or hex "<…>" (UTF-16BE when it starts with a byte-order mark).
+const pdfText = (s: string) => {
+  if (s.startsWith('<')) {
+    const hex = Buffer.from(s.slice(1, -1), 'hex');
+    if (hex[0] === 0xfe && hex[1] === 0xff) return hex.subarray(2).swap16().toString('utf16le');
+    return hex.toString('latin1');
+  }
+  return s.slice(1, -1).replace(/\\([()\\])/g, '$1');
+};
+const pdfValues = (pdf: string, key: string) =>
+  [...pdf.matchAll(new RegExp(`/${key}\\s*(\\((?:\\\\.|[^\\\\)])*\\)|<[0-9A-Fa-f]*>)`, 'g'))].map(
+    (m) => pdfText(m[1]),
+  );
+
 test('resume pdf', async ({ page, request }) => {
   const res = await request.get('/resume.pdf');
   expect(res.status()).toBe(200);
   expect(res.headers()['content-type']).toContain('application/pdf');
-  expect((await res.body()).subarray(0, 5).toString()).toBe('%PDF-');
+  const body = await res.body();
+  expect(body.subarray(0, 5).toString()).toBe('%PDF-');
+  // WO-026: two pages, tagged (structure and a marked-content flag), and titled.
+  const pdf = body.toString('latin1');
+  expect(pdf.match(/\/Type\s*\/Page\b(?!s)/g) ?? [], 'pages').toHaveLength(2);
+  expect(pdf).toMatch(/\/Marked\s+true/);
+  expect(pdf).toContain('/StructTreeRoot');
+  expect(pdfValues(pdf, 'Title')).toContain('Nakul Iyer, Résumé');
 
   await page.goto('/');
   const link = page.locator('#resume').getByRole('link', { name: 'Download PDF' });
   await expect(link).toHaveAttribute('href', '/resume.pdf');
-  await expect(link).toHaveAttribute('download', '');
+  await expect(link).toHaveAttribute('download', 'Nakul-Iyer-Resume.pdf');
   await expect(page.locator('#resume').getByRole('button', { name: 'Print résumé' })).toBeVisible();
+  // The actions have their own row: Download and Print side by side, the placeholder chip not
+  // between them.
+  const [dl, pr] = await Promise.all(
+    [link, page.locator('#resume [data-print]')].map((l) => l.boundingBox()),
+  );
+  expect(Math.abs(dl!.y + dl!.height / 2 - (pr!.y + pr!.height / 2))).toBeLessThanOrEqual(2);
+  await expect(page.locator('#resume .cv-actions .ln-ph')).toHaveCount(0);
 
   // The committed PDF matches the content it was made from.
   execFileSync('node', ['factory/stations/resume-pdf.mjs', '--check'], { stdio: 'pipe' });

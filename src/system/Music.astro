@@ -2,9 +2,10 @@
 // Music: the one section where the record theme lives. It opens with a title and the music story
 // (from src/content/music.json), then a stage: the selected song's panel and the songs as a
 // tablist (a tracklist beside the panel on laptops, a strip of covers above it on phones). Each
-// panel has the sleeve, one line of credits and release, a link to the song's page (full lyrics,
-// notes on the lines and story; no lyric lines here) and click-to-load players. SongArt and
-// Players are shared with the song pages. The selected song is kept in the URL (#song-<id>).
+// panel has the sleeve (small, beside the title, under the strip on phones), one line of credits
+// and release, a link to the song's page (full lyrics, notes on the lines and story; no lyric
+// lines here) and click-to-load players. SongArt and Players are shared with the song pages. The
+// selected song is kept in the URL (#song-<id>). Without scripting every panel shows, stacked.
 import type { Music, Song } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
@@ -116,20 +117,22 @@ const [lead, ...story] = music.story.map(say);
             role="tabpanel"
             id={`mu-panel-${s.id}`}
             aria-labelledby={`mu-tab-${s.id}`}
-            hidden={i !== 0}
+            data-initial={i === 0 ? '' : undefined}
             style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
           >
             <div class="mu-head">
               <SongArt song={s} index={i} />
               <div class="mu-info">
-                <p class="mu-k">
-                  <span class="label">
-                    Track {i + 1} · {d.year}
-                  </span>
-                  {d.status === 'placeholder' && <Placeholder />}
-                </p>
-                <h3 class="mu-title">{d.title}</h3>
-                <p class="mu-release">{release}</p>
+                <div class="mu-id">
+                  <p class="mu-k">
+                    <span class="label">
+                      Track {i + 1} · {d.year}
+                    </span>
+                    {d.status === 'placeholder' && <Placeholder />}
+                  </p>
+                  <h3 class="mu-title">{d.title}</h3>
+                  <p class="mu-release">{release}</p>
+                </div>
                 <div class="mu-about">
                   <h4 class="label">About this song</h4>
                   <p>{say(d.meaning)}</p>
@@ -150,6 +153,35 @@ const [lead, ...story] = music.story.map(say);
         );
       })}
     </div>
+    <script is:inline>
+      // Every panel is in the HTML, visible, so without scripting all the songs show, stacked.
+      // With scripting, CSS hides all but the first until this runs (no shift before first
+      // paint); this then picks the song from the URL (#song-<id>) and hands over to `hidden`.
+      // It runs as the page is parsed, before the module scripts (SongArt only loads the cover
+      // of a panel that isn't hidden).
+      (() => {
+        const stage = document.currentScript?.previousElementSibling;
+        if (!stage) return;
+        const tabs = [...stage.querySelectorAll('[role="tab"]')];
+        let id = '';
+        try {
+          id = decodeURIComponent(/^#song-(.+)$/.exec(location.hash)?.[1] ?? '');
+        } catch {
+          // A malformed hash: keep the first song.
+        }
+        const sel = tabs.find((t) => t.dataset.song === id) ?? tabs[0];
+        for (const t of tabs) {
+          const on = t === sel;
+          t.setAttribute('aria-selected', String(on));
+          t.tabIndex = on ? 0 : -1;
+          const panel = document.getElementById(t.getAttribute('aria-controls') ?? '');
+          if (panel) panel.hidden = !on;
+        }
+        if (sel?.dataset.c1)
+          stage.closest('#music')?.style.setProperty('--mu-tint', sel.dataset.c1);
+        stage.setAttribute('data-ready', '');
+      })();
+    </script>
 
     {features.length > 0 && (
       <section class="mu-feat" aria-labelledby="mu-feat-h">
@@ -191,15 +223,38 @@ const [lead, ...story] = music.story.map(say);
 <script>
   // Tabs (automatic activation, roving tabindex). The selected song lives in the URL as
   // #song-<id> (replaced, not pushed), so a reload, a shared link, the song page's "All songs"
-  // link and Back from a song page all come back to it. Lyrics and the players bring their own
-  // scripts.
+  // link and Back from a song page all come back to it. The inline script above has already
+  // picked the song from the URL and hidden the other panels. Lyrics and the players bring their
+  // own scripts.
   const root = document.getElementById('music');
   const strip = root?.querySelector<HTMLElement>('[data-tabs]');
   if (root && strip) {
     const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
     const motion = matchMedia('(prefers-reduced-motion: no-preference)');
+    const behavior = (): ScrollBehavior => (motion.matches ? 'smooth' : 'auto');
+    // A tracklist (vertical) on laptops, a strip of covers (horizontal) on phones.
+    const wide = matchMedia('(min-width: 900px)');
+    const orient = () =>
+      strip.setAttribute('aria-orientation', wide.matches ? 'vertical' : 'horizontal');
+    orient();
+    wide.addEventListener('change', orient);
     const panelOf = (t: HTMLButtonElement) =>
       document.getElementById(t.getAttribute('aria-controls') ?? '');
+    // Phones: keep the tab, focus ring and all, inside the strip (its scroll-padding is the ring's
+    // room). Only the strip scrolls, never the page.
+    const keepInStrip = (tab: HTMLButtonElement, smooth = true) => {
+      if (strip.scrollWidth <= strip.clientWidth) return;
+      const pad = parseFloat(getComputedStyle(strip).scrollPaddingInlineStart) || 0;
+      const s = strip.getBoundingClientRect();
+      const r = tab.getBoundingClientRect();
+      const dx =
+        r.left < s.left + pad
+          ? r.left - s.left - pad
+          : r.right > s.right - pad
+            ? r.right - s.right + pad
+            : 0;
+      if (dx) strip.scrollBy({ left: dx, behavior: smooth ? behavior() : 'auto' });
+    };
     const select = (tab: HTMLButtonElement, focus = false, remember = true) => {
       tabs.forEach((t) => {
         const on = t === tab;
@@ -216,14 +271,15 @@ const [lead, ...story] = music.story.map(say);
       if (tab.dataset.c1) root.style.setProperty('--mu-tint', tab.dataset.c1);
       if (remember && tab.dataset.song)
         history.replaceState(history.state, '', `#song-${tab.dataset.song}`);
-      if (focus) tab.focus();
+      if (focus) tab.focus({ preventScroll: true });
+      keepInStrip(tab);
     };
     // Phones: the panel sits under the strip; if a tap leaves it mostly below the fold, bring it up
     // (otherwise the tap seems to do nothing).
     const reveal = (tab: HTMLButtonElement) => {
       const panel = panelOf(tab);
       if (!panel || panel.getBoundingClientRect().top < innerHeight * 0.6) return;
-      panel.scrollIntoView({ block: 'nearest', behavior: motion.matches ? 'smooth' : 'auto' });
+      panel.scrollIntoView({ block: 'nearest', behavior: behavior() });
     };
     // Start fetching a song's cover on hover or focus, so it's usually ready by the click.
     const warm = (t: HTMLButtonElement) => {
@@ -250,23 +306,40 @@ const [lead, ...story] = music.story.map(say);
       });
     });
 
-    // Arriving on /#song-<id>: select that song and land on the section. On Back or Forward the
-    // browser restores the scroll position itself.
+    // Arriving on /#song-<id>: select that song and land on the section.
     const fromHash = () => {
-      const id = /^#song-(.+)$/.exec(location.hash)?.[1];
-      const tab = id && tabs.find((t) => t.dataset.song === decodeURIComponent(id));
+      let id = '';
+      try {
+        id = decodeURIComponent(/^#song-(.+)$/.exec(location.hash)?.[1] ?? '');
+      } catch {
+        return;
+      }
+      const tab = tabs.find((t) => t.dataset.song === id);
       if (!tab) return;
       if (tab.getAttribute('aria-selected') !== 'true') select(tab, false, false);
       // Keep the selected cover in view in the phone strip (without moving the page).
-      strip.scrollLeft = Math.max(0, tab.offsetLeft - tab.offsetWidth / 2);
+      keepInStrip(tab, false);
       return tab;
+    };
+    // The focus start point moves into the section too, so the next Tab continues in Music
+    // rather than from the top of the page (SC 2.4.3). The section is focusable only for this.
+    const land = () => {
+      root.tabIndex = -1;
+      root.focus({ preventScroll: true });
+      root.addEventListener('blur', () => root.removeAttribute('tabindex'), { once: true });
     };
     const nav = performance.getEntriesByType('navigation')[0] as
       PerformanceNavigationTiming | undefined;
-    if (fromHash() && nav?.type !== 'back_forward') root.scrollIntoView();
+    if (fromHash()) {
+      // On Back or Forward the browser restores the scroll position itself.
+      if (nav?.type !== 'back_forward') root.scrollIntoView();
+      land();
+    }
     // Restored from the back/forward cache, or the hash edited by hand.
     addEventListener('hashchange', () => {
-      if (fromHash()) root.scrollIntoView();
+      if (!fromHash()) return;
+      root.scrollIntoView();
+      land();
     });
   }
 </script>
@@ -304,12 +377,11 @@ const [lead, ...story] = music.story.map(say);
     gap: var(--space-3);
     max-width: var(--measure);
   }
+  /* The lead is larger than the rest of the story but at the body weight, so "Music" leads. */
   .mu-story-lead {
-    font-family: var(--ln-display);
     font-size: var(--text-lg);
-    font-weight: 600;
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-title);
+    font-weight: 400;
+    line-height: var(--leading-normal);
   }
   .mu-story-p {
     color: var(--ln-ink-2);
@@ -343,6 +415,27 @@ const [lead, ...story] = music.story.map(say);
     scroll-margin-top: var(--ln-scroll-pad);
     scroll-margin-bottom: var(--space-4);
   }
+  /* With scripting, only the first panel shows until the inline script hands over to `hidden`
+     (so nothing shifts before first paint). Without it, every song shows, stacked, and the
+     tabs, which need the script, are left out. */
+  @media (scripting: enabled) {
+    .mu-stage:not([data-ready]) > .mu-panel:not([data-initial]) {
+      display: none;
+    }
+  }
+  @media (scripting: none) {
+    .mu-stage > .mu-tabs {
+      display: none;
+    }
+    .mu-panel + .mu-panel {
+      padding-top: var(--space-6);
+      border-top: var(--ln-hairline);
+    }
+  }
+  /* The section takes focus only after a jump to a song (the focus start point, not a control). */
+  body.ln .music:focus-visible {
+    outline: none;
+  }
 
   /* Song tabs. Phones: a strip of covers with titles, scrolled sideways. */
   .mu-tabs {
@@ -354,7 +447,8 @@ const [lead, ...story] = music.story.map(say);
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
-    scroll-padding-inline: var(--space-1);
+    /* A tab scrolled into view keeps its focus ring (width and offset) inside the strip. */
+    scroll-padding-inline: calc(var(--focus-width) + var(--focus-offset) + var(--space-1));
     /* Room for the focus ring inside the scroller. */
     padding: var(--space-2);
     margin-inline: calc(var(--space-2) * -1);
@@ -418,13 +512,12 @@ const [lead, ...story] = music.story.map(say);
     height: 100%;
     object-fit: cover;
   }
+  /* Titles wrap (no clamp, so wider text spacing never cuts one); two lines' room keeps the
+     covers in a row. */
   .mu-tab-t {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
+    display: block;
     min-height: calc(2em * var(--leading-snug));
+    overflow-wrap: break-word;
     font-weight: 600;
     font-size: var(--text-xs);
     line-height: var(--leading-snug);
@@ -435,7 +528,8 @@ const [lead, ...story] = music.story.map(say);
     display: grid;
     gap: var(--space-6);
   }
-  .mu-info {
+  .mu-info,
+  .mu-id {
     display: grid;
     gap: var(--space-3);
     align-content: start;
@@ -536,23 +630,46 @@ const [lead, ...story] = music.story.map(say);
     translate: 0 0;
   }
 
-  /* Phones: a smaller sleeve, so the song's title is close under the strip. */
-  .mu-head :global(.sa) {
-    width: min(100%, 15rem);
-  }
-  /* Sleeve beside the details once the panel has the room. */
-  @container (min-width: 40rem) {
+  /* Phones and tablets: the strip above already shows the covers, so the panel doesn't repeat
+     the cover at full size. A small sleeve (the record still peeking) sits beside the title. */
+  @media (max-width: 899.98px) {
     .mu-head {
-      grid-template-columns: 17.5rem minmax(0, 1fr);
-      gap: var(--space-7);
-      align-items: start;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      gap: var(--space-4);
+      align-items: center;
+    }
+    .mu-info {
+      display: contents;
     }
     .mu-head :global(.sa) {
       width: 100%;
     }
+    .mu-about,
+    .mu-call,
+    .mu-info > :global(.pl) {
+      grid-column: 1 / -1;
+    }
+    /* The title one step smaller beside the small sleeve. */
+    body.ln .mu-title {
+      font-size: var(--text-lg);
+    }
   }
 
   @media (min-width: 900px) {
+    /* Laptops: the full sleeve, over the details or beside them once the panel has the room. */
+    .mu-head :global(.sa) {
+      width: min(100%, 15rem);
+    }
+    @container (min-width: 40rem) {
+      .mu-head {
+        grid-template-columns: 17.5rem minmax(0, 1fr);
+        gap: var(--space-7);
+        align-items: start;
+      }
+      .mu-head :global(.sa) {
+        width: 100%;
+      }
+    }
     .mu-intro {
       grid-template-columns: 11rem minmax(0, 1fr);
       column-gap: clamp(2.5rem, 4vw, 4rem);
@@ -583,6 +700,14 @@ const [lead, ...story] = music.story.map(say);
     .mu-panel {
       grid-column: 1;
       grid-row: 1;
+    }
+    @media (scripting: none) {
+      .mu-stage {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .mu-panel {
+        grid-row: auto;
+      }
     }
     /* One row per song: number, cover, title, year; hairlines between rows, no cards. */
     .mu-tab {

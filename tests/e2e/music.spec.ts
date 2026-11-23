@@ -266,7 +266,8 @@ test('music lists features under Appears on, with a player and no page', async (
 });
 
 // WO-022: the layout of the Music section (tracklist beside the panel, heading, phone strip),
-// the quieter players and the song kept in the URL.
+// the quieter players and the song kept in the URL. WO-026: one cover per screen on phones, a
+// lighter story lead, one control per service, deep-link focus, tablist orientation and no-JS.
 type Box = { top: number; bottom: number; left: number; right: number };
 const box = (page: Page, selector: string) =>
   page.locator(selector).evaluate((el): Box => {
@@ -343,6 +344,10 @@ test('music heading matches sections', async ({ page }) => {
   expect(music).toEqual(await style('#work-h'));
   await expect(page.locator('#music-h')).toHaveText('Music');
   await expect(page.locator('#music-h')).not.toHaveClass(/\blabel\b/);
+  // WO-026: the story's first line is lighter than the title, so "Music" leads.
+  const lead = await style('#music .mu-story-lead');
+  expect(Number(lead.weight)).toBeLessThan(Number(music.weight));
+  expect(parseFloat(lead.size)).toBeLessThan(parseFloat(music.size));
 });
 
 test('music phone strip shows the panel', async ({ page }, info) => {
@@ -405,6 +410,114 @@ test('music remembers the song', async ({ page }) => {
   await all.click();
   await expect(selectedTabs(page)).toHaveAttribute('data-song', third);
   await expect(page.locator(`#mu-panel-${third}`)).toBeVisible();
+
+  // WO-026: a deep link moves the focus start point into Music (SC 2.4.3), so the first Tab
+  // continues there rather than from the top of the page.
+  const deep = ids.includes('misfits') ? 'misfits' : third;
+  await page.goto(`/#song-${deep}`);
+  await expect(selectedTabs(page)).toHaveAttribute('data-song', deep);
+  await expect(page.locator('#music-h')).toBeInViewport();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#music :focus')).toHaveCount(1);
+  // The section takes focus only for the jump.
+  await expect(page.locator('#music')).not.toHaveAttribute('tabindex');
+});
+
+// WO-026: on phones the strip already shows the covers, so the panel doesn't repeat the selected
+// one at full size (a small sleeve beside the title instead).
+test('music phone shows one cover', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Phone layout (375 × 812).');
+  // The jump, with no smooth scroll to wait for.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/#music');
+  await expect(page.locator('#music-h')).toBeInViewport();
+  const id = await selectedTabs(page).getAttribute('data-song');
+  // Every rendering of the selected song's art on screen: its strip cover and its sleeve.
+  const widths = await page.evaluate((song) => {
+    const art = [
+      ...document.querySelectorAll(`#mu-tab-${song} .mu-tab-art`),
+      ...document.querySelectorAll(`#mu-panel-${song} .sa-art`),
+    ];
+    return art
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.bottom > 0 && r.top < innerHeight;
+      })
+      .map((el) => el.getBoundingClientRect().width);
+  }, id);
+  expect(widths.length, 'the selected cover is on screen').toBeGreaterThan(0);
+  // "Full size": wider than the 120px sleeve. At most one, and here none: the sleeve is small.
+  expect(widths.filter((w) => w > 128).length).toBeLessThanOrEqual(1);
+  const sleeve = await box(page, `#mu-panel-${id} .sa`);
+  expect(sleeve.right - sleeve.left).toBeLessThanOrEqual(128);
+  // The sleeve sits beside the title, with the record still peeking out.
+  const title = await box(page, `#mu-panel-${id} .mu-title`);
+  expect(title.left).toBeGreaterThanOrEqual(sleeve.right);
+  await expect(page.locator(`#mu-panel-${id} .sa-vinyl`)).toBeVisible();
+});
+
+test('music tablist orientation and strip focus', async ({ page }, info) => {
+  await page.goto('/');
+  const list = page.locator('#music [role="tablist"]');
+  const phone = info.project.name === 'mobile';
+  await expect(list).toHaveAttribute('aria-orientation', phone ? 'horizontal' : 'vertical');
+  // It follows the layout when the window changes size.
+  await page.setViewportSize(phone ? { width: 1440, height: 900 } : { width: 375, height: 812 });
+  await expect(list).toHaveAttribute('aria-orientation', phone ? 'vertical' : 'horizontal');
+  await page.setViewportSize(phone ? { width: 375, height: 812 } : { width: 1440, height: 900 });
+  await expect(list).toHaveAttribute('aria-orientation', phone ? 'horizontal' : 'vertical');
+  if (!phone) return;
+
+  // At 375 the focused tab, focus ring included, stays inside the strip.
+  await jumpToMusic(page);
+  await page.locator('#music [role="tab"]').first().focus();
+  for (let n = 0; n < 3; n++) await page.keyboard.press('ArrowRight');
+  const focused = page.locator('#music [role="tab"]:focus');
+  await expect(focused).toHaveAttribute('aria-selected', 'true');
+  await expect(focused).toHaveAttribute('data-song', (await tabIds(page))[3]);
+  await expect
+    .poll(() =>
+      focused.evaluate((el) => {
+        const strip = el.parentElement!.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        const ring = parseFloat(s.outlineWidth) + parseFloat(s.outlineOffset);
+        return r.left - ring >= strip.left && r.right + ring <= strip.right;
+      }),
+    )
+    .toBe(true);
+  // Titles wrap rather than being cut, even with wider text spacing (WCAG 1.4.12) at 320.
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addStyleTag({
+    content:
+      '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }',
+  });
+  const cut = await page
+    .locator('#music .mu-tab-t')
+    .evaluateAll((ts) => ts.filter((t) => t.scrollHeight > t.clientHeight + 1).length);
+  expect(cut).toBe(0);
+});
+
+test('music no-js shows every song', async ({ browser }, info) => {
+  const ctx = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: info.project.use.viewport ?? { width: 1440, height: 900 },
+  });
+  const page = await ctx.newPage();
+  await page.goto('/');
+  const panels = page.locator('#music [role="tabpanel"]');
+  await expect(panels).toHaveCount(songIds.length);
+  for (const panel of await panels.all()) {
+    await panel.scrollIntoViewIfNeeded();
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.mu-title')).toBeVisible();
+    // Each service is a plain link to it (the player needs the script).
+    await expect(panel.locator('button.pl-play')).toBeHidden();
+    for (const link of await panel.locator('a.pl-link').all()) await expect(link).toBeVisible();
+  }
+  // The tabs need the script, so they are left out.
+  await expect(page.locator('#music [role="tablist"]')).toBeHidden();
+  await ctx.close();
 });
 
 test('music players', async ({ page }) => {
@@ -417,11 +530,17 @@ test('music players', async ({ page }) => {
     await page.locator(`#mu-tab-${id}`).click();
     const buttons = page.locator(`#mu-panel-${id} button.pl-play`);
     for (const b of await buttons.all()) {
-      await expect(b).toHaveAccessibleName(
-        new RegExp(`^Play on \\w+\\s?: ${escape(titleOf(id))}$`),
-      );
+      // WO-026: no stray space before the colon.
+      const kind = (await b.getAttribute('data-kind')) ?? '';
+      const service = { spotify: 'Spotify', youtube: 'YouTube' }[kind] ?? kind;
+      await expect(b).toHaveAccessibleName(`Play on ${service}: ${titleOf(id)}`);
       await expect(b).toHaveAccessibleDescription(/^Loads the \w+ player$/);
       await expect(b).not.toContainText(/Loads the/);
+    }
+    // One control per service: the player button, and no second "Open on" link beside it.
+    const services = page.locator(`#mu-panel-${id} .pl-player`);
+    for (const s of await services.all()) {
+      await expect(s.getByRole('button').or(s.getByRole('link'))).toHaveCount(1);
     }
   }
   // The song page still shows every service.

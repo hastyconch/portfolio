@@ -1,7 +1,8 @@
 ---
 // Click-to-load Spotify/YouTube players for one song (constitution art. 5 and 6): nothing
-// third-party is requested until the visitor presses a player button, and every player keeps a
-// plain "Open on …" link as its no-JS fallback. Shared by the home Music section and song pages.
+// third-party is requested until the visitor presses a player button. Each service has one
+// control: the "Play on …" button with scripting, or, without it, a plain "Open … on …" link to the
+// service in its place (the no-JS fallback). Shared by the home Music section and song pages.
 import type { Song } from '../lib/content';
 import { spotifyEmbed, youtubeEmbed } from '../lib/music';
 
@@ -30,21 +31,24 @@ const players = [
               data-src={p.embed}
               data-kind={p.key}
               data-title={`${d.title} on ${p.name}`}
+              aria-label={`Play on ${p.name}: ${d.title}`}
               aria-describedby={`pl-${song.id}-${p.key}`}
             >
               <span class="pl-ico" aria-hidden="true" />
               <span class="pl-text">
-                <strong>
-                  Play on {p.name}
-                  <span class="visually-hidden">: {d.title}</span>
-                </strong>
+                <strong>Play on {p.name}</strong>
               </span>
             </button>
             <span id={`pl-${song.id}-${p.key}`} hidden>
               Loads the {p.name} player
             </span>
-            <a class="pl-link" href={p.url} rel="noopener">
-              Open on {p.name}
+            <a class="pl-play pl-link" href={p.url} rel="noopener">
+              <span class="pl-ico" aria-hidden="true" />
+              <span class="pl-text">
+                <strong>
+                  Open {d.title} on {p.name}
+                </strong>
+              </span>
             </a>
           </>
         ) : (
@@ -166,21 +170,31 @@ const players = [
     font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
-  /* Lined up with the button's left edge (the padding is vertical only, for the target size). */
+  /* One control per service: the click-to-load button with scripting, the plain link to the
+     service (the same row) without it. */
   .pl-link {
-    justify-self: start;
-    padding: var(--space-1) 0;
-    font-size: var(--text-sm);
-    color: var(--ln-ink-2);
-    text-underline-offset: 0.2em;
-    transition: color var(--dur-quick) var(--ease-out);
+    text-decoration: none;
+    transition:
+      border-color var(--dur-quick) var(--ease-out),
+      background-color var(--dur-quick) var(--ease-out);
   }
   .pl-link:hover,
   .pl-link:focus-visible {
-    color: var(--ln-ink);
+    border-color: var(--ln-ink-2);
+    background: var(--ln-bg-3);
   }
   .pl-link:active {
-    color: var(--ln-ink-3);
+    background: var(--ln-bg-2);
+  }
+  @media (scripting: enabled) {
+    .pl-link {
+      display: none;
+    }
+  }
+  @media (scripting: none) {
+    button.pl-play {
+      display: none;
+    }
   }
   .pl-player :global(.pl-frame) {
     width: 100%;
