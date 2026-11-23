@@ -6,6 +6,12 @@
 // links all sit in the first screen. WO-026: the link row holds only links that work: Résumé,
 // See the work, and Email and LinkedIn once they are real (http(s) or mailto). A contact that
 // isn't real yet appears in the footer only.
+// WO-028: the work shows above the fold on laptops. The three pillars leave the notes column and
+// sit under the cover and the notes as one row of three, spanning both columns, with less
+// padding; the hero's bottom padding is a step tighter. A row reads better than a shorter stack:
+// the pillars are three parallel claims, so side by side they scan as a set at a glance, the
+// notes column ends on its links, and the row costs one pillar's height instead of three. Copy,
+// the cover's size and the one display moment (the name) are unchanged. Phones keep the stack.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -52,15 +58,16 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
           See the work <span aria-hidden="true">↓</span>
         </a>
       </p>
-      <dl class="hero-facts">
-        {profile.pillars.map((p) => (
-          <div>
-            <dt>{p.title}</dt>
-            <dd>{p.body}</dd>
-          </div>
-        ))}
-      </dl>
     </div>
+
+    <dl class="hero-facts">
+      {profile.pillars.map((p) => (
+        <div>
+          <dt>{p.title}</dt>
+          <dd>{p.body}</dd>
+        </div>
+      ))}
+    </dl>
   </div>
 </section>
 
@@ -212,7 +219,7 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
     color: var(--ln-ink-3);
   }
   .hero-facts {
-    margin: var(--space-2) 0 0;
+    margin: 0;
     border-top: var(--ln-hairline);
   }
   .hero-facts div {
@@ -245,10 +252,31 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
       max-width: 72%;
     }
   }
+  /* Tablets and up: the pillars are one row of three under the hero, one hairline above and
+     below, with less padding than the phone stack. */
+  @media (min-width: 760px) {
+    .hero {
+      padding-block: var(--space-7) var(--space-6);
+    }
+    .hero-facts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--space-6);
+      border-bottom: var(--ln-hairline);
+    }
+    .hero-facts div {
+      align-content: start;
+      padding-block: var(--space-3);
+      border-bottom: 0;
+    }
+  }
   @media (min-width: 1000px) {
     .hero-grid {
       grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-      gap: var(--space-8);
+      gap: var(--space-6) var(--space-8);
+    }
+    .hero-facts {
+      grid-column: 1 / -1;
     }
   }
 </style>

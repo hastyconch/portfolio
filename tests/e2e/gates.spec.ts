@@ -39,6 +39,30 @@ test('hero first screen on phones', async ({ page, isMobile }) => {
   await expect(hero.getByRole('link', { name: /See the work/ })).toHaveAttribute('href', '#work');
 });
 
+// WO-028: on a laptop the first screen shows the work. At 1440 x 900 the Work title is in the first
+// viewport; at 1366 x 768 the name, headline and hero links still are.
+test('hero shows the work above the fold', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'laptop layout');
+  const inView = async (sel: string, height: number) => {
+    const el = page.locator(sel);
+    await expect(el).toBeVisible();
+    const box = (await el.boundingBox())!;
+    expect(box.y, `${sel} top`).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height, `${sel} is in the first ${height}px`).toBeLessThanOrEqual(height);
+  };
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  await inView('#work-h', 900);
+
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const sel of ['#hero .hero-name', '#hero .hero-headline', '#hero .hero-links']) {
+    await inView(sel, 768);
+  }
+});
+
 test('contact links are honest', async ({ page }) => {
   for (const route of ['/', '/projects/billable/']) {
     await page.goto(route);

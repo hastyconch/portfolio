@@ -558,7 +558,8 @@ export default function PipelineDemo() {
             aria-disabled={atStart}
             onClick={() => !atStart && go(step - 1)}
           >
-            <span aria-hidden="true">←</span> Back
+            {/* The space sits inside the hidden arrow, so the name is exactly "Back". */}
+            <span aria-hidden="true">← </span>Back
           </button>
           <button type="button" className="pl-btn pl-play" onClick={togglePlay}>
             <span aria-hidden="true">{playing ? '❚❚' : atEnd ? '↺' : '▶'}</span> {playLabel}

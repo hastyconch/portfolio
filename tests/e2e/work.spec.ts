@@ -162,7 +162,8 @@ test('skill badges are text, not controls', async ({ page }) => {
 
 // WO-025: skill tags are quiet (a neutral hairline, no accent edge), so the phone "Try the demo"
 // button is the one thing that reads as a control. Its name is "Try the demo: {name}" and its one
-// line is the description.
+// line is the description. WO-028: the tags are plain (no fill, weight 500 at most) and the
+// button is filled with the accent, its label centred.
 test('work demo button and tags', async ({ page, isMobile }) => {
   await page.goto('/');
   const accent = await page.evaluate(() => {
@@ -187,13 +188,38 @@ test('work demo button and tags', async ({ page, isMobile }) => {
     expect(b.color, 'tag border is not the accent').not.toBe(accent);
     expect(b.width, 'tag border is a hairline').toBe('1px');
   }
+  const tags = await page.locator('#work .wk-badges li').evaluateAll((lis) =>
+    lis.map((li) => {
+      const s = getComputedStyle(li);
+      return { bg: s.backgroundColor, weight: Number(s.fontWeight), cursor: s.cursor };
+    }),
+  );
+  for (const t of tags) {
+    expect(t.bg, 'tag has no fill').toBe('rgba(0, 0, 0, 0)');
+    expect(t.weight, 'tag weight').toBeLessThanOrEqual(500);
+    expect(t.cursor, 'tag does not look tappable').not.toBe('pointer');
+  }
 
   if (!isMobile) return;
   const button = page.locator('#work [data-wk-try]').first();
-  await expect(button).toHaveAccessibleName('Try the demo: Grocer loyalty app');
-  await expect(button).toHaveAccessibleDescription('Load offers, build a list, earn points.');
-  await expect(button).toContainText('Try the demo');
+  await expect(button).toHaveAccessibleName('Try the demo: Airline loyalty app');
+  await expect(button).toHaveAccessibleDescription('Track tier progress, book a reward.');
+  await expect(button).toHaveText('Try the demo: Airline loyalty app ▸');
+  await expect(button.locator('[aria-hidden="true"]')).toHaveText('▸');
   await expect(button).not.toContainText('↓');
+  const fill = await button.evaluate((b) => {
+    const s = getComputedStyle(b);
+    return { bg: s.backgroundColor, align: s.textAlign };
+  });
+  expect(fill.bg, 'the button is filled with the accent').toBe(accent);
+  expect(fill.align, 'the label is centred').toBe('center');
+  // The one line stays outside the button, beneath it.
+  await expect(button.locator('.wk-try-d')).toHaveCount(0);
+  const line = (await page
+    .locator(`#${await button.getAttribute('aria-describedby')}`)
+    .boundingBox())!;
+  const box = (await button.boundingBox())!;
+  expect(line.y, 'the line sits beneath the button').toBeGreaterThanOrEqual(box.y + box.height);
   for (const b of await page.locator('#work [data-wk-try]').all()) {
     await expect(b).toHaveAccessibleName(/^Try the demo: \S/);
     const box = (await b.boundingBox())!;
@@ -224,12 +250,12 @@ test('work demos add no landmarks', async ({ page, isMobile }) => {
   expect(await stray()).toBe(0);
   await expect(page.locator('#work .wk-demo').getByRole('region')).toHaveCount(0);
   await expect(page.locator('#work .wk-demo[role="region"]')).toHaveCount(0);
-  if (isMobile) await expect(page.locator('#work .wk-demo[role="group"]')).toHaveCount(3);
+  if (isMobile) await expect(page.locator('#work .wk-demo[role="group"]')).toHaveCount(4);
 });
 
-// WO-024: on phones only the first demo shows inline; the others wait behind "Try the demo" and
-// load nothing until it is pressed. Pressing one reveals the demo, hydrates it and focuses it.
-const LATER_DEMOS = /(GrocerDemo|SchedulerDemo|PipelineDemo)[^/]*\.js/;
+// WO-024, WO-028: on phones every demo waits behind "Try the demo" and loads nothing until it is
+// pressed. Pressing one reveals the demo, hydrates it and focuses it.
+const LATER_DEMOS = /(AirlineDemo|GrocerDemo|SchedulerDemo|PipelineDemo)[^/]*\.js/;
 
 test('work phone demos expand on demand', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'phone layout');
@@ -239,18 +265,21 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   });
   await page.goto('/');
 
-  // Projects starts within about eight screens.
+  // Projects starts within about seven screens (WO-028).
   const projectsTop = await page.evaluate(
     () => document.querySelector('#projects')!.getBoundingClientRect().top + window.scrollY,
   );
-  expect(projectsTop, 'Projects top at 375 x 812').toBeLessThanOrEqual(6500);
+  expect(projectsTop, 'Projects top at 375 x 812').toBeLessThanOrEqual(5700);
 
   const buttons = page.getByRole('button', { name: /^Try the demo/ });
-  await expect(buttons).toHaveCount(3);
-  // The first engagement keeps its demo inline; the others are collapsed.
-  const articles = page.locator('#work .wk article');
-  await expect(articles.first().locator('.wk-demo')).toBeVisible();
-  await expect(articles.first().getByRole('button', { name: /^Try the demo/ })).toHaveCount(0);
+  await expect(buttons).toHaveCount(4);
+  // Every demo engagement is collapsed, the first one too.
+  const articles = page.locator('#work .wk-live article');
+  await expect(articles).toHaveCount(4);
+  for (const a of await articles.all()) {
+    await expect(a.locator('.wk-demo')).toBeHidden();
+    await expect(a.getByRole('button', { name: /^Try the demo/ })).toHaveCount(1);
+  }
   for (const b of await buttons.all()) {
     const box = await b.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -279,7 +308,7 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   await expect(region).toBeVisible();
   await expect(region).toBeFocused();
   await expect(region).toHaveAttribute('role', 'group');
-  await expect(region).toHaveAccessibleName('Grocer loyalty app demo');
+  await expect(region).toHaveAccessibleName('Airline loyalty app demo');
   const nav = await navHeight(page);
   const title = article.locator('.wk-title');
   await expect(title).toBeInViewport();
@@ -294,9 +323,9 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   await loaded;
   await expect(region.locator('astro-island')).not.toHaveAttribute('ssr');
   await expect(first).toBeHidden();
-  // The other two stay collapsed.
+  // The other three stay collapsed.
   expect(chunks).toHaveLength(1);
-  await expect(page.getByRole('button', { name: /^Try the demo/ })).toHaveCount(2);
+  await expect(page.getByRole('button', { name: /^Try the demo/ })).toHaveCount(3);
 });
 
 test('work demos all show inline on laptops and without scripting', async ({
