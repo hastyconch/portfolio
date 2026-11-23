@@ -281,55 +281,60 @@ export default function BillableMini() {
       </div>
 
       <div className="bm-info">
-        <h3 className="bm-h">Goal</h3>
-        <p id={goalId}>
-          Collect the Billable Hours (the clock coins), open the Leaked Email on the top desk, then
-          defeat the Red Stapler that patrols the floor. Two laptop swings or pogo bounces finish
-          it.
-        </p>
-        <h3 className="bm-h">Controls</h3>
-        <dl className="bm-keys" id={controlsId}>
-          <div>
-            <dt>Move</dt>
-            <dd>
-              <kbd>Arrow keys</kbd> or <kbd>A</kbd> / <kbd>D</kbd>
-            </dd>
-          </div>
-          <div>
-            <dt>Jump</dt>
-            <dd>
-              <kbd>Space</kbd> or <kbd>Z</kbd> (hold to jump higher)
-            </dd>
-          </div>
-          <div>
-            <dt>Attack</dt>
-            <dd>
-              <kbd>X</kbd> (laptop swing)
-            </dd>
-          </div>
-          <div>
-            <dt>Pogo</dt>
-            <dd>
-              Hold <kbd>Down</kbd> or <kbd>S</kbd> in the air
-            </dd>
-          </div>
-          <div>
-            <dt>Drop through a desk</dt>
-            <dd>
-              <kbd>Down</kbd> + <kbd>Jump</kbd>
-            </dd>
-          </div>
-          <div>
-            <dt>Pause</dt>
-            <dd>
-              <kbd>Esc</kbd> (returns focus to the page)
-            </dd>
-          </div>
-          <div>
-            <dt>Touch</dt>
-            <dd>On-screen buttons under the game</dd>
-          </div>
-        </dl>
+        <div className="bm-goal">
+          <h3 className="bm-h">Goal</h3>
+          <p id={goalId}>
+            Collect the Billable Hours (the clock coins), open the Leaked Email on the top desk,
+            then defeat the Red Stapler that patrols the floor. Two laptop swings or pogo bounces
+            finish it.
+          </p>
+        </div>
+        <div className="bm-controls">
+          <h3 className="bm-h">Controls</h3>
+          <dl className="bm-keys" id={controlsId}>
+            <div>
+              <dt>Move</dt>
+              <dd>
+                <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>Jump</dt>
+              <dd>
+                <kbd>Space</kbd> or <kbd>Z</kbd>{' '}
+                <span className="bm-note">hold to jump higher</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Attack</dt>
+              <dd>
+                <kbd>X</kbd> <span className="bm-note">laptop swing</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Pogo</dt>
+              <dd>
+                Hold <kbd>Down</kbd> or <kbd>S</kbd> <span className="bm-note">in the air</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Drop through a desk</dt>
+              <dd>
+                <kbd>Down</kbd> + <kbd>Jump</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>Pause</dt>
+              <dd>
+                <kbd>Esc</kbd> <span className="bm-note">returns focus to the page</span>
+              </dd>
+            </div>
+            <div className="bm-keys-touch">
+              <dt>Touch</dt>
+              <dd>On-screen buttons under the game</dd>
+            </div>
+          </dl>
+        </div>
       </div>
 
       <p className="bm-sr" role="status">

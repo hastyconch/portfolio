@@ -8,7 +8,7 @@ summary: I help clients decide which AI tools and processes to adopt across the 
 contributions:
   - Assess current delivery and identify where AI changes the economics.
   - Select tooling, define new ways of working and pilot them with teams.
-  - Build prototypes and designs directly as an AI-enabled product manager.
+  - Build prototypes and designs myself, with AI, as the product manager.
 outcomes: []
 skills: [AI strategy, Change management, Prototyping]
 demo: none

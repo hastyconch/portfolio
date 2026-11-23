@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "anonymize": "node factory/stations/anonymize.mjs",
     "copylint": "node factory/stations/copylint.mjs",
+    "tastelint": "node factory/stations/tastelint-run.mjs",
     "craft": "node factory/stations/craftaudit.mjs --ci && node factory/stations/craftaudit.mjs --config .craftrc.demos.json --ci",
     "speclint": "node factory/stations/speclint.mjs",
     "links": "node factory/stations/linkcheck.mjs",

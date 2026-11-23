@@ -173,7 +173,7 @@ export default function GrocerDemo() {
           ? `, including ${bonus.length} ${bonus.length === 1 ? 'offer' : 'offers'}`
           : '') +
         `. Balance ${fmt(total)}.` +
-        (unlocked ? ` Reward unlocked: ${member.reward}.` : ''),
+        (unlocked ? ` Reward earned: ${member.reward}.` : ''),
     );
   }
 

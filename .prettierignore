@@ -6,3 +6,4 @@ factory/log
 private
 .claude/worktrees
 factory/out
+factory/stations/tastelint.mjs

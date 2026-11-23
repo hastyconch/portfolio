@@ -101,7 +101,7 @@ test('grocer checkout earns points and unlocks the reward', async ({ page }) => 
     if (!(await box.isChecked())) await box.check();
   }
   await demo.getByRole('button', { name: /^Check out/ }).click();
-  await expect(live).toContainText('Reward unlocked');
+  await expect(live).toContainText('Reward earned');
 
   await tab('Home').click();
   await expect(demo.getByText('Reward ready')).toBeVisible();

@@ -63,3 +63,51 @@ test('billable mini loads no game code before Play', async ({ page }) => {
 
   expect(errors).toEqual([]);
 });
+
+// WO-020: on the case study the game takes the column's full width and Goal / Controls sit in one
+// band under it, with action labels on one line and no empty run before "Problem".
+const CASE_STUDY = '/projects/billable/';
+
+test('billable controls labels do not wrap', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'laptop layout');
+  await page.goto(CASE_STUDY);
+  await page.locator('#play').scrollIntoViewIfNeeded();
+  await expect(page.locator('.bm[data-hydrated]')).toBeVisible();
+
+  const labels = page.locator('.bm-keys dt:visible');
+  expect(await labels.count()).toBeGreaterThanOrEqual(6);
+  const lines = await labels.evaluateAll((dts) =>
+    dts.map((dt) => {
+      const h = dt.getBoundingClientRect().height;
+      const lh = parseFloat(getComputedStyle(dt).lineHeight);
+      return { text: dt.textContent, lines: Math.round(h / lh) };
+    }),
+  );
+  for (const l of lines) expect(l.lines, `"${l.text}" wraps`).toBe(1);
+});
+
+test('billable layout band under the game', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'laptop layout');
+  await page.goto(CASE_STUDY);
+  await page.locator('#play').scrollIntoViewIfNeeded();
+  await expect(page.locator('.bm[data-hydrated]')).toBeVisible();
+
+  const box = async (sel: string) => {
+    const b = await page.locator(sel).boundingBox();
+    if (!b) throw new Error(`${sel} not laid out`);
+    return b;
+  };
+  const stage = await box('#play .bm-stage');
+  const band = await box('#play .bm-info');
+  const section = await box('#play');
+
+  expect(stage.width, 'game narrower than 800px').toBeGreaterThanOrEqual(800);
+  expect(band.y, 'band starts above the game bottom').toBeGreaterThanOrEqual(
+    stage.y + stage.height,
+  );
+  // The band spans the game's edges.
+  expect(Math.abs(band.x - stage.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(band.width - stage.width)).toBeLessThanOrEqual(1);
+  // The section ends at the band.
+  expect(section.y + section.height - (band.y + band.height)).toBeLessThanOrEqual(96);
+});

@@ -1,5 +1,6 @@
 ---
 title: Airline loyalty program
+short: Airline loyalty
 sector: Travel
 kicker: A member experience for millions of frequent flyers.
 years: Deloitte Digital

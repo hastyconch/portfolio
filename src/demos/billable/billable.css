@@ -8,14 +8,8 @@
   --bm-panel: #2a2740;
   --bm-rule: #4b5260;
   display: grid;
-  gap: 1.5rem;
+  gap: var(--dk-6);
   min-width: 0;
-}
-@media (min-width: 60rem) {
-  .bm {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-    align-items: start;
-  }
 }
 
 .bm-main {
@@ -201,11 +195,19 @@
   background: #3d6b17;
 }
 
+/* Goal and Controls: one band under the game, on the game's edges. Stacked on narrow screens;
+   from 60rem the goal takes a third and Controls the rest, as two columns of rows. */
 .bm-info {
+  display: grid;
+  gap: var(--dk-5) var(--dk-6);
   min-width: 0;
-  padding: var(--dk-4) var(--dk-5);
+  padding: var(--dk-4);
   border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   border-radius: var(--dk-r3);
+}
+.bm-goal,
+.bm-controls {
+  min-width: 0;
 }
 .bm-h {
   margin: 0 0 var(--dk-2);
@@ -216,24 +218,37 @@
   text-transform: uppercase;
 }
 .bm-info p {
-  margin: 0 0 1.25rem;
+  margin: 0;
+  text-wrap: pretty;
 }
+
+/* Each row is action then keys. The rows share the dl's tracks (subgrid), so every key column
+   starts on one line; action labels never wrap. */
 .bm-keys {
   display: grid;
-  gap: 0.35rem;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--dk-3);
   margin: 0;
+  font-size: var(--dk-fs-md);
+  line-height: var(--dk-lh-normal);
 }
 .bm-keys div {
   display: grid;
-  grid-template-columns: 6.5rem 1fr;
-  gap: var(--dk-3);
-  padding: var(--dk-1) 0;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+  padding: var(--dk-2) 0;
   border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
 }
-/* Keys as keycaps: a raised edge in the text colour, so they hold in both schemes. */
+.bm-keys dt {
+  font-weight: 700;
+  white-space: nowrap;
+}
 .bm-keys dd {
+  margin: 0;
   text-wrap: pretty;
 }
+/* Keys as keycaps: a raised edge in the text colour, so they hold in both schemes. */
 .bm-keys kbd {
   display: inline-block;
   min-width: 1.5rem;
@@ -247,11 +262,37 @@
   line-height: var(--dk-lh-normal);
   text-align: center;
 }
-.bm-keys dt {
-  font-weight: 700;
+/* Notes on a key: a quieter second tone, on their own line under the keys. */
+.bm-note {
+  display: block;
+  font-size: var(--dk-fs-sm);
+  color: var(--ln-ink-2, currentColor);
 }
-.bm-keys dd {
-  margin: 0;
+/* Touch only where the on-screen pad exists (same query as .bm-pad). */
+.bm-keys .bm-keys-touch {
+  display: none;
+}
+@media (pointer: coarse), (max-width: 47.99rem) {
+  .bm-keys .bm-keys-touch {
+    display: grid;
+  }
+}
+
+@media (min-width: 60rem) {
+  .bm-info {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    padding: var(--dk-4) var(--dk-5);
+  }
+  /* Two columns of rows, with a wider gutter (the empty third track) between them. */
+  .bm-keys {
+    grid-template-columns: max-content minmax(0, 1fr) var(--dk-2) max-content minmax(0, 1fr);
+  }
+  .bm-keys div:nth-child(odd) {
+    grid-column: 1 / span 2;
+  }
+  .bm-keys div:nth-child(even) {
+    grid-column: 4 / span 2;
+  }
 }
 
 .bm-sr {

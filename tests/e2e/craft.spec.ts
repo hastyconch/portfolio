@@ -32,3 +32,22 @@ test('nav links are plain section names', async ({ page, isMobile }) => {
     await expect(nav.getByRole('link', { name, exact: true }).first()).toBeVisible();
   }
 });
+
+// WO-021 (taste-skill): nothing fades in because the page scrolled. Scroll-linked animations are
+// allowed only for the reading-progress bar in the header.
+for (const route of ['/', '/projects/billable/', '/music/roadhouse/']) {
+  test(`no scroll fade-ins: ${route}`, async ({ page }) => {
+    await page.goto(route);
+    const scrollLinked = await page.evaluate(() =>
+      [...document.querySelectorAll('body *')]
+        .filter((el) => {
+          const s = getComputedStyle(el) as CSSStyleDeclaration & { animationTimeline?: string };
+          const tl = s.animationTimeline ?? 'auto';
+          return tl !== 'auto' && tl !== '' && !el.closest('.np-progress');
+        })
+        .map((el) => `${el.tagName.toLowerCase()}.${el.className}`),
+    );
+    expect(scrollLinked).toEqual([]);
+    expect(await page.locator('.reveal').count()).toBe(0);
+  });
+}

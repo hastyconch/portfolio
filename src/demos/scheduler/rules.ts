@@ -36,21 +36,21 @@ export interface Nurse {
 }
 
 export const NURSES: Nurse[] = [
-  { name: 'Priya' },
+  { name: 'Renee' },
   { name: 'Jordan', extraHours: 8, extraNote: '8h course' },
   { name: 'Sam' },
   { name: 'Morgan', leave: [4, 5, 6] },
-  { name: 'Ines' },
+  { name: 'Odette' },
   { name: 'Theo' },
 ];
 
 // Starting week: every rule passes except Saturday night coverage (3 of 4).
 export const START: Shift[][] = [
-  ['D', 'D', 'O', 'O', 'O', 'O', 'O'], // Priya   24h
+  ['D', 'D', 'O', 'O', 'O', 'O', 'O'], // Renee   24h
   ['O', 'O', 'D', 'D', 'O', 'O', 'O'], // Jordan  24h + 8h course
   ['O', 'O', 'N', 'N', 'N', 'O', 'O'], // Sam     3 nights in a row
   ['N', 'N', 'O', 'O', 'O', 'O', 'O'], // Morgan  leave Fri–Sun
-  ['O', 'O', 'O', 'N', 'N', 'N', 'O'], // Ines
+  ['O', 'O', 'O', 'N', 'N', 'N', 'O'], // Odette
   ['O', 'O', 'O', 'O', 'D', 'D', 'D'], // Theo
 ];
 

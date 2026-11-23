@@ -3,6 +3,8 @@
 // backdrop from the app's own palette, then the copy. The title comes first so titles line up
 // across the rail whatever tags a card carries. The whole card links to the case study.
 // Owner-supplied apps without screenshots yet show a designed "Screenshots coming" frame.
+// WO-019: the art carries `data-art`, so a navigation to the case study can name it for the
+// card-to-hero morph (a cross-document view transition; see Shell.astro).
 import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 import type { Project } from '../lib/content';
@@ -35,6 +37,7 @@ const frame = cover?.frame ?? 'browser';
   <div
     class:list={['pc-art', `pa-${frame}`]}
     style={`--bd: ${cover?.backdrop ?? d.accent}`}
+    data-art={project.id}
     aria-hidden="true"
   >
     <div class="pa-dev">

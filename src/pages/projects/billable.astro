@@ -1,0 +1,21 @@
+---
+// Billable's case study. Its own route (rather than [slug]) so the playable room's island and
+// stylesheet ship on this page only, not as render-blocking CSS on every case study.
+import CaseStudyLayout from '../../system/CaseStudyLayout.astro';
+import BillableMini from '../../demos/billable/BillableMini.tsx';
+import { getSiteContent } from '../../lib/content';
+
+const { projects } = await getSiteContent();
+const index = projects.findIndex((p) => p.data.demo === 'billable');
+const project = projects[index];
+if (!project) throw new Error('No project with demo: billable');
+---
+
+<CaseStudyLayout
+  project={project}
+  index={index}
+  prev={projects[index - 1]}
+  next={projects[index + 1]}
+>
+  <BillableMini slot="play" client:visible />
+</CaseStudyLayout>

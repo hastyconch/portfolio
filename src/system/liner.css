@@ -74,6 +74,46 @@ html {
   }
 }
 
+/* Page changes carry you (WO-019): cross-document view transitions, CSS only, as progressive
+   enhancement. The header is named in Nav.astro so it holds still. Between case studies the page
+   slides 24px and cross-fades, in the direction of travel through the projects order (the `cs`,
+   `fwd` and `back` types are set by the small script in Shell.astro); a project card's art grows
+   into its case study's hero (`art-<id>`, named on the one card at navigation time). Reduced
+   motion: no transitions at all, an instant swap. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  :root {
+    --vt-x: calc(var(--move-lg) * 2);
+  }
+  ::view-transition-group(*) {
+    animation-duration: var(--dur-slow);
+    animation-timing-function: var(--ease-out);
+  }
+  html:active-view-transition-type(back) {
+    --vt-x: calc(var(--move-lg) * -2);
+  }
+  html:active-view-transition-type(cs)::view-transition-old(root) {
+    animation: vt-out var(--dur-base) var(--ease-exit) both;
+  }
+  html:active-view-transition-type(cs)::view-transition-new(root) {
+    animation: vt-in var(--dur-slow) var(--ease-out) both;
+  }
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    translate: calc(var(--vt-x) * -1) 0;
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    translate: var(--vt-x) 0;
+  }
+}
+
 body.ln {
   font-family: var(--ln-body);
   font-size: var(--text-md);
