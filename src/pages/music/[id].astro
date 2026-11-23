@@ -29,6 +29,10 @@ const { song, index, music, prev, next } = Astro.props;
 const d = song.data;
 const say = voice(music);
 const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`;
+// Credits and release on one line, as in the home panel.
+const release = [say(d.credits), d.release].filter(Boolean).join(' · ');
+// Back to the Music section with this song selected (the home tabs read #song-<id>).
+const allSongs = `/#song-${song.id}`;
 ---
 
 <Shell title={`${d.title} · lyrics and liner notes`} description={say(d.meaning)}>
@@ -36,7 +40,7 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
     <div class="ln-wrap sg-layout">
       <header class="sg-intro">
         <p class="sg-back">
-          <a href="/#music">
+          <a href={allSongs}>
             <span aria-hidden="true">←</span> All songs
           </a>
         </p>
@@ -47,8 +51,7 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
           {d.status === 'placeholder' && <Placeholder />}
         </p>
         <h1 class="sg-title">{d.title}</h1>
-        <p class="sg-credits">{say(d.credits)}</p>
-        {d.release && <p class="sg-release">{d.release}</p>}
+        <p class="sg-release">{release}</p>
       </header>
 
       <!-- Cover and players: beside the lyrics (and sticky) on wide screens. -->
@@ -78,7 +81,7 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
           <span class="sg-pg-t">{prev.data.title}</span>
         </a>
       ) : (
-        <a class="sg-pg" href="/#music">
+        <a class="sg-pg" href={allSongs}>
           <span class="sg-pg-k">All songs</span>
           <span class="sg-pg-t">Music</span>
         </a>
@@ -89,7 +92,7 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
           <span class="sg-pg-t">{next.data.title}</span>
         </a>
       ) : (
-        <a class="sg-pg sg-pg-next" href="/#music">
+        <a class="sg-pg sg-pg-next" href={allSongs}>
           <span class="sg-pg-k">All songs</span>
           <span class="sg-pg-t">Music</span>
         </a>
@@ -158,9 +161,6 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
     font-weight: 800;
     line-height: var(--leading-tight);
     overflow-wrap: anywhere;
-  }
-  .sg-credits {
-    color: var(--ln-ink-2);
   }
 
   .sg-sec {
@@ -253,7 +253,6 @@ const colors = (s: Song) => `--c1: ${s.data.artColors[0]}; --c2: ${s.data.artCol
     }
   }
   .sg-release {
-    font-size: var(--text-sm);
-    color: var(--ln-ink-3);
+    color: var(--ln-ink-2);
   }
 </style>

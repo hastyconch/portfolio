@@ -89,12 +89,21 @@ test.describe('music', () => {
     await page.goto('/');
     const story = page.locator('#music [data-story]');
     const paragraphs = story.locator('.mu-story-lead, .mu-story-p');
-    await expect(paragraphs).toHaveCount(music.story.length);
+    // WO-022: a sentence that only describes the UI ("Below are the songs…") is left out.
+    const shown = music.story
+      .map((p) =>
+        p
+          .split(/(?<=[.!?])\s+/)
+          .filter((s) => !/^Below\b/i.test(s))
+          .join(' '),
+      )
+      .filter((p) => p.trim());
+    await expect(paragraphs).toHaveCount(shown.length);
+    await expect(story).not.toContainText(/Below are the songs/i);
 
     const { name, named } = music.collaborator;
     if (named) {
-      for (const [i, text] of music.story.entries())
-        await expect(paragraphs.nth(i)).toHaveText(text);
+      for (const [i, text] of shown.entries()) await expect(paragraphs.nth(i)).toHaveText(text);
       if (music.story.join(' ').includes(name)) await expect(story).toContainText(name);
     } else {
       // Unnamed collaborator: the name appears nowhere in the section, only "a friend".
@@ -261,4 +270,168 @@ test('music lists features under Appears on, with a player and no page', async (
   await expect(page.locator('#music a[href="/music/lonely/"]')).toHaveCount(0);
   const res = await page.request.get('/music/lonely/');
   expect(res.status()).toBe(404);
+});
+
+// WO-022: the layout of the Music section (tracklist beside the panel, heading, phone strip),
+// the quieter players and the song kept in the URL.
+type Box = { top: number; bottom: number; left: number; right: number };
+const box = (page: Page, selector: string) =>
+  page.locator(selector).evaluate((el): Box => {
+    const r = el.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+  });
+// Jump to the section, then measure. Positions are taken from the section's top (all in one go,
+// so a scroll that settles in between can't skew them), as if the section sat right under the
+// header: the anchor offset (liner.css, WO-023) doesn't change the result.
+const jumpToMusic = async (page: Page) => {
+  await page.locator('#music').evaluate((el) => el.scrollIntoView());
+};
+const measureMusic = (page: Page, selectors: string[]) =>
+  page.evaluate((sels) => {
+    const header =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ln-header')) || 0;
+    const top = document.getElementById('music')?.getBoundingClientRect().top ?? 0;
+    return sels.map((s) => {
+      const r = document.querySelector(s)?.getBoundingClientRect();
+      if (!r) throw new Error(`no ${s}`);
+      const y = header - top;
+      return { top: r.top + y, bottom: r.bottom + y, left: r.left, right: r.right, header };
+    });
+  }, selectors);
+const selectedTabs = (page: Page) => page.locator('#music [role="tab"][aria-selected="true"]');
+const tabIds = (page: Page) =>
+  page
+    .locator('#music [role="tab"]')
+    .evaluateAll((ts) => ts.map((t) => t.getAttribute('data-song') ?? ''));
+
+test('music tracklist beside the panel', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Laptop layout (1440 × 900).');
+  await page.goto('/');
+  await jumpToMusic(page);
+  const vh = page.viewportSize()?.height ?? 900;
+  const [title, list, panel, sleeve] = await measureMusic(page, [
+    '#music-h',
+    '#music [role="tablist"]',
+    '#music [role="tabpanel"]:not([hidden])',
+    '#music [role="tabpanel"]:not([hidden]) .sa',
+  ]);
+  // The title, the whole tracklist and the top of the sleeve are above the fold.
+  expect(title.top).toBeGreaterThanOrEqual(title.header);
+  expect(list.bottom).toBeLessThanOrEqual(vh);
+  expect(sleeve.top).toBeLessThan(vh - 100);
+  // The list is to the right of the panel, the two aligned to the top.
+  expect(list.left).toBeGreaterThanOrEqual(panel.right);
+  expect(Math.abs(list.top - panel.top)).toBeLessThanOrEqual(2);
+  // One column of rows, with no number badge over the covers.
+  const lefts = await page
+    .locator('#music [role="tab"]')
+    .evaluateAll((ts) => ts.map((t) => t.getBoundingClientRect().left));
+  expect(new Set(lefts).size).toBe(1);
+  await expect(page.locator('#music .mu-tab-art .ln-num')).toHaveCount(0);
+  // Switching songs doesn't move anything above the panel (measured from the section's top).
+  const above = () =>
+    page.evaluate(() => {
+      const top = (s: string) => document.querySelector(s)?.getBoundingClientRect().top ?? 0;
+      return [top('#music-h'), top('#music [role="tablist"]')].map((t) => t - top('#music'));
+    });
+  const before = await above();
+  await page.locator('#music [role="tab"]').last().click();
+  expect(await above()).toEqual(before);
+});
+
+test('music heading matches sections', async ({ page }) => {
+  await page.goto('/');
+  const style = (sel: string) =>
+    page.locator(sel).evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { size: s.fontSize, family: s.fontFamily, weight: s.fontWeight };
+    });
+  const music = await style('#music-h');
+  expect(music).toEqual(await style('#work-h'));
+  await expect(page.locator('#music-h')).toHaveText('Music');
+  await expect(page.locator('#music-h')).not.toHaveClass(/\blabel\b/);
+});
+
+test('music phone strip shows the panel', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Phone layout (375 × 812).');
+  await page.goto('/');
+  await jumpToMusic(page);
+  const tabs = page.locator('#music [role="tab"]');
+  // One row of covers, at most 160px tall.
+  const strip = await box(page, '#music [role="tablist"]');
+  expect(strip.bottom - strip.top).toBeLessThanOrEqual(160);
+  const rows = await tabs.evaluateAll((ts) => ts.map((t) => t.getBoundingClientRect().top));
+  expect(new Set(rows).size).toBe(1);
+  // The hard case: the strip at the bottom of the screen, so the panel is below the fold.
+  await page
+    .locator('#music [role="tablist"]')
+    .evaluate((el) => el.scrollIntoView({ block: 'end' }));
+  const sixth = tabs.nth(5);
+  await sixth.tap();
+  await expect(sixth).toHaveAttribute('aria-selected', 'true');
+  const id = await sixth.getAttribute('data-song');
+  await expect(page.locator(`#mu-panel-${id} .mu-title`)).toBeInViewport();
+  // No sideways scroll on the page itself.
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('music remembers the song', async ({ page }) => {
+  await page.goto('/');
+  const ids = await tabIds(page);
+  const [, second, third] = ids;
+  // Choosing a song replaces the URL's hash: no new history entry.
+  const length = await page.evaluate(() => history.length);
+  await page.locator(`#mu-tab-${second}`).click();
+  await expect(page).toHaveURL(new RegExp(`/#song-${second}$`));
+  await page.locator(`#mu-tab-${third}`).focus();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
+  await expect(page).toHaveURL(new RegExp(`/#song-${third}$`));
+  expect(await page.evaluate(() => history.length)).toBe(length);
+
+  // Loading /#song-<id> selects it and lands on the section.
+  await page.goto(`/#song-${second}`);
+  await expect(selectedTabs(page)).toHaveAttribute('data-song', second);
+  await expect(page.locator(`#mu-panel-${second}`)).toBeVisible();
+  await expect(page.locator('#music-h')).toBeInViewport();
+
+  // Back from the song's page shows it selected.
+  await page.locator(`#mu-panel-${second} a[data-song-link]`).click();
+  await expect(page).toHaveURL(new RegExp(`/music/${second}/$`));
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/#song-${second}$`));
+  await expect(selectedTabs(page)).toHaveAttribute('data-song', second);
+
+  // The song page's "All songs" link comes back to the same song.
+  await page.goto(`/music/${third}/`);
+  const all = page.locator('.sg-back a');
+  await expect(all).toHaveAttribute('href', `/#song-${third}`);
+  await all.click();
+  await expect(selectedTabs(page)).toHaveAttribute('data-song', third);
+  await expect(page.locator(`#mu-panel-${third}`)).toBeVisible();
+});
+
+test('music players', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('#music');
+  // Only the players that work: no "link coming" state on the home page.
+  await expect(section.locator('.pl-play.is-soon')).toHaveCount(0);
+  await expect(section).not.toContainText(/link coming/i);
+  for (const id of await tabIds(page)) {
+    await page.locator(`#mu-tab-${id}`).click();
+    const buttons = page.locator(`#mu-panel-${id} button.pl-play`);
+    for (const b of await buttons.all()) {
+      await expect(b).toHaveAccessibleName(
+        new RegExp(`^Play on \\w+\\s?: ${escape(titleOf(id))}$`),
+      );
+      await expect(b).toHaveAccessibleDescription(/^Loads the \w+ player$/);
+      await expect(b).not.toContainText(/Loads the/);
+    }
+  }
+  // The song page still shows every service.
+  await page.goto(`/music/${songIds[0]}/`);
+  await expect(page.locator('.pl-player')).toHaveCount(2);
 });
