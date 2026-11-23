@@ -1,6 +1,7 @@
 import { test, expect, type Response } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gzipSync } from 'node:zlib';
+import { BLINK_HALF_MS, hurtAlpha } from '../../src/demos/billable/game/core/blink';
 
 // WO-011: the Billable. mini-room ships a poster and a Play button; Phaser and the scene arrive
 // only after Play (constitution art. 5). The generic route gates (axe, overflow, motion) cover
@@ -62,6 +63,70 @@ test('billable mini loads no game code before Play', async ({ page }) => {
   expect(blocking.map((v) => `${v.id}: ${v.help} → ${v.nodes[0]?.target}`)).toEqual([]);
 
   expect(errors).toEqual([]);
+});
+
+// WO-025: the game pauses when keyboard focus leaves it, as Esc does, but leaves focus where the
+// visitor sent it. Moving within the game (the Pause button, the on-screen pad) doesn't pause.
+test('billable pauses when focus leaves', async ({ page }) => {
+  await page.goto(ROUTE);
+  await expect(page.locator('.bm[data-hydrated]')).toBeVisible();
+  await page.getByRole('button', { name: /^play/i }).click();
+  const game = page.getByRole('application', { name: /billable\. mini-room/i });
+  await expect(page.locator('.bm[data-status="playing"]')).toBeVisible({ timeout: 15_000 });
+  await expect(game).toBeFocused();
+
+  const inside = () => page.evaluate(() => !!document.activeElement?.closest('.bm'));
+  let left = false;
+  for (let i = 0; i < 12 && !left; i++) {
+    await page.keyboard.press('Tab');
+    left = !(await inside());
+    if (!left) {
+      await page.waitForTimeout(50);
+      expect(await page.locator('.bm').getAttribute('data-status'), 'focus within the game').toBe(
+        'playing',
+      );
+    }
+  }
+  expect(left, 'Tab leaves the game').toBe(true);
+  await expect(page.locator('.bm[data-status="paused"]')).toBeVisible();
+  // Focus stays where Tab put it, outside the game.
+  await page.waitForTimeout(100);
+  expect(await inside()).toBe(false);
+
+  // Resume picks up again, with focus back in the game.
+  await page.locator('.bm-overlay').getByRole('button', { name: 'Resume' }).click();
+  await expect(page.locator('.bm[data-status="playing"]')).toBeVisible();
+  await expect(game).toBeFocused();
+  await page.waitForTimeout(100);
+  await expect(page.locator('.bm[data-status="playing"]')).toBeVisible();
+
+  // The hit blink is not a fast flip: no visible phase shorter than a sixth of a second, so at
+  // most 3 blinks a second, over each invulnerable window (a hit, a respawn) with full alpha on
+  // either side. Under reduced motion it is a steady fade, as before.
+  expect(BLINK_HALF_MS).toBeGreaterThanOrEqual(1000 / 6);
+  for (const until of [1300, 800]) {
+    const runs: number[] = [];
+    let prev = 1;
+    let run = 0;
+    for (let t = -500; t < until + 500; t++) {
+      const a = hurtAlpha(t, t < 0 ? 0 : until, false);
+      if (a !== prev) {
+        runs.push(run);
+        run = 0;
+      }
+      run++;
+      prev = a;
+    }
+    const inner = runs.slice(1); // the first run is the full alpha before the hit
+    expect(inner.length, `the ${until}ms window blinks`).toBeGreaterThan(0);
+    expect(Math.min(...inner), `shortest blink phase in ${until}ms (ms)`).toBeGreaterThanOrEqual(
+      1000 / 6,
+    );
+  }
+  const until = 1300;
+  expect(hurtAlpha(until, until, false)).toBe(1);
+  for (const t of [0, 100, 650, 1299]) expect(hurtAlpha(t, until, true)).toBe(0.6);
+  expect(hurtAlpha(until, until, true)).toBe(1);
 });
 
 // WO-020: on the case study the game takes the column's full width and Goal / Controls sit in one
