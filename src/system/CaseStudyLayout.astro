@@ -103,7 +103,7 @@ const contents = [
           </p>
           <p class="label cs-k">
             Case study
-            {d.featured && <span class="cs-feat">Featured</span>}
+            {d.featured && heroShot && <span class="cs-feat">Featured</span>}
             {d.status === 'placeholder' && <Placeholder />}
           </p>
           <h1 class="cs-title">{d.title}</h1>

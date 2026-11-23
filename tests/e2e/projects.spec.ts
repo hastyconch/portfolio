@@ -157,6 +157,14 @@ test('featured only with art', async ({ page }) => {
   }
   // The Mock-up chip is unchanged.
   await expect(page.locator('#rail .pc-feat', { hasText: /^Mock-up$/ })).toHaveCount(1);
+  // The case study's intro follows the same rule: no "Featured" over the screenshots-coming hero.
+  for (const slug of ['travel-planner', 'fashion']) {
+    await page.goto(`/projects/${slug}/`);
+    await expect(page.locator('.cs-hero .pa-soon')).toHaveCount(1);
+    await expect(page.locator('.cs-feat')).toHaveCount(0);
+  }
+  await page.goto('/projects/billable/');
+  await expect(page.locator('.cs-feat')).toHaveCount(1);
 });
 
 // WO-029: on phones the rule under the Projects lead is inset to the gutter like the cards' rules.
