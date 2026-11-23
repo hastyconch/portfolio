@@ -346,9 +346,9 @@ export default function GrocerDemo() {
 
             <section className="gro-picks" aria-labelledby={`${base}-picks`}>
               <div className="gro-row">
-                <h3 id={`${base}-picks`} className="gro-h">
+                <p id={`${base}-picks`} className="gro-h">
                   Picked for you
-                </h3>
+                </p>
                 <button type="button" className="gro-link" onClick={() => go('offers')}>
                   See offers
                 </button>

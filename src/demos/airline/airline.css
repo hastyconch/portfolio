@@ -42,7 +42,7 @@
 .sky-app *::after {
   box-sizing: border-box;
 }
-.sky-app :is(p, h3, ul, ol, dl, dd) {
+.sky-app :is(p, h2, ul, ol, dl, dd) {
   margin: 0;
 }
 .sky-app :is(ul, ol) {
@@ -731,7 +731,7 @@
   background: var(--sky-card);
   box-shadow: var(--dk-shadow-3);
 }
-.sky-sheet h3 {
+.sky-sheet h2 {
   font-size: var(--dk-fs-2xl);
   line-height: var(--dk-lh-snug);
   text-align: center;
@@ -853,7 +853,7 @@
 .sky-panel:focus-visible {
   outline-offset: -3px;
 }
-.sky-sheet h3:focus {
+.sky-sheet h2:focus {
   outline: none;
 }
 

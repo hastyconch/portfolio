@@ -195,7 +195,7 @@ export default function AirlineDemo() {
   }, [tab]);
 
   useEffect(() => {
-    if (sheet) sheetRef.current?.querySelector<HTMLElement>('h3')?.focus();
+    if (sheet) sheetRef.current?.querySelector<HTMLElement>('h2')?.focus();
   }, [sheet]);
 
   function go(next: Tab) {
@@ -594,9 +594,9 @@ export default function AirlineDemo() {
               <circle cx="26" cy="26" r="23" pathLength="100" />
               <path d="M15 27 23 35 38 19" pathLength="100" />
             </svg>
-            <h3 id={`${base}-sheet-h`} tabIndex={-1}>
+            <h2 id={`${base}-sheet-h`} tabIndex={-1}>
               You’re going to {sheetFlight.city}
-            </h3>
+            </h2>
             <div className="sky-pass">
               <div className="sky-pass-top">
                 <span className="sky-iata">
