@@ -53,9 +53,9 @@ test.describe('demos fit their pane', () => {
         await demo.getByRole('button', { name: 'Assign Jordan' }).click();
         await record('overtime warning');
         await demo.getByRole('button', { name: 'Reset' }).click();
-        await demo.getByRole('button', { name: 'Assign Priya' }).click();
+        await demo.getByRole('button', { name: 'Assign Renee' }).click();
         await record('all covered');
-        await demo.getByRole('gridcell', { name: /^Ines, Saturday: Night/ }).click();
+        await demo.getByRole('gridcell', { name: /^Odette, Saturday: Night/ }).click();
         await record('new gap');
       } else {
         const act = pane.locator('.pl-next');

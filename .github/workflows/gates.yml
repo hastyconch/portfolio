@@ -43,6 +43,8 @@ jobs:
         run: npm run -s anonymize
       - name: copy lint (no em dashes, art. 11)
         run: npm run -s copylint
+      - name: copy tells (taste-skill copy-lint, art. 11)
+        run: npm run -s tastelint
       - name: craft audit (art. 12)
         run: npm run -s craft
       - name: internal links

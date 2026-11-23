@@ -21,6 +21,7 @@ The owner says:
 > statement. I think that that's not very visually appealing."
 
 At 1440 × 900 today the Goal / Controls panel is a narrow 20rem column beside the game:
+
 - Its labels wrap ("Drop through a desk" takes three lines).
 - The panel is far taller than the game, so a tall empty area opens under the game before
   "Problem".

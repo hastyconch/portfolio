@@ -4,7 +4,7 @@ tagline: A site built by a software factory of AI agents, with me as the product
 category: tool
 year: '2026'
 platforms: [Web]
-problem: I wanted a portfolio that shows how I work, not just what I've worked on. So I ran it the way I'd run a product team with AI. I wrote a constitution and work orders with testable acceptance criteria, let AI builder agents do the building, and kept the decisions (and the sign-offs) for myself. Instead of committing to one design up front, the factory built four complete directions so I could pick the best of each.
+problem: I wanted a portfolio that shows how I work as well as what I've worked on. So I ran it the way I'd run a product team with AI. I wrote a constitution and work orders with testable acceptance criteria, let AI builder agents do the building, and kept the decisions (and the sign-offs) for myself. The factory built four complete directions before I committed to one, so I could pick the best of each.
 features:
   - 'A written constitution: ten rules every agent is held to, from client anonymity and WCAG 2.2 AA to honest labelling of planned work.'
   - Work orders in which every acceptance criterion names the automated check that proves it; a linter rejects any that don't.

@@ -21,13 +21,13 @@ test('scheduler grid is keyboard operable', async ({ page }) => {
 
   // Roving tabindex: exactly one cell is in the tab order.
   await expect(grid.locator('[role="gridcell"][tabindex="0"]')).toHaveCount(1);
-  const first = cell(/^Priya, Monday: Day/);
+  const first = cell(/^Renee, Monday: Day/);
   await expect(first).toHaveAttribute('tabindex', '0');
   await expect(first.locator('.sch-glyph')).toHaveText('D');
 
   await first.focus();
   await page.keyboard.press('ArrowRight');
-  await expect(cell(/^Priya, Tuesday/)).toBeFocused();
+  await expect(cell(/^Renee, Tuesday/)).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(cell(/^Jordan, Tuesday: Off/)).toBeFocused();
   await expect(cell(/^Jordan, Tuesday/)).toHaveAttribute('tabindex', '0');
@@ -46,28 +46,28 @@ test('scheduler grid is keyboard operable', async ({ page }) => {
   await expect(cell(/^4\/4 \+4 more: RNs on the Sunday night shift/)).toBeFocused();
 
   // Cells are locked until the open shift is filled.
-  await cell(/^Priya, Monday/).focus();
+  await cell(/^Renee, Monday/).focus();
   await page.keyboard.press('Enter');
   await expect(live).toContainText('Fill the open shift first');
-  await expect(glyph(/^Priya, Monday: Day/)).toHaveText('D');
+  await expect(glyph(/^Renee, Monday: Day/)).toHaveText('D');
 
-  await demo.getByRole('button', { name: 'Assign Priya' }).click();
-  await expect(cell(/^Priya, Saturday: Night/)).toBeFocused();
+  await demo.getByRole('button', { name: 'Assign Renee' }).click();
+  await expect(cell(/^Renee, Saturday: Night/)).toBeFocused();
 
   // Enter and Space cycle Day → Night → Off, with state in text and in the accessible name.
-  await cell(/^Priya, Monday/).focus();
+  await cell(/^Renee, Monday/).focus();
   await page.keyboard.press('Enter');
-  await expect(glyph(/^Priya, Monday: Night/)).toHaveText('N');
+  await expect(glyph(/^Renee, Monday: Night/)).toHaveText('N');
   await page.keyboard.press('Space');
-  await expect(glyph(/^Priya, Monday: Off/)).toHaveText('–');
-  await expect(live).toContainText('Priya, Monday: Off');
+  await expect(glyph(/^Renee, Monday: Off/)).toHaveText('–');
+  await expect(live).toContainText('Renee, Monday: Off');
 
   // Rules recheck live: a night then a day shift breaks the 12h rest rule.
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Space'); // Tue: Day → Night
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Space'); // Wed: Off → Day
-  await expect(cell(/^Priya, Wednesday: Day\. Problem: under 12h rest/)).toHaveCount(1);
+  await expect(cell(/^Renee, Wednesday: Day\. Problem: under 12h rest/)).toHaveCount(1);
   await expect(demo.locator('.sch-issues')).toContainText('under 12h rest');
 });
 
@@ -84,12 +84,12 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
 
   // Ranked candidates with plain-words reasons.
   const cands = task.locator('.sch-cand');
-  await expect(cands.locator('strong')).toHaveText(['Priya', 'Jordan', 'Sam', 'Morgan']);
+  await expect(cands.locator('strong')).toHaveText(['Renee', 'Jordan', 'Sam', 'Morgan']);
   await expect(cands.nth(0)).toContainText('Eligible.');
   await expect(cands.nth(1)).toContainText('Overtime: goes to 44h.');
   await expect(cands.nth(2)).toContainText('Blocked: 4th night in a row.');
   await expect(cands.nth(3)).toContainText('Blocked: approved leave.');
-  await expect(task).toContainText('Ines and Theo already work Sat.');
+  await expect(task).toContainText('Odette and Theo already work Sat.');
 
   // Blocked nurses cannot be assigned and say why.
   const sam = task.getByRole('button', { name: 'Can’t assign Sam' });
@@ -102,13 +102,13 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   await expect(cell(/^Sam, Saturday: Off/)).toHaveCount(1);
 
   // Assigning an eligible nurse covers the shift and is announced.
-  await task.getByRole('button', { name: 'Assign Priya' }).click();
-  await expect(live).toContainText('Priya assigned to Saturday night: 4 of 4 RNs.');
+  await task.getByRole('button', { name: 'Assign Renee' }).click();
+  await expect(live).toContainText('Renee assigned to Saturday night: 4 of 4 RNs.');
   await expect(live).toContainText('All rules pass.');
   await expect(openCover).toHaveAccessibleName(
     '4/4 +2 more: RNs on the Saturday night shift, including 2 RNs not shown here.',
   );
-  await expect(glyph(/^Priya, Saturday: Night/)).toHaveText('N');
+  await expect(glyph(/^Renee, Saturday: Night/)).toHaveText('N');
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
   await expect(demo.locator('.sch-status')).toHaveText('All rules pass.');
 
@@ -125,14 +125,14 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
 test('scheduler finds cover for a gap the visitor opens', async ({ page }) => {
   const { demo, cell } = await open(page);
   const task = demo.locator('.sch-task');
-  await task.getByRole('button', { name: 'Assign Priya' }).click();
+  await task.getByRole('button', { name: 'Assign Renee' }).click();
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
 
-  // Take Ines off Saturday night: the panel turns into a new open shift with ranked cover.
-  await cell(/^Ines, Saturday: Night/).click();
+  // Take Odette off Saturday night: the panel turns into a new open shift with ranked cover.
+  await cell(/^Odette, Saturday: Night/).click();
   await expect(task).toContainText('New gap');
   await expect(task.getByRole('heading')).toHaveText('Sat night, ICU: 3 of 4 RNs');
-  await expect(task.locator('.sch-cand strong').first()).toHaveText('Ines');
-  await task.getByRole('button', { name: 'Assign Ines' }).click();
+  await expect(task.locator('.sch-cand strong').first()).toHaveText('Odette');
+  await task.getByRole('button', { name: 'Assign Odette' }).click();
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
 });

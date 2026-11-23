@@ -74,6 +74,12 @@ colon, parentheses, a full stop, or `·` in titles and labels. This covers every
 can read or hear: content, component text, accessible names and page titles, including the
 demos. Enforced by `factory/stations/copylint.mjs` over `src/` and the built `dist/`.
 
+The copy also avoids the tells of model-written text: chatbot residue, the old slop words
+("intricate", "unlock", "seamless" and the like), stock phrases and over-used devices such as
+"not just X". Enforced by `factory/stations/tastelint.mjs`, vendored from taste-skill (MIT), over
+every built page: its FAILs block; its WARN and INFO findings are for a human to read
+(`npm run tastelint -- --verbose`).
+
 ## Article 12 — UI craft
 
 The site follows the `ui-craft` skill (github.com/hastyconch/ui-craft). Concretely:

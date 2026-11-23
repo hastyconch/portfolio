@@ -14,6 +14,8 @@ export default [
       '.lighthouseci/',
       'playwright-report/',
       'test-results/',
+      // vendored from taste-skill; update by copying, don't edit
+      'factory/stations/tastelint.mjs',
     ],
   },
   js.configs.recommended,

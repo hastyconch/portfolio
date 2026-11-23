@@ -67,8 +67,8 @@ gallery:
       }
     - {
         image: ../../assets/projects/felt-and-tiles/05-atelier.webp,
-        alt: 'The Atelier: a preview table, animation and sound preferences, and card backs to unlock.',
-        caption: 'The Atelier: card backs, faces and felt to unlock.',
+        alt: 'The Atelier: a preview table, animation and sound preferences, and card backs to earn.',
+        caption: 'The Atelier: card backs, faces and felt to earn.',
         shape: wide,
       }
 demo: mahjong

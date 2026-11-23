@@ -449,7 +449,7 @@ export default function SchedulerDemo() {
               Arrow keys move;{' '}
               {taskDone
                 ? 'Enter or Space (or a click) cycles Day → Night → Off.'
-                : 'cells unlock once the open shift is filled.'}{' '}
+                : 'cells become editable once the open shift is filled.'}{' '}
               Cover counts the whole unit: the RNs above plus colleagues not shown (“+3 more”),
               whose shifts are fixed in this demo.
             </p>

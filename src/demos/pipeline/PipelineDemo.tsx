@@ -19,9 +19,9 @@ function RagChip({ rag }: { rag: Rag }) {
 
 // People on the invented project, each with an avatar tint (white initials hold 4.5:1).
 const PEOPLE: Record<string, string> = {
-  Maya: '#9a3412',
+  Lorna: '#9a3412',
   Jonah: '#1d4ed8',
-  Ines: '#0f766e',
+  Carmen: '#0f766e',
   Theo: '#6d28d9',
 };
 function Av({ who }: { who: string }) {
@@ -33,7 +33,7 @@ function Av({ who }: { who: string }) {
 }
 
 const transcript = [
-  { who: 'Maya', role: 'TPM', at: '09:30', line: 'Where are we on the lease-data migration?' },
+  { who: 'Lorna', role: 'TPM', at: '09:30', line: 'Where are we on the lease-data migration?' },
   {
     who: 'Jonah',
     role: 'Backend',
@@ -41,7 +41,7 @@ const transcript = [
     line: 'The script is done, but it is waiting on review. Theo said he would look on Friday.',
   },
   {
-    who: 'Ines',
+    who: 'Carmen',
     role: 'Design',
     at: '09:33',
     line: 'We agreed: the tenant dashboard ships in Release 3 without the saved-search panel.',
@@ -53,10 +53,10 @@ const transcript = [
     line: 'The payments sandbox is still flaky. It could slip the integration test.',
   },
   {
-    who: 'Maya',
+    who: 'Lorna',
     role: 'TPM',
     at: '09:41',
-    line: 'Let’s lock scope at today’s list. Ines, final specs by Thursday?',
+    line: 'Let’s lock scope at today’s list. Carmen, final specs by Thursday?',
   },
 ];
 
@@ -83,7 +83,7 @@ const extracted = [
     icon: '→',
     items: [
       { text: 'Theo: review the migration script (was due Friday).', src: 1, owner: 'Theo' },
-      { text: 'Ines: final tenant specs by Thursday.', src: 4, owner: 'Ines' },
+      { text: 'Carmen: final tenant specs by Thursday.', src: 4, owner: 'Carmen' },
       { text: 'Jonah: raise a sandbox ticket with the payments team.', src: 3, owner: 'Jonah' },
     ],
   },
@@ -92,7 +92,7 @@ const extracted = [
 const workstreams: { name: string; owner: string; was: Rag; rag: Rag; note: string }[] = [
   {
     name: 'Tenant dashboard',
-    owner: 'Ines',
+    owner: 'Carmen',
     was: 'green',
     rag: 'green',
     note: 'On track; scope trimmed by agreement.',
@@ -115,7 +115,7 @@ const workstreams: { name: string; owner: string; was: Rag; rag: Rag; note: stri
 
 const followUps = [
   { who: 'Theo', task: 'Migration script review', due: '2 days overdue', overdue: true },
-  { who: 'Ines', task: 'Final tenant specs', due: 'Due Thursday', overdue: false },
+  { who: 'Carmen', task: 'Final tenant specs', due: 'Due Thursday', overdue: false },
   { who: 'Jonah', task: 'Sandbox ticket', due: 'Due today', overdue: false },
 ];
 
@@ -130,11 +130,11 @@ const tickets: { id: string; title: string; who: string; from: Column | 'New'; t
     from: 'To do',
     to: 'In progress',
   },
-  { id: 'LAR-131', title: 'Final tenant specs', who: 'Ines', from: 'To do', to: 'In progress' },
+  { id: 'LAR-131', title: 'Final tenant specs', who: 'Carmen', from: 'To do', to: 'In progress' },
   {
     id: 'LAR-118',
     title: 'Drop saved search from R3',
-    who: 'Maya',
+    who: 'Lorna',
     from: 'In progress',
     to: 'Done',
   },
@@ -336,7 +336,7 @@ const steps: Step[] = [
               <p>
                 Hi Theo, hope your week is going well! Jonah’s migration script is ready for review
                 whenever you have a moment; it’s the last step before cut-over. Could you take a
-                look by Wednesday? Happy to pair on it if that helps. Thanks, Maya
+                look by Wednesday? Happy to pair on it if that helps. Thanks, Lorna
               </p>
             </div>
             {v.nudged && (
