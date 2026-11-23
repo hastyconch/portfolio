@@ -87,3 +87,18 @@ test.describe('projects show real screens', () => {
     });
   }
 });
+
+// WO-019: a card's art grows into its case study's hero (a cross-document view transition). The
+// two share the project id, and nothing else on a case study carries one, so the name the
+// navigation gives them is never duplicated.
+test('card art and case study hero share the project id for the morph', async ({ page }) => {
+  await page.goto('/');
+  const ids = await page
+    .locator('#rail .pc-art[data-art]')
+    .evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.art!));
+  expect(ids.length).toBe(await page.locator('#rail > li').count());
+  expect(new Set(ids).size).toBe(ids.length);
+  await page.goto(`/projects/${ids[1]}/`);
+  await expect(page.locator('#cs-art')).toHaveAttribute('data-art', ids[1]);
+  await expect(page.locator('[data-art]')).toHaveCount(1);
+});

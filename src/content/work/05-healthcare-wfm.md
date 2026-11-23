@@ -1,5 +1,6 @@
 ---
 title: Healthcare workforce management
+short: Healthcare scheduling
 sector: Healthcare
 kicker: Scheduling the nurses who staff a hospital network.
 years: Deloitte Digital

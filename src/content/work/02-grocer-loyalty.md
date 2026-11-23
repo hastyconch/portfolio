@@ -1,5 +1,6 @@
 ---
 title: Grocer loyalty & digital experience
+short: Grocer loyalty
 sector: Retail
 kicker: Points, offers and recipes in one shopping companion.
 years: Deloitte Digital

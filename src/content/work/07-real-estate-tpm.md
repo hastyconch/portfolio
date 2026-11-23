@@ -1,5 +1,6 @@
 ---
 title: AI-assisted program management
+short: AI program management
 sector: Real estate software
 kicker: Every initiative delivered on time.
 years: Deloitte Digital
