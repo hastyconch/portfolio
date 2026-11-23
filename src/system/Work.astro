@@ -43,7 +43,7 @@ const others = work.filter((w) => w.data.demo === 'none');
         const wide = live && isWide(d.demoFrame);
         return (
           <li class:list={['wk', live && 'wk-live', wide && 'wk-wide']}>
-            <article class="reveal" aria-labelledby={hid}>
+            <article aria-labelledby={hid}>
               <div class="wk-head">
                 <p class="wk-meta">
                   <span class="label">{d.sector}</span>
@@ -126,7 +126,7 @@ const others = work.filter((w) => w.data.demo === 'none');
     </ol>
 
     {others.length > 0 && (
-      <section class="wk-more reveal" aria-labelledby="work-more-h">
+      <section class="wk-more" aria-labelledby="work-more-h">
         <h3 id="work-more-h" class="wk-more-h label" tabindex="-1">
           More client work
         </h3>

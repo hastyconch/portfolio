@@ -99,20 +99,5 @@
   text-transform: uppercase;
 }
 
-/* One section reveal, CSS only: content settles in as it scrolls into view. Browsers without
-   scroll-driven animations, and reduced motion, simply show it. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 35%;
-    }
-  }
-}
-@keyframes reveal {
-  from {
-    opacity: 0;
-    translate: 0 var(--move-lg);
-  }
-}
+/* No scroll-linked reveals (WO-021): sections are simply there. The page's moments are the hero
+   entrance, the Music record and the Work pane snap. */

@@ -102,3 +102,20 @@ test('card art and case study hero share the project id for the morph', async ({
   await expect(page.locator('#cs-art')).toHaveAttribute('data-art', ids[1]);
   await expect(page.locator('[data-art]')).toHaveCount(1);
 });
+
+// WO-021: one section per screen. On a laptop, a jump to Projects shows its heading and the first
+// row of cards together, with the section's top meeting the nav.
+test('projects is one pane', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'the pane is a laptop layout');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#projects');
+  await expect
+    .poll(() =>
+      page.locator('#projects').evaluate((s) => Math.round(s.getBoundingClientRect().top)),
+    )
+    .toBe(60);
+  const head = await page.locator('#projects-h').boundingBox();
+  const card = await page.locator('#rail > li').first().boundingBox();
+  expect(head!.y).toBeGreaterThanOrEqual(60);
+  expect(card!.y + card!.height).toBeLessThanOrEqual(900);
+});

@@ -30,7 +30,7 @@ const { projects } = Astro.props;
       </div>
     </SideHead>
   </div>
-  <ol class="rail reveal" id="rail" aria-label="Projects">
+  <ol class="rail" id="rail" aria-label="Projects">
     {projects.map((p) => (
       <ProjectCard project={p} />
     ))}
@@ -64,6 +64,19 @@ const { projects } = Astro.props;
 <style>
   .projects {
     padding-bottom: var(--space-8);
+  }
+  /* One section per screen (WO-021): on laptops Projects is one pane below the nav, heading and
+     rail together, and the page settles on it like a Work pane (the root snaps only at 760px and
+     up with motion allowed). Taller content grows the pane rather than clipping it. */
+  @media (min-width: 1100px) and (min-height: 600px) {
+    .projects {
+      display: grid;
+      align-content: center;
+      min-height: calc(100svh - var(--ln-header));
+      padding-block: clamp(var(--space-4), 4svh, var(--space-6));
+      scroll-snap-align: start;
+      scroll-margin-top: calc(var(--ln-header) - var(--ln-scroll-pad, var(--ln-header)));
+    }
   }
   .rail-btns {
     display: none;
