@@ -120,6 +120,30 @@ test('projects is one pane', async ({ page, isMobile }) => {
   expect(card!.y + card!.height).toBeLessThanOrEqual(900);
 });
 
+// WO-027: the stack hairline sits at the same height on every card in the rail, however much
+// each card says above it (or however its stack wraps).
+test('card lines align', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'phones show a list, not a rail');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.locator('#projects').evaluate((s) => s.scrollIntoView({ behavior: 'instant' }));
+  const tops = await page.locator('#rail .pc-stack').evaluateAll((els) =>
+    els
+      .filter((e) => {
+        const r = e.getBoundingClientRect();
+        return r.width > 0 && r.left < innerWidth && r.right > 0;
+      })
+      .map((e) => e.getBoundingClientRect().top),
+  );
+  expect(tops.length).toBeGreaterThanOrEqual(4);
+  expect(Math.max(...tops) - Math.min(...tops), tops.join(', ')).toBeLessThanOrEqual(1);
+  // and for the cards further along the rail
+  const all = await page
+    .locator('#rail .pc-stack')
+    .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  expect(Math.max(...all) - Math.min(...all), all.join(', ')).toBeLessThanOrEqual(1);
+});
+
 // WO-023: the rail keeps its place. Open the 6th card, go Back, and the rail is where you left it.
 test('projects rail keeps its place', async ({ page, isMobile }) => {
   test.skip(!!isMobile, 'the rail scrolls sideways on laptops');

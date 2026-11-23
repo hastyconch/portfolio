@@ -286,7 +286,7 @@ export default function GrocerDemo() {
         {tab === 'home' && (
           <div className={`gro-home${seen ? '' : ' is-first'}`}>
             <p className="gro-hello">Hi {member.first}, happy shopping</p>
-            <section className="gro-card gro-balance" aria-label="Points balance">
+            <div role="group" className="gro-card gro-balance" aria-label="Points balance">
               <div
                 className="gro-ring"
                 role="progressbar"
@@ -320,10 +320,10 @@ export default function GrocerDemo() {
                   <strong>{member.reward}</strong>
                 </span>
               </p>
-            </section>
+            </div>
 
             {lastShop && (
-              <section className="gro-card gro-last" aria-label="Your last shop">
+              <div role="group" className="gro-card gro-last" aria-label="Your last shop">
                 <span className="gro-label">
                   <Icon name="receipt" size={16} /> Last shop
                 </span>
@@ -341,10 +341,10 @@ export default function GrocerDemo() {
                     </li>
                   ))}
                 </ul>
-              </section>
+              </div>
             )}
 
-            <section className="gro-picks" aria-labelledby={`${base}-picks`}>
+            <div role="group" className="gro-picks" aria-labelledby={`${base}-picks`}>
               <div className="gro-row">
                 <p id={`${base}-picks`} className="gro-h">
                   Picked for you
@@ -356,9 +356,9 @@ export default function GrocerDemo() {
               <ul className="gro-carousel" aria-label="Offers picked for you">
                 {offers.map((o) => offerCard(o, 'slide'))}
               </ul>
-            </section>
+            </div>
 
-            <section className="gro-summary" aria-label="Your offers">
+            <div role="group" className="gro-summary" aria-label="Your offers">
               {used.length === offers.length ? (
                 <span>
                   <strong>All {offers.length}</strong> offers earned this week
@@ -372,7 +372,7 @@ export default function GrocerDemo() {
                   {used.length > 0 && ` · ${used.length} earned`}
                 </span>
               )}
-            </section>
+            </div>
           </div>
         )}
 
@@ -399,7 +399,7 @@ export default function GrocerDemo() {
         {tab === 'lists' && (
           <div className="gro-lists">
             {lastShop && (
-              <section className="gro-receipt" aria-label="Receipt">
+              <div role="group" className="gro-receipt" aria-label="Receipt">
                 <div className="gro-receipt-head">
                   <strong>Pantry Lane · Elm St</strong>
                   <span className="gro-sub">Receipt · points earned</span>
@@ -435,7 +435,7 @@ export default function GrocerDemo() {
                     </span>
                   </p>
                 )}
-              </section>
+              </div>
             )}
 
             {lastShop && list.length === 0 ? (
@@ -443,7 +443,11 @@ export default function GrocerDemo() {
                 Basket checked out. Add a recipe’s ingredients to start the next shop.
               </p>
             ) : (
-              <section className="gro-card gro-listcard" aria-labelledby={`${base}-list-h`}>
+              <div
+                role="group"
+                className="gro-card gro-listcard"
+                aria-labelledby={`${base}-list-h`}
+              >
                 <div className="gro-row">
                   <strong id={`${base}-list-h`} className="gro-h">
                     Weekly shop
@@ -517,13 +521,13 @@ export default function GrocerDemo() {
                     Check out {inBasket.length > 0 && `(${inBasket.length})`}
                   </button>
                 </div>
-              </section>
+              </div>
             )}
           </div>
         )}
 
         {tab === 'recipes' && (
-          <section className="gro-card gro-recipe" aria-labelledby={`${base}-recipe-h`}>
+          <div role="group" className="gro-card gro-recipe" aria-labelledby={`${base}-recipe-h`}>
             <div className="gro-recipe-art">
               <RecipeArt />
               <span className="gro-tag">Breakfast</span>
@@ -567,7 +571,7 @@ export default function GrocerDemo() {
                 Add ingredients to list
               </button>
             </div>
-          </section>
+          </div>
         )}
       </div>
 

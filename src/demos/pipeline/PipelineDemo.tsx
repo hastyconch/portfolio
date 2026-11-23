@@ -531,7 +531,8 @@ export default function PipelineDemo() {
 
         <div className="pl-stage" id={`${base}-stage`} data-moved={moved || undefined}>
           {steps.map((s, i) => (
-            <section
+            <div
+              role="group"
               key={s.short}
               className={`pl-step${i === step ? ' is-on' : ''}`}
               aria-hidden={i !== step}
@@ -546,7 +547,7 @@ export default function PipelineDemo() {
                 </strong>
               </p>
               {typeof s.body === 'function' ? s.body(view) : s.body}
-            </section>
+            </div>
           ))}
         </div>
 

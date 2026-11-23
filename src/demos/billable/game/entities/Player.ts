@@ -1,8 +1,10 @@
 // Vendored from the Billable. game source (src/entities/player/Player.ts). Trimmed to one class
 // with a single swing: no ladders, specials, combos or sound. The forgiveness mechanics (coyote
 // time, jump buffer, variable jump height, apex hang, corner correction) are unchanged. Under
-// reduced motion the hurt flicker becomes a steady half-fade.
+// reduced motion the hurt blink becomes a steady half-fade; otherwise it blinks at 2.5 Hz
+// (../core/blink.ts, WO-025).
 import Phaser from 'phaser';
+import { hurtAlpha } from '../core/blink';
 import type { Controls } from '../core/input';
 import { blocks, type Terrain } from '../levels/format';
 import { F, type ClassStats } from './classes';
@@ -315,13 +317,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.setFrame(b.velocity.y < 0 ? F.jump : F.fall);
         }
     }
-    // Invulnerability: flicker, or a steady fade under reduced motion (no flashing).
-    const invuln = this.pstate !== 'dead' && this.scene.time.now < this.invulnUntil;
-    if (this.world.reducedMotion) this.setAlpha(invuln ? 0.6 : 1);
-    else {
-      const flicker = invuln && Math.floor(this.scene.time.now / 60) % 2 === 0;
-      this.setAlpha(flicker ? 0.25 : 1);
-    }
+    // Invulnerability: a slow blink, or a steady fade under reduced motion (no flashing).
+    const until = this.pstate === 'dead' ? 0 : this.invulnUntil;
+    this.setAlpha(hurtAlpha(this.scene.time.now, until, this.world.reducedMotion));
 
     this.weapon.setVisible(fx >= 0 && this.visible);
     if (fx >= 0) {

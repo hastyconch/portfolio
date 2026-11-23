@@ -17,8 +17,10 @@ interface Props {
   index: number;
   /** true when the sleeve is above the fold (song pages), so the image isn't lazy */
   eager?: boolean;
+  /** the image's displayed size; the home panel shows a small sleeve on phones (WO-026) */
+  sizes?: string;
 }
-const { song, index, eager = false } = Astro.props;
+const { song, index, eager = false, sizes = '(min-width: 900px) 296px, 280px' } = Astro.props;
 const d = song.data;
 const pad = (n: number) => String(n).padStart(2, '0');
 // Without alt text the art is decorative: the title is always printed beside it.
@@ -38,7 +40,7 @@ const decorative = !d.art || !d.artAlt;
         src={d.art}
         alt={d.artAlt ?? ''}
         widths={[300, 560]}
-        sizes="(min-width: 900px) 296px, 280px"
+        sizes={sizes}
         quality={60}
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : undefined}

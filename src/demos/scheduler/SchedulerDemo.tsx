@@ -455,7 +455,7 @@ export default function SchedulerDemo() {
             </p>
           </div>
 
-          <section className="sch-rulebar" aria-labelledby={`${id}-rules`}>
+          <div role="group" className="sch-rulebar" aria-labelledby={`${id}-rules`}>
             <h4 id={`${id}-rules`}>
               <Glyph name={issues.length ? 'alert' : 'check'} />
               Rule check
@@ -485,10 +485,10 @@ export default function SchedulerDemo() {
                 ))}
               </ul>
             </details>
-          </section>
+          </div>
         </div>
 
-        <section className="sch-task" aria-labelledby={`${id}-task`}>
+        <div role="group" className="sch-task" aria-labelledby={`${id}-task`}>
           {!gap ? (
             <div className="sch-allset">
               <span className="sch-allset-mark" aria-hidden="true">
@@ -574,7 +574,7 @@ export default function SchedulerDemo() {
               )}
             </>
           )}
-        </section>
+        </div>
       </div>
 
       <p className="sch-vh" role="status" aria-live="polite">

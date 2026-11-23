@@ -10,6 +10,9 @@
 // WO-024: on phones (under 760px, scripting on) only the first demo shows inline. The others
 // wait behind a "Try the demo" button and hydrate when it reveals them (client:visible never
 // fires while they are display: none). Without scripting they all show, as before.
+// WO-025: the button is a button (outlined, "Try the demo: {name}", its one line as the
+// description), revealing does not jump the page, and the demos add no region landmarks: the
+// revealed wrapper is a named group, and only once it has been revealed.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -72,18 +75,29 @@ const others = work.filter((w) => w.data.demo === 'none');
               </div>
 
               {tryIt && (
-                <button type="button" class="wk-try" data-wk-try aria-controls={`${hid}-demo`}>
-                  <span class="wk-try-k label">Try the demo</span>
-                  <span class="wk-try-n">{tryIt.name}</span>
-                  <span class="wk-try-d">{tryIt.line}</span>
-                </button>
+                <div class="wk-try">
+                  <button
+                    type="button"
+                    class="wk-try-b"
+                    data-wk-try
+                    aria-controls={`${hid}-demo`}
+                    aria-label={`Try the demo: ${tryIt.name}`}
+                    aria-describedby={`${hid}-try-d`}
+                  >
+                    {/* The name is the visible text with a colon for the ear; the space keeps
+                        the visible text two words apart for label-in-name checks. */}
+                    <span class="wk-try-k">Try the demo</span>{' '}
+                    <span class="wk-try-n">{tryIt.name}</span>
+                  </button>
+                  <p class="wk-try-d" id={`${hid}-try-d`}>
+                    {tryIt.line}
+                  </p>
+                </div>
               )}
               <div
                 class="wk-demo"
                 id={tryIt ? `${hid}-demo` : undefined}
-                role={tryIt ? 'region' : undefined}
-                aria-label={tryIt ? `${tryIt.name} demo` : undefined}
-                tabindex={tryIt ? -1 : undefined}
+                data-wk-label={tryIt ? `${tryIt.name} demo` : undefined}
               >
                 {d.demo === 'airline' && (
                   <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
@@ -192,12 +206,24 @@ const others = work.filter((w) => w.data.demo === 'none');
 </section>
 
 <script>
-  // Reveal a collapsed demo (phones): it becomes visible, so client:visible hydrates it now,
-  // and focus moves into it.
+  // Reveal a collapsed demo (phones): it becomes visible, so client:visible hydrates it now. It
+  // becomes a named group and takes focus without scrolling; then the page brings the
+  // engagement's head (meta, title, kicker) flush under the header, so the title stays on screen
+  // and the demo follows it.
   for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-wk-try]')) {
     btn.addEventListener('click', () => {
-      btn.closest('article')?.setAttribute('data-open', '');
-      document.getElementById(btn.getAttribute('aria-controls') ?? '')?.focus();
+      const article = btn.closest('article');
+      const demo = document.getElementById(btn.getAttribute('aria-controls') ?? '');
+      if (!article || !demo) return;
+      article.setAttribute('data-open', '');
+      demo.setAttribute('role', 'group');
+      demo.setAttribute('aria-label', demo.dataset.wkLabel ?? '');
+      demo.tabIndex = -1;
+      demo.focus({ preventScroll: true });
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      article
+        .querySelector('.wk-head')
+        ?.scrollIntoView({ block: 'start', behavior: still ? 'instant' : 'smooth' });
     });
   }
 </script>
@@ -246,6 +272,8 @@ const others = work.filter((w) => w.data.demo === 'none');
   .wk-head {
     grid-area: head;
     max-width: var(--measure);
+    /* "Try the demo" scrolls the head flush under the header (WO-025). */
+    scroll-margin-top: var(--ln-flush);
   }
   /* Focus arrives here from the header's stepper; the pane coming into view is the cue. */
   body.ln :is(.wk-title, .wk-more-h):focus {
@@ -313,20 +341,25 @@ const others = work.filter((w) => w.data.demo === 'none');
     outline-offset: var(--space-2);
   }
 
-  /* Try the demo (phones): a full-width plate in the demo's place, until it is pressed. */
+  /* Try the demo (phones): an outlined button in the demo's place, with its one line under it,
+     until it is pressed. The accent outline and label set it apart from the neutral skill tags. */
   .wk-try {
     display: none;
     grid-area: demo;
-    gap: var(--space-1);
-    justify-items: start;
-    width: 100%;
-    min-height: 44px;
+    gap: var(--space-2);
     margin-top: var(--space-5);
+  }
+  .wk-try-b {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    width: 100%;
+    min-height: 48px;
     padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--ln-rule);
-    border-left: 3px solid var(--ln-accent);
+    border: 1px solid var(--ln-accent);
     border-radius: var(--radius-2);
-    background: var(--ln-bg-2);
+    background: transparent;
     color: var(--ln-ink);
     font: inherit;
     text-align: left;
@@ -336,28 +369,24 @@ const others = work.filter((w) => w.data.demo === 'none');
       border-color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .wk-try:hover,
-  .wk-try:focus-visible {
-    border-color: var(--ln-ink);
-    border-left-color: var(--ln-accent);
+  .wk-try-b:hover,
+  .wk-try-b:focus-visible {
     background: var(--ln-hl-hover);
   }
-  .wk-try:active {
+  .wk-try-b:active {
+    background: var(--ln-hl-hover);
+    border-color: var(--ln-ink);
     scale: var(--press-scale);
   }
-  body.ln .wk-try-k {
+  .wk-try-k {
+    font-weight: 700;
     color: var(--ln-accent);
   }
-  .wk-try-k::after {
-    content: ' ↓' / '';
-  }
   .wk-try-n {
-    font-family: var(--ln-display);
-    font-size: var(--text-lg);
-    font-weight: 700;
-    line-height: var(--leading-snug);
+    font-weight: 600;
   }
-  .wk-try-d {
+  body.ln .wk-try-d {
+    margin: 0;
     font-size: var(--text-sm);
     line-height: var(--leading-snug);
     color: var(--ln-ink-2);
@@ -371,8 +400,9 @@ const others = work.filter((w) => w.data.demo === 'none');
     }
   }
 
-  /* Skills: badges, a row on phones and a stack in the side column on wider screens. A stamp:
-     a tinted neutral plate, a hairline and an accent edge, set in the UI face at a firmer weight
+  /* Skills: badges, a row on phones and a stack in the side column on wider screens. Quiet: a
+     tinted neutral plate and a neutral hairline (no accent edge since WO-025, so the one
+     tappable thing, "Try the demo", doesn't read as a tag), set in the UI face at a firmer weight
      than the copy. Not interactive, so no states. */
   .wk-skills {
     grid-area: skills;
@@ -391,9 +421,8 @@ const others = work.filter((w) => w.data.demo === 'none');
     list-style: none;
   }
   .wk-badges li {
-    padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
-    border: 1px solid var(--ln-badge-rule);
-    border-left: 3px solid var(--ln-accent);
+    padding: var(--space-1) var(--space-2);
+    border: var(--ln-hairline);
     border-radius: var(--radius-1);
     background: var(--ln-badge);
     font-size: var(--text-xs);
@@ -402,7 +431,11 @@ const others = work.filter((w) => w.data.demo === 'none');
     color: var(--ln-ink);
   }
 
-  /* More client work: a compact list */
+  /* More client work: a compact list. Its last rule ends the section: no bottom padding on top of
+     the next section's own (WO-025), so the gap before Projects is one section rhythm. */
+  .work {
+    padding-bottom: 0;
+  }
   .wk-more {
     padding-top: var(--space-7);
   }
@@ -506,8 +539,10 @@ const others = work.filter((w) => w.data.demo === 'none');
     .wk-more-h {
       padding-top: var(--space-5);
     }
+    /* Beside the heading, the last engagement's rule above already tops the list. */
     .wk-more-list {
       margin-top: 0;
+      border-top: 0;
     }
   }
 

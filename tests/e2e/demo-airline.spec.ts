@@ -75,6 +75,6 @@ test('airline demo: tabs, booking sheet and focus by keyboard', async ({ page, i
 
   // Home shows the new trip and balance.
   await tab('Home').click();
-  await expect(demo.getByRole('region', { name: 'Your reward trip' })).toContainText('LIS');
+  await expect(demo.getByRole('group', { name: 'Your reward trip' })).toContainText('LIS');
   await expect(demo.getByText('13,250 points', { exact: true })).toBeAttached();
 });

@@ -129,8 +129,8 @@ test('project switcher', async ({ page, isMobile }) => {
     await expect(crumbs(page).locator('.np-count')).toHaveText(`1 / ${projects}`);
   }
 
-  const trigger = crumbs(page).getByRole('button', { name: 'Billable.' });
-  await expect(trigger).toHaveAttribute('aria-current', 'location');
+  const trigger = crumbs(page).getByRole('button', { name: 'Billable., switch project' });
+  await expect(crumbs(page).locator('[aria-current="location"]')).toHaveText('Billable.');
   await press(page, trigger);
   const jump = page.locator('#np-jump');
   await expect(jump).toBeVisible();
@@ -161,6 +161,91 @@ test('project switcher', async ({ page, isMobile }) => {
   expect(overflow).toBeLessThanOrEqual(0);
   const bar = await page.locator('.np-bar').boundingBox();
   expect(bar!.height).toBeLessThanOrEqual(61);
+});
+
+// WO-027: the crumb's trigger says what it does, the current place is marked on its text (not on
+// a button), and the jump list closes once focus moves on past it.
+test('crumb trigger names its action', async ({ page, isMobile }) => {
+  if (!isMobile) {
+    await page.goto('/');
+    await scrollTo(page, '#work .wk', 0);
+    await expect(
+      crumbs(page).getByRole('button', { name: /switch engagement$/ }),
+    ).toHaveAccessibleName('Airline loyalty, switch engagement');
+    await scrollTo(page, '#work .wk', 1);
+    await expect(
+      crumbs(page).getByRole('button', { name: /switch engagement$/ }),
+    ).toHaveAccessibleName('Grocer loyalty, switch engagement');
+    await expect(page.locator('.np button[aria-current]')).toHaveCount(0);
+  }
+
+  await page.goto('/projects/felt-and-tiles/');
+  const trigger = crumbs(page).getByRole('button', { name: 'Felt & Tiles, switch project' });
+  await expect(trigger).toBeVisible();
+  await expect(page.locator('.np button[aria-current]')).toHaveCount(0);
+  const here = crumbs(page).locator('[aria-current="location"]');
+  await expect(here).toHaveText('Felt & Tiles');
+  expect(await here.evaluate((el) => el.closest('button'))).toBeNull();
+
+  // Tab past the last entry: the list closes.
+  const jump = page.locator('#np-jump');
+  const entry = jump.locator('a[aria-current="page"]');
+  await press(page, trigger);
+  await expect(entry).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(jump.getByRole('link').last()).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(jump).toBeHidden();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
+
+  // Shift+Tab out of it, too.
+  await press(page, trigger);
+  await expect(entry).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(jump.getByRole('link').first()).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(jump).toBeHidden();
+});
+
+// WO-027: on a phone the case-study crumb reads "Projects / Felt & Tiles 2 / 8": no stray "/"
+// after the folded name, and a count that says the item is one of several.
+test('phone crumb', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'the folded crumb is for phones');
+  await page.goto('/');
+  const projects = await page.locator('#rail > li').count();
+  await page.goto('/projects/felt-and-tiles/');
+  // What shows after the disc, in order.
+  const shown = await crumbs(page).evaluate((nav) =>
+    [...nav.querySelectorAll<HTMLElement>('.np-sep, .np-sec, .np-item, .np-count')]
+      .filter((el) => el.checkVisibility())
+      .map((el) => el.textContent!.trim()),
+  );
+  expect(shown).toEqual(['Projects', '/', 'Felt & Tiles', `2 / ${projects}`]);
+  await expect(crumbs(page).locator('.np-count')).toBeVisible();
+  await expect(crumbs(page).locator('.np-arrow').first()).toBeHidden();
+  const bar = await page.locator('.np-bar').boundingBox();
+  expect(bar!.height).toBeLessThanOrEqual(61);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+// WO-027: the header's in-page links replace the history entry, so Back leaves the page.
+test('nav does not pile up history', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const before = await page.evaluate(() => history.length);
+  for (const id of ['work', 'projects', 'music', 'resume', 'contact']) {
+    if (isMobile) {
+      await page.locator('.np-menu summary').click();
+      await page.locator(`.np-menu-list a[href="#${id}"]`).click();
+    } else {
+      await page.locator(`.np-links a[href="#${id}"]`).click();
+    }
+    await expect(page).toHaveURL(new RegExp(`#${id}$`));
+  }
+  expect(await page.evaluate(() => history.length)).toBe(before);
 });
 
 test('toc marks section', async ({ page }) => {

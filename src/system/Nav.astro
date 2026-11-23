@@ -93,15 +93,20 @@ const thumbs = cur
             <span class="np-sep" aria-hidden="true">
               /
             </span>
-            <button
-              type="button"
-              class="np-trigger"
-              popovertarget="np-jump"
-              aria-current="location"
-            >
-              <span class="np-item">{cur?.data.title}</span>
+            {/* The item is the current place (aria-current on its text); the button over it opens
+                the jump list and its name says so (WO-027). */}
+            <span class="np-here">
+              <button
+                type="button"
+                class="np-trigger"
+                popovertarget="np-jump"
+                aria-label={cur ? `${cur.data.title}, switch project` : 'Switch engagement'}
+              />
+              <span class="np-item" aria-current="location">
+                {cur?.data.title}
+              </span>
               <span class="np-caret" aria-hidden="true" />
-            </button>
+            </span>
             {cur ? (
               <span class="np-step">
                 {prev ? (
@@ -246,6 +251,22 @@ const thumbs = cur
     }
   });
 
+  // Home: the header's in-page links (#work, #projects, ...) replace the current history entry
+  // instead of adding one, so Back leaves the page rather than scrolling back through it
+  // (WO-027). location.replace keeps the browser's own fragment jump: the same scroll, landing
+  // and :target as a plain link. The jump list's links are handled below.
+  document.querySelector('.np[data-home]')?.addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
+    const me = e as MouseEvent;
+    if (!a || a.dataset.target || me.defaultPrevented) return;
+    if (me.button !== 0 || me.metaKey || me.ctrlKey || me.shiftKey || me.altKey) return;
+    e.preventDefault();
+    location.replace(a.hash);
+  });
+</script>
+
+<script>
+  // Two scripts, so each stays small enough to be inlined in the page (no extra request).
   // Wayfinding (WO-019). One observer for the section, the Work pane and a case study's
   // "On this page" list: the current target is the last one whose top has crossed a line a
   // quarter of the way down the view, under the header.
@@ -347,6 +368,7 @@ const thumbs = cur
     );
     if (!show) return;
     swap(itemT, stops[item].label);
+    trigger?.setAttribute('aria-label', `${stops[item].label}, switch engagement`);
     if (count) count.textContent = item < panes ? `${item + 1} / ${panes}` : '';
     const p = stops[item - 1];
     const n = stops[item + 1];
@@ -420,8 +442,17 @@ const thumbs = cur
   }
 
   // The jump list opens under its trigger with focus on the current entry. Arrow keys move
-  // through it; Escape closes it and the browser returns focus to the trigger.
+  // through it; Escape closes it and the browser returns focus to the trigger. It also closes
+  // when focus moves to anything outside it and its trigger (WO-027).
   if (jump && trigger) {
+    const leave = (e: FocusEvent) => {
+      const to = e.relatedTarget as Node | null;
+      if (to && to !== trigger && !jump.contains(to) && jump.matches(':popover-open')) {
+        jump.hidePopover();
+      }
+    };
+    jump.addEventListener('focusout', leave);
+    trigger.addEventListener('focusout', leave);
     jump.addEventListener('beforetoggle', (e) => {
       if ((e as ToggleEvent).newState !== 'open') return;
       jump.style.setProperty('--jx', `${Math.round(trigger.getBoundingClientRect().left)}px`);
@@ -561,7 +592,7 @@ const thumbs = cur
     font-size: var(--text-sm);
   }
   .np-sec,
-  .np-trigger {
+  .np-here {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
@@ -586,21 +617,29 @@ const thumbs = cur
   .np-sec:active {
     color: var(--ln-ink-3);
   }
-  /* The item: the current place, and the trigger for the jump list. */
-  .np-trigger {
+  /* The item: the current place, with the jump list's trigger laid over it (the button fills
+     the item's box under its text, so the whole item is the target). */
+  .np-here {
+    position: relative;
     gap: var(--space-2);
     min-width: 0;
     margin-inline: calc(var(--space-2) * -1) 0;
     padding: 0 var(--space-2);
+    color: var(--ln-ink);
+    transition: scale var(--dur-quick) var(--ease-out);
+  }
+  .np-here:has(.np-trigger:active) {
+    scale: var(--press-scale);
+  }
+  .np-trigger {
+    position: absolute;
+    inset: 0;
+    padding: 0;
     border: 0;
     border-radius: var(--radius-2);
     background: transparent;
-    color: var(--ln-ink);
-    font-family: inherit;
     cursor: pointer;
-    transition:
-      background-color var(--dur-quick) var(--ease-out),
-      scale var(--dur-quick) var(--ease-out);
+    transition: background-color var(--dur-quick) var(--ease-out);
   }
   .np-trigger:hover,
   .np-trigger:focus-visible,
@@ -608,7 +647,12 @@ const thumbs = cur
     background: var(--ln-hl);
   }
   .np-trigger:active {
-    scale: var(--press-scale);
+    background: var(--ln-hl-hover);
+  }
+  .np-item,
+  .np-caret {
+    position: relative;
+    pointer-events: none;
   }
   .np-item {
     display: block;
@@ -925,8 +969,9 @@ const thumbs = cur
     }
   }
 
-  /* Phones: on a case study the name folds to its disc, so the disc, "/ Projects / Billable."
-     and the menu fit on one line. */
+  /* Phones: on a case study the name folds to its disc, and the separator after it goes with it,
+     so the disc, "Projects / Billable. 1 / 8" and the menu fit on one line. The count stays (as
+     text, without the arrows), so the jump list reads as one of several (WO-027). */
   @media (max-width: 759px) {
     .np[data-deep] .np-name {
       position: absolute;
@@ -935,6 +980,18 @@ const thumbs = cur
       overflow: hidden;
       clip: rect(0 0 0 0);
       white-space: nowrap;
+    }
+    .np[data-deep] .np-c-sec .np-sep {
+      display: none;
+    }
+    .np[data-deep] .np-step {
+      display: inline-flex;
+    }
+    .np[data-deep] .np-arrow {
+      display: none;
+    }
+    .np[data-deep] .np-count {
+      min-width: 0;
     }
     /* Home: the section only; the engagement stepper and list are for wider screens. */
     .np[data-home] .np-c-item {
