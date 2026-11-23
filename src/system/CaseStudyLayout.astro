@@ -6,7 +6,6 @@ import Shell from './Shell.astro';
 import Placeholder from './Placeholder.astro';
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import BillableMini from '../demos/billable/BillableMini.tsx';
 
 interface Props {
   project: Project;
@@ -146,7 +145,7 @@ const contents = [
               Play a room
             </h2>
             <p class="cs-sub">One room of the real game, in your browser.</p>
-            <BillableMini client:visible />
+            <slot name="play" />
           </section>
         )}
 

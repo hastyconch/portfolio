@@ -52,14 +52,14 @@ test('work snap is proximity and off under reduced motion', async ({ page, isMob
   // Proximity is the default strictness, so the computed value may serialise as just "y".
   expect(await snapType()).toMatch(/^y( proximity)?$/);
 
-  // Only the demo engagements are snap points.
+  // Only the demo engagements and the Projects pane (WO-021) are snap points.
   const aligns = await page.evaluate(() => ({
-    panes: [...document.querySelectorAll('#work .wk')].map(
+    panes: [...document.querySelectorAll('#work .wk, #projects')].map(
       (el) => getComputedStyle(el).scrollSnapAlign,
     ),
-    others: [...document.querySelectorAll('section, .wk-item, .wk-more, header, footer')].map(
-      (el) => getComputedStyle(el).scrollSnapAlign,
-    ),
+    others: [
+      ...document.querySelectorAll('section:not(#projects), .wk-item, .wk-more, header, footer'),
+    ].map((el) => getComputedStyle(el).scrollSnapAlign),
   }));
   expect(aligns.panes.length).toBeGreaterThanOrEqual(4);
   for (const a of aligns.panes) expect(a).toBe('start');

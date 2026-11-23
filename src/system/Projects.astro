@@ -71,11 +71,18 @@ const { projects } = Astro.props;
   @media (min-width: 1100px) and (min-height: 600px) {
     .projects {
       display: grid;
+      /* minmax(0, …): the rail scrolls sideways inside its column instead of widening it */
+      grid-template-columns: minmax(0, 1fr);
       align-content: center;
       min-height: calc(100svh - var(--ln-header));
       padding-block: clamp(var(--space-4), 4svh, var(--space-6));
       scroll-snap-align: start;
       scroll-margin-top: calc(var(--ln-header) - var(--ln-scroll-pad, var(--ln-header)));
+    }
+    /* Auto margins would size the rail to its cards (fit-content) in the grid; no margins let it
+       stretch to the column and scroll inside it. */
+    .projects .rail {
+      margin-inline: 0;
     }
   }
   .rail-btns {
