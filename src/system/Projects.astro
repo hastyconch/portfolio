@@ -86,8 +86,13 @@ const { projects } = Astro.props;
       // storage can be unavailable (private windows); the rail then starts at the beginning
     }
   });
-  addEventListener('pageshow', restore);
-  restore();
+  // Only on Back/Forward: a fresh visit or a reload starts at the first card.
+  const nav = performance.getEntriesByType('navigation')[0] as
+    PerformanceNavigationTiming | undefined;
+  addEventListener('pageshow', (e) => {
+    if (e.persisted) restore();
+  });
+  if (nav?.type === 'back_forward') restore();
 </script>
 
 <style>

@@ -141,4 +141,7 @@ test('projects rail keeps its place', async ({ page, isMobile }) => {
   await expect(page).toHaveURL(/\/$/);
   await expect.poll(() => rail.evaluate((r) => r.scrollLeft)).toBeGreaterThanOrEqual(left - 4);
   expect(Math.abs((await rail.evaluate((r) => r.scrollLeft)) - left)).toBeLessThanOrEqual(4);
+  // Only Back/Forward restores it: a reload starts at the first card.
+  await page.reload();
+  expect(await rail.evaluate((r) => r.scrollLeft)).toBe(0);
 });
