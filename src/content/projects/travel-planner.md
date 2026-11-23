@@ -89,7 +89,7 @@ gallery:
       }
 demo: travel
 accent: '#1a5c44'
-order: 2
+order: 6
 featured: true
 status: ready
 ---

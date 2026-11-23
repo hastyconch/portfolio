@@ -71,7 +71,7 @@ gallery:
       }
 demo: parking
 accent: '#4f46e5'
-order: 3
+order: 7
 featured: false
 status: ready
 ---

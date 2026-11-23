@@ -84,7 +84,7 @@ gallery:
       }
 demo: fashion
 accent: '#9d174d'
-order: 4
+order: 8
 featured: true
 status: ready
 ---

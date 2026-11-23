@@ -129,7 +129,7 @@ gallery:
       }
 demo: none
 accent: '#b4441f'
-order: 8
+order: 5
 featured: false
 status: ready
 ---
