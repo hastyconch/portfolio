@@ -56,8 +56,12 @@
 }
 
 html {
-  /* Anchors and focused elements stop clear of the sticky nav. */
+  /* Anchors and focused elements stop clear of the sticky nav, with a little air (an in-page
+     heading lands 12px under it). Section bands cancel the air and land flush under the header:
+     `--ln-flush` is their scroll margin (.ln-sec below, and the Work panes). The header cancels
+     the whole padding, so focusing or clicking it never scrolls the page (Nav.astro). */
   --ln-scroll-pad: calc(var(--ln-header) + var(--space-3));
+  --ln-flush: calc(var(--space-3) * -1);
   scroll-padding-top: var(--ln-scroll-pad);
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -65,14 +69,9 @@ html {
     scroll-behavior: smooth;
   }
 }
-/* Work panes settle into place (WO-015). Proximity, never mandatory: mandatory traps keyboard and
-   assistive-tech users and breaks anything taller than the viewport. Only the demo engagements
-   declare a snap point. Phones and reduced motion scroll freely. */
-@media (min-width: 760px) and (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-snap-type: y proximity;
-  }
-}
+/* No page-level scroll snap (WO-023). Proximity snapping on viewport-tall panes trapped the wheel:
+   a few notches from a pane's top snapped back to where they started. The header's stepper moves
+   pane to pane instead. Horizontal rails keep their own x snap. */
 
 /* Page changes carry you (WO-019): cross-document view transitions, CSS only, as progressive
    enhancement. The header is named in Nav.astro so it holds still. Between case studies the page
@@ -227,10 +226,11 @@ body.ln .label {
   opacity: 0.7;
 }
 
-/* Section scaffold. Sections set their own rhythm on top of this. */
+/* Section scaffold. Sections set their own rhythm on top of this. A jump to a section lands its
+   top flush under the header (the one rule for every section band; see --ln-flush above). */
 .ln-sec {
   padding-block: var(--space-section);
-  scroll-margin-top: var(--ln-header);
+  scroll-margin-top: var(--ln-flush);
 }
 .ln-sec + .ln-sec:not(.ln-dark) {
   border-top: var(--ln-hairline);

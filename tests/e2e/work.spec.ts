@@ -37,61 +37,52 @@ test('work engagements fit one viewport at 1440x900', async ({ page, isMobile })
   }
 });
 
-test('work snap is proximity and off under reduced motion', async ({ page, isMobile }) => {
+// WO-023: no page-level vertical snap at any size. Proximity snapping on viewport-tall panes
+// trapped the wheel; the header's stepper moves pane to pane instead.
+test('work has no vertical snap', async ({ page }) => {
   await page.goto('/');
-  const snapType = () =>
-    page.evaluate(() => getComputedStyle(document.documentElement).scrollSnapType);
-
-  if (isMobile) {
-    // Below 760px phones scroll naturally.
-    expect(await snapType()).toBe('none');
-    return;
+  const snap = () =>
+    page.evaluate(() => ({
+      root: getComputedStyle(document.documentElement).scrollSnapType,
+      aligned: [
+        ...document.querySelectorAll('#work .wk, section, .wk-item, .wk-more, header, footer'),
+      ]
+        .map((el) => getComputedStyle(el).scrollSnapAlign)
+        .filter((a) => a !== 'none'),
+    }));
+  for (const [width, height] of [
+    [375, 812],
+    [740, 900],
+    [1440, 900],
+  ]) {
+    await page.setViewportSize({ width, height });
+    expect(await snap(), `${width}x${height}`).toEqual({ root: 'none', aligned: [] });
   }
-
-  await page.setViewportSize({ width: 1440, height: 900 });
-  // Proximity is the default strictness, so the computed value may serialise as just "y".
-  expect(await snapType()).toMatch(/^y( proximity)?$/);
-
-  // Only the demo engagements and the Projects pane (WO-021) are snap points.
-  const aligns = await page.evaluate(() => ({
-    panes: [...document.querySelectorAll('#work .wk, #projects')].map(
-      (el) => getComputedStyle(el).scrollSnapAlign,
-    ),
-    others: [
-      ...document.querySelectorAll('section:not(#projects), .wk-item, .wk-more, header, footer'),
-    ].map((el) => getComputedStyle(el).scrollSnapAlign),
-  }));
-  expect(aligns.panes.length).toBeGreaterThanOrEqual(4);
-  for (const a of aligns.panes) expect(a).toBe('start');
-  for (const a of aligns.others) expect(a).toBe('none');
-
-  // Stopping just past a pane's top settles the pane right under the nav.
-  const nav = await navHeight(page);
-  await page.evaluate(() => {
-    const pane = document.querySelectorAll('#work .wk')[1] as HTMLElement;
-    const top = pane.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: top - 60 + 40, behavior: 'instant' });
-  });
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        Math.round(
-          (document.querySelectorAll('#work .wk')[1] as HTMLElement).getBoundingClientRect().top,
-        ),
-      ),
-    )
-    .toBeGreaterThanOrEqual(nav - 2);
-  const top = await page.evaluate(
-    () => (document.querySelectorAll('#work .wk')[1] as HTMLElement).getBoundingClientRect().top,
-  );
-  expect(Math.abs(top - nav)).toBeLessThanOrEqual(2);
-
-  // Below 760px and under reduced motion there is no snapping.
-  await page.setViewportSize({ width: 740, height: 900 });
-  expect(await snapType()).toBe('none');
-  await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(await snapType()).toBe('none');
+  expect((await snap()).root).toBe('none');
+});
+
+test('work wheel is never trapped', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'a mouse wheel');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const nav = await navHeight(page);
+  await page.evaluate((nav) => {
+    const pane = document.querySelector('#work .wk') as HTMLElement;
+    const top = pane.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: top - nav, behavior: 'instant' });
+  }, nav);
+  const start = await page.evaluate(() => window.scrollY);
+  // Five 100px notches from the top of pane 1, over its story column.
+  await page.mouse.move(300, 500);
+  for (let i = 0; i < 5; i++) {
+    await page.mouse.wheel(0, 100);
+    await page.waitForTimeout(60);
+  }
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 400);
+  // It does not snap back.
+  await page.waitForTimeout(1000);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 400);
 });
 
 test('skill badges are text, not controls', async ({ page }) => {

@@ -33,6 +33,31 @@ test('nav links are plain section names', async ({ page, isMobile }) => {
   }
 });
 
+// WO-023: the sticky header is solid. Nothing scrolling under it reads through.
+test('header is solid', async ({ page }) => {
+  for (const scheme of ['dark', 'light'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const route of ['/', '/projects/billable/']) {
+      await page.goto(route);
+      const s = await page.locator('header.np').evaluate((el) => {
+        const cs = getComputedStyle(el) as CSSStyleDeclaration & {
+          webkitBackdropFilter?: string;
+        };
+        return {
+          bg: cs.backgroundColor,
+          filter: cs.backdropFilter,
+          webkit: cs.webkitBackdropFilter ?? 'none',
+        };
+      });
+      const alpha = s.bg.match(/^rgba?\(([^)]+)\)$/)?.[1].split(/[\s,/]+/)[3];
+      expect(alpha === undefined || Number(alpha) === 1, `${scheme} ${route}: ${s.bg}`).toBe(true);
+      expect(s.bg).not.toBe('transparent');
+      expect(s.filter, `${scheme} ${route}`).toBe('none');
+      expect(s.webkit || 'none', `${scheme} ${route}`).toBe('none');
+    }
+  }
+});
+
 // WO-021 (taste-skill): nothing fades in because the page scrolled. Scroll-linked animations are
 // allowed only for the reading-progress bar in the header.
 for (const route of ['/', '/projects/billable/', '/music/roadhouse/']) {

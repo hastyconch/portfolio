@@ -2,9 +2,9 @@
 // Work: engagements with a demo get the full layout (story, what I did, the live demo inline
 // beside it, after the summary on phones). The rest follow as a compact list, each summary in
 // a disclosure. Sector and role sit inline above each title.
-// WO-015: on laptops each demo engagement is one pane, one viewport tall below the nav, and the
-// page settles on the next one (proximity snapping, set on the root in liner.css). Skills are
-// badges: a deliberate, non-interactive stamp, not a quiet list.
+// WO-015: on laptops each demo engagement is one pane, one viewport tall below the nav (WO-023
+// removed the page snap; the header's stepper moves pane to pane). Skills are badges: a
+// deliberate, non-interactive stamp, not a quiet list.
 // WO-019: the header's stepper and jump list move between panes and put focus on the pane's
 // heading (tabindex -1), so keyboard users land where they went.
 import type { Work } from '../lib/content';
@@ -176,11 +176,9 @@ const others = work.filter((w) => w.data.demo === 'none');
   }
   .wk {
     border-bottom: var(--ln-hairline);
-    /* A snap point, live only where the root snaps (760px and up, motion allowed). The root's
-       scroll padding already clears the nav plus a little air; this pulls the pane back up so
-       its top meets the nav exactly. */
-    scroll-snap-align: start;
-    scroll-margin-top: calc(var(--ln-header) - var(--ln-scroll-pad, var(--ln-header)));
+    /* A jump or a step to a pane lands its top flush under the header, like a section band
+       (liner.css). There is no page-level snap (WO-023). */
+    scroll-margin-top: var(--ln-flush);
   }
   .wk article {
     display: grid;

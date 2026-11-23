@@ -212,3 +212,153 @@ test('no duplicate transition names', async ({ page, isMobile }) => {
     for (const m of found.vt) expect(m, route).toMatch(/prefers-reduced-motion:\s*no-preference/);
   }
 });
+
+// WO-023: a jump to a section lands its top flush under the header (the root's scroll padding
+// and the section's own margin no longer add up).
+test('sections land under the header', async ({ page, isMobile }) => {
+  await page.goto('/');
+  // Walk the page once first, so the demo islands (client:visible) have hydrated: a demo that
+  // grows as it hydrates while a smooth jump passes it moves the target.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y < height; y += 600) {
+    await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+    await page.waitForTimeout(50);
+  }
+  await page.waitForLoadState('networkidle');
+  for (const id of ['work', 'projects', 'music', 'resume']) {
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    if (isMobile) {
+      await page.locator('.np-menu summary').click();
+      await page.locator(`.np-menu-list a[href="#${id}"]`).click();
+    } else {
+      await page.locator(`.np-links a[href="#${id}"]`).click();
+    }
+    const gap = () =>
+      page.evaluate((id) => {
+        const header = document.querySelector('.np')!.getBoundingClientRect().bottom;
+        return Math.round(document.getElementById(id)!.getBoundingClientRect().top - header);
+      }, id);
+    await expect.poll(gap, { message: `#${id} lands under the header` }).toBeLessThanOrEqual(2);
+    // and stays there once the smooth scroll has settled
+    await page.waitForTimeout(300);
+    expect(Math.abs(await gap()), `#${id}`).toBeLessThanOrEqual(2);
+  }
+});
+
+// WO-023: the header holds still. Clicking or focusing anything in it never scrolls the page.
+test('header never scrolls the page', async ({ page }) => {
+  await page.goto('/projects/billable/');
+  const y = () => page.evaluate(() => Math.round(scrollY));
+  await page.evaluate(() => window.scrollTo({ top: 2000, behavior: 'instant' }));
+  expect(await y()).toBe(2000);
+
+  // Playwright's own click: it scrolls the target into view if the browser thinks it needs to.
+  const trigger = crumbs(page).getByRole('button', { name: 'Billable.' });
+  await trigger.click();
+  await expect(page.locator('#np-jump')).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(await y()).toBe(2000);
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await page.waitForTimeout(300);
+  expect(await y()).toBe(2000);
+
+  // Shift+Tab from the page's content back into the header.
+  await page.evaluate(() =>
+    document.querySelector<HTMLElement>('main a[href]')!.focus({ preventScroll: true }),
+  );
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('Shift+Tab');
+    await page.waitForTimeout(300);
+    expect(
+      await page.evaluate(() => !!document.activeElement?.closest('.np')),
+      'focus is in the header',
+    ).toBe(true);
+    expect(await y(), `Shift+Tab ${i + 1}`).toBe(2000);
+  }
+});
+
+// WO-023: a control that reaches the end of its list stays focusable (aria-disabled), so focus
+// never falls to <body>.
+test('focus survives end of list', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'the rail arrows and the stepper are for laptops');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const onBody = () => page.evaluate(() => document.activeElement === document.body);
+
+  // Projects rail: Enter on "Scroll projects forward" until the end.
+  await scrollTo(page, '#projects');
+  const fwd = page.getByRole('button', { name: 'Scroll projects forward' });
+  await fwd.focus();
+  for (let i = 0; i < 12 && (await fwd.getAttribute('aria-disabled')) !== 'true'; i++) {
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(150);
+    expect(await onBody()).toBe(false);
+  }
+  await expect(fwd).toHaveAttribute('aria-disabled', 'true');
+  await expect(fwd).toBeFocused();
+  const left = await page.locator('#rail').evaluate((r) => r.scrollLeft);
+  await page.keyboard.press('Enter'); // ignored at the end
+  await expect(fwd).toBeFocused();
+  expect(await page.locator('#rail').evaluate((r) => r.scrollLeft)).toBe(left);
+
+  // Home stepper: step to the end of the list.
+  await scrollTo(page, '#work .wk', 3);
+  const next = page.locator('button.np-next');
+  await expect(next).toHaveAccessibleName('Next: More client work');
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#work-more-h')).toBeFocused();
+  await expect(next).toHaveAttribute('aria-disabled', 'true');
+  await expect(next).toBeDisabled();
+  // The end step is still a control you can reach; it does nothing.
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expect(next).toBeFocused();
+
+  // Scrolling out of Work while the stepper holds focus keeps it shown until focus moves on.
+  await scrollTo(page, '#projects');
+  await expect(section(page).getByRole('link')).toHaveText('Projects');
+  await expect(item(page)).toBeVisible();
+  await expect(next).toBeFocused();
+  await page.keyboard.press('Tab');
+  expect(await onBody()).toBe(false);
+  await expect(item(page)).toBeHidden();
+});
+
+// WO-023: the phone menu never stays open over the page.
+test('phone menu closes on focus out', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'the menu is for phones');
+  await page.goto('/');
+  const menu = page.locator('.np-menu');
+  const toggle = menu.locator('summary');
+  const open = () => menu.evaluate((d: HTMLDetailsElement) => d.open);
+
+  // Tabbing past the last item closes it.
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  expect(await open()).toBe(true);
+  const items = await menu.locator('.np-menu-list a').count();
+  for (let i = 0; i < items; i++) await page.keyboard.press('Tab');
+  await expect(menu.locator('.np-menu-list a').last()).toBeFocused();
+  expect(await open()).toBe(true);
+  await page.keyboard.press('Tab');
+  expect(await open()).toBe(false);
+
+  // Escape from inside closes it and returns focus to the toggle.
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Escape');
+  expect(await open()).toBe(false);
+  await expect(toggle).toBeFocused();
+
+  // Escape works from anywhere while it is open, too.
+  await page.keyboard.press('Enter');
+  expect(await open()).toBe(true);
+  await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+  await page.keyboard.press('Escape');
+  expect(await open()).toBe(false);
+  await expect(toggle).toBeFocused();
+});
