@@ -5,6 +5,7 @@ import type { Project } from '../lib/content';
 import Shell from './Shell.astro';
 import Placeholder from './Placeholder.astro';
 import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import BillableMini from '../demos/billable/BillableMini.tsx';
 
 interface Props {
@@ -16,6 +17,22 @@ interface Props {
 }
 const { project, prev, next } = Astro.props;
 const d = project.data;
+// Owner drop-ins: src/assets/projects/<id>/<slot>.(png|jpg|webp), see the README there.
+const dropins = import.meta.glob<{ default: ImageMetadata }>(
+  '../assets/projects/*/*.{png,jpg,jpeg,webp}',
+  { eager: true },
+);
+const fromSlot = (slot?: string) =>
+  slot
+    ? Object.entries(dropins).find(([k]) => k.includes(`/projects/${project.id}/${slot}.`))?.[1]
+        .default
+    : undefined;
+const cover = d.cover;
+const heroShot = cover?.image ?? fromSlot(cover?.slot);
+const frame = cover?.frame ?? 'browser';
+const isGame = frame === 'game';
+const gallery = d.gallery?.items.map((g) => ({ ...g, src: g.image ?? fromSlot(g.slot) }));
+const pending = gallery?.some((g) => !g.src);
 const contents = [
   ...(d.demo === 'billable' ? [{ id: 'play', label: 'Play a room' }] : []),
   { id: 'problem', label: 'Problem' },
@@ -28,10 +45,55 @@ const contents = [
 ---
 
 <Shell title={`${d.title} · case study`} description={d.tagline}>
-  <article class="cs" style={`--art: ${d.accent}`}>
+  <article class="cs" style={`--art: ${d.accent}; --bd: ${cover?.backdrop ?? d.accent}`}>
     <header class="cs-head">
       <div class="ln-wrap cs-head-grid">
-        <div class="cs-art" aria-hidden="true"></div>
+        <figure class="cs-hero">
+          <div class:list={['cs-art', `pa-${frame}`]}>
+            <div class="pa-dev">
+              {heroShot && isGame ? (
+                // Pixel art ships as its lossless 2x master (about 10 KB): re-encoding it lossy
+                // makes it larger and blurrier.
+                <img
+                  src={heroShot.src}
+                  width={heroShot.width}
+                  height={heroShot.height}
+                  alt={cover?.alt ?? ''}
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              ) : heroShot ? (
+                <Image
+                  src={heroShot}
+                  alt={cover?.alt ?? ''}
+                  widths={frame === 'phone' ? [280, 480] : [720, 1280]}
+                  sizes={
+                    frame === 'phone'
+                      ? '(min-width: 1000px) 210px, calc((100vw - 2rem) * 0.38)'
+                      : '(min-width: 1000px) 580px, calc(100vw - 2rem)'
+                  }
+                  quality={60}
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              ) : (
+                <div class="pa-soon" role="img" aria-label={`${d.title}: screenshots coming`}>
+                  <span class="pa-sk" />
+                  <span class="pa-sk" />
+                  <span class="pa-sk" />
+                  <span class="pa-soon-t" aria-hidden="true">
+                    Screenshots coming
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          {cover?.mockup && (
+            <figcaption class="cs-hero-cap">Mock-up, with invented cards and prices.</figcaption>
+          )}
+        </figure>
         <div class="cs-intro">
           <p class="cs-back">
             <a href="/#projects">
@@ -106,35 +168,67 @@ const contents = [
           </ul>
         </section>
 
-        {d.gallery && (
+        {d.gallery && gallery && (
           <section id="gallery" class="cs-sec cs-gallery reveal" aria-labelledby="gallery-h">
             <h2 id="gallery-h" class="cs-h">
               {d.gallery.title}
             </h2>
             <p class="cs-gal-intro">{d.gallery.intro}</p>
-            <ul class="cs-gal">
-              {d.gallery.items.map((g) => (
-                <li class:list={['cs-gal-item', `cs-gal-${g.shape}`]}>
+            <ul
+              class:list={['cs-gal', { 'cs-gal-game': isGame, 'cs-gal-waiting': pending }]}
+              aria-labelledby="gallery-h"
+              tabindex="0"
+            >
+              {gallery.map((g) => (
+                <li class:list={['cs-gal-item', `cs-gal-${g.shape}`, { 'cs-gal-pending': !g.src }]}>
                   <figure>
-                    <Image
-                      src={g.image}
-                      alt={g.alt}
-                      widths={g.shape === 'tall' ? [240, 480] : [720, 1440]}
-                      sizes={
-                        g.shape === 'full'
-                          ? '(min-width: 1000px) 760px, 100vw'
-                          : g.shape === 'wide'
-                            ? '(min-width: 760px) 380px, 100vw'
-                            : '(min-width: 760px) 180px, 45vw'
-                      }
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <figcaption>{g.caption}</figcaption>
+                    {g.src && isGame ? (
+                      <img
+                        src={g.src.src}
+                        width={g.src.width}
+                        height={g.src.height}
+                        alt={g.alt}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : g.src ? (
+                      <Image
+                        src={g.src}
+                        alt={g.alt}
+                        widths={g.shape === 'tall' ? [360, 480] : [720, 1440]}
+                        sizes={
+                          g.shape === 'full'
+                            ? '(min-width: 1000px) 760px, calc(100vw - 2rem)'
+                            : g.shape === 'wide'
+                              ? '(min-width: 760px) 380px, calc(100vw - 2rem)'
+                              : '(min-width: 760px) 180px, calc(50vw - 1.5rem)'
+                        }
+                        quality={70}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div class="cs-gal-soon" aria-hidden="true">
+                        <span class="pa-sk" />
+                        <span class="pa-sk" />
+                        <span class="pa-sk" />
+                        <span class="cs-gal-soon-t">Screenshot coming</span>
+                      </div>
+                    )}
+                    <figcaption>
+                      {!g.src && <span class="visually-hidden">Screenshot coming: </span>}
+                      {g.caption}
+                    </figcaption>
                   </figure>
                 </li>
               ))}
             </ul>
+            {pending && (
+              <p class="cs-gal-note">
+                Screenshots are on their way. This app runs on real accounts and personal data, so
+                they will be taken on demo data.
+              </p>
+            )}
           </section>
         )}
 
@@ -229,14 +323,116 @@ const contents = [
     gap: var(--space-6);
     align-items: center;
   }
-  /* Cover: a flat swatch of the project's accent. On phones a thin band, so the title leads. */
+  /* Hero: the app's own screen in a device frame on a backdrop tinted from its palette (the
+     same composition as the project card). On phones it follows the intro, so the title leads. */
+  .cs-hero {
+    order: 1;
+    margin: 0;
+    min-width: 0;
+  }
   .cs-art {
-    width: 100%;
-    height: var(--space-2);
-    border-radius: var(--radius-1);
-    background: var(--art);
+    position: relative;
+    container-type: inline-size;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-3);
+    background: color-mix(in srgb, var(--bd) 24%, var(--ln-bg-2));
     outline: 1px solid color-mix(in srgb, var(--ln-ink) 10%, transparent);
     outline-offset: -1px;
+  }
+  .cs-hero-cap {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ln-ink-3);
+  }
+  .pa-dev {
+    position: absolute;
+    /* device material: the same near-black in both schemes, like real hardware */
+    background: #18181b;
+    box-shadow: var(--shadow-2);
+  }
+  .pa-dev :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+  }
+  /* Phone: rises from the bottom edge. Concentric corners: 12 = 8 + 4. */
+  .pa-phone .pa-dev {
+    left: 50%;
+    top: 10%;
+    width: 38%;
+    aspect-ratio: 390 / 844;
+    translate: -50% 0;
+    padding: var(--space-1);
+    border-radius: var(--radius-3);
+  }
+  .pa-phone .pa-dev :global(img),
+  .pa-phone .pa-soon {
+    border-radius: var(--radius-2);
+  }
+  /* Browser: a window that runs off the right and bottom edges. */
+  .pa-browser .pa-dev {
+    left: 7%;
+    top: 11%;
+    width: 104%;
+    aspect-ratio: 16 / 10;
+    padding-top: 4cqi;
+    border-radius: var(--radius-2) 0 0 0;
+  }
+  .pa-browser .pa-dev::before {
+    content: '';
+    position: absolute;
+    top: 1.4cqi;
+    left: 2cqi;
+    width: 1.2cqi;
+    height: 1.2cqi;
+    border-radius: 50%;
+    background: #52525b;
+    box-shadow:
+      2cqi 0 #52525b,
+      4cqi 0 #52525b;
+  }
+  /* Game: a screen in a thick bezel, centred. Concentric corners: 12 = 4 + 8. */
+  .pa-game .pa-dev {
+    left: 50%;
+    top: 50%;
+    width: 84%;
+    aspect-ratio: 16 / 9;
+    translate: -50% -50%;
+    padding: var(--space-2);
+    border-radius: var(--radius-3);
+  }
+  .pa-game .pa-dev :global(img) {
+    border-radius: var(--radius-1);
+    image-rendering: pixelated;
+  }
+  /* Screenshots coming: a quiet sketch of a screen, not a broken image. */
+  .pa-soon {
+    display: grid;
+    align-content: start;
+    gap: 4cqi;
+    height: 100%;
+    padding: 5cqi 4cqi;
+    background: color-mix(in srgb, var(--bd) 10%, var(--ln-bg-3));
+  }
+  .pa-sk {
+    height: 3cqi;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--bd) 28%, var(--ln-bg-3));
+  }
+  .pa-sk:first-child {
+    width: 60%;
+    height: 5cqi;
+    background: color-mix(in srgb, var(--bd) 60%, var(--ln-bg-3));
+  }
+  .pa-soon-t {
+    margin-top: 4cqi;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    color: var(--ln-ink-2);
   }
 
   .cs-intro {
@@ -546,13 +742,16 @@ const contents = [
   }
   @media (min-width: 1000px) {
     .cs-head-grid {
-      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: var(--space-8);
     }
-    .cs-art {
-      width: min(100%, 360px);
-      height: auto;
-      aspect-ratio: 4 / 3;
+    .cs-intro {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .cs-hero {
+      grid-column: 2;
+      grid-row: 1;
     }
     .cs-body {
       grid-template-columns: 12rem minmax(0, 1fr);
@@ -569,6 +768,36 @@ const contents = [
     }
   }
 
+  /* The gallery renders only as it nears the viewport, and on phones it is a swipeable row
+     (one screen and the edge of the next): together that keeps its lazy screenshots from
+     competing with the hero for the first paint (LCP budget). */
+  .cs-gallery {
+    min-width: 0;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+  }
+  @media (max-width: 759px) {
+    .cs-gal.cs-gal {
+      display: flex;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      padding-bottom: var(--space-2);
+      scrollbar-width: thin;
+      scrollbar-color: var(--ln-rule) transparent;
+    }
+    .cs-gal .cs-gal-item {
+      flex: 0 0 85%;
+      scroll-snap-align: start;
+    }
+    .cs-gal .cs-gal-tall {
+      flex-basis: 62%;
+    }
+  }
+  .cs-gal:focus-visible {
+    outline: var(--focus-width) solid var(--ln-accent);
+    outline-offset: var(--focus-offset);
+  }
   /* Process gallery */
   .cs-gal-intro {
     max-width: var(--measure);
@@ -589,13 +818,59 @@ const contents = [
   .cs-gal figure {
     margin: 0;
   }
-  .cs-gal :global(img) {
+  .cs-gal :global(img),
+  .cs-gal-soon {
     display: block;
     width: 100%;
     height: auto;
-    border: var(--ln-hairline);
     border-radius: var(--radius-2);
     background: var(--ln-bg-3);
+    outline: 1px solid color-mix(in srgb, var(--ln-ink) 10%, transparent);
+    outline-offset: -1px;
+  }
+  .cs-gal-game :global(img) {
+    image-rendering: pixelated;
+  }
+  /* A slot waiting for the owner's screenshot: a small sketch of the screen it will hold,
+     quietly labelled, so the gallery reads as "coming", not as broken images. */
+
+  .cs-gal.cs-gal-waiting .cs-gal-item {
+    grid-column: auto;
+  }
+  .cs-gal-pending figure {
+    container-type: inline-size;
+  }
+  .cs-gal-soon {
+    display: grid;
+    align-content: start;
+    gap: 6cqi;
+    padding: 10cqi 8cqi;
+    aspect-ratio: 16 / 10;
+    background: color-mix(in srgb, var(--bd) 10%, var(--ln-bg-3));
+    outline-style: dashed;
+    outline-color: color-mix(in srgb, var(--ln-ink) 25%, transparent);
+  }
+  .cs-gal-soon .pa-sk {
+    height: 5cqi;
+  }
+  .cs-gal-soon .pa-sk:first-child {
+    height: 8cqi;
+  }
+  .cs-gal-soon-t {
+    margin-top: 6cqi;
+    font-size: var(--text-2xs);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    color: var(--ln-ink-2);
+  }
+  .cs-gal-tall .cs-gal-soon {
+    aspect-ratio: 9 / 16;
+  }
+  .cs-gal-note {
+    max-width: var(--measure);
+    margin-top: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--ln-ink-3);
   }
   .cs-gal figcaption {
     margin-top: var(--space-2);
@@ -609,6 +884,9 @@ const contents = [
     .cs-gal-wide {
       grid-column: span 2;
     }
+  }
+  .cs-gal.cs-gal-waiting {
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 10rem));
   }
 
   /* Billable mini-room: its Goal / Controls headings take the site's label style. */

@@ -64,6 +64,11 @@ engineering:
       title: 'History kept on purpose',
       body: 'The four directions are preserved under a git tag, every work order lands as its own merge commit, and a dated decision log records each choice I made along the way.',
     }
+cover:
+  frame: browser
+  backdrop: '#1a1411'
+  image: ../../assets/projects/portfolio/01-cover.webp
+  alt: 'The home page of this site in light mode: the album-cover hero, with the record sliding out from behind it.'
 gallery:
   title: The four directions
   intro: What the factory built for the first decision, captured as I reviewed them. Same content, same sections, four very different sites.

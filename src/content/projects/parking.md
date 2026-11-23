@@ -42,6 +42,33 @@ engineering:
       title: 'Retries that know why',
       body: "Each response is classified as success, verification error or other error, so retries are targeted and the portal's own message comes back when it matters.",
     }
+cover:
+  frame: phone
+  backdrop: '#4f46e5'
+  slot: '01-visitors'
+  alt: 'Parking Registrar on a phone: saved visitors.'
+gallery:
+  title: 'Screens'
+  intro: "The app's main screens."
+  items:
+    - {
+        slot: '01-visitors',
+        alt: 'Saved visitors, each with a one-tap Register button and a monthly usage meter.',
+        caption: 'Saved visitors: one tap to register.',
+        shape: tall,
+      }
+    - {
+        slot: '02-confirmation',
+        alt: 'A registration confirmed, with the confirmation code.',
+        caption: 'Registered, with the code captured.',
+        shape: tall,
+      }
+    - {
+        slot: '03-history',
+        alt: 'Registration history, grouped by month.',
+        caption: 'History, grouped by month.',
+        shape: tall,
+      }
 demo: parking
 accent: '#4f46e5'
 order: 3
