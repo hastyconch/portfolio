@@ -263,7 +263,10 @@ const thumbs = cur
     e.preventDefault();
     location.replace(a.hash);
   });
+</script>
 
+<script>
+  // Two scripts, so each stays small enough to be inlined in the page (no extra request).
   // Wayfinding (WO-019). One observer for the section, the Work pane and a case study's
   // "On this page" list: the current target is the last one whose top has crossed a line a
   // quarter of the way down the view, under the header.
