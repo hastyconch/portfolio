@@ -63,6 +63,32 @@ test('alignments', async ({ page, isMobile }) => {
   expect(await pager.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('1px');
 });
 
+// WO-029: the case-study gallery skips rendering until it nears the view (content-visibility),
+// which drops its heading from Chromium's accessibility tree. The region keeps its name anyway.
+test('case-study gallery is named', async ({ page, context, isMobile }) => {
+  test.skip(!isMobile, 'checked at 375, where the gallery starts far below the fold');
+  const cdp = await context.newCDPSession(page);
+  for (const slug of ['travel-planner', 'portfolio', 'billable']) {
+    await page.goto(`/projects/${slug}/`);
+    const title = (await page.locator('#gallery-h').textContent())!.trim();
+    const below = await page
+      .locator('#gallery')
+      .evaluate((s) => s.getBoundingClientRect().top > innerHeight * 2);
+    expect(below, `${slug}: the gallery is off-screen`).toBe(true);
+    await cdp.send('Accessibility.enable');
+    const { nodes } = await cdp.send('Accessibility.getFullAXTree');
+    const regions = nodes
+      .filter((n) => !n.ignored && n.role?.value === 'region')
+      .map((n) => String(n.name?.value ?? ''));
+    expect(regions, `${slug}: named regions`).toContain(title);
+    expect(
+      regions.filter((n) => !n.trim()),
+      `${slug}: unnamed regions`,
+    ).toEqual([]);
+    await cdp.send('Accessibility.disable');
+  }
+});
+
 test('404 way out', async ({ page }) => {
   await page.goto('/this-page-does-not-exist/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page not found');

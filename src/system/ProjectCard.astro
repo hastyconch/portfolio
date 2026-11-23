@@ -75,7 +75,8 @@ const frame = cover?.frame ?? 'browser';
     <p class="pc-k">
       <span class="pc-cat">{d.category}</span>
       <span class="ln-num">{d.year}</span>
-      {d.featured && <span class="pc-feat">Featured</span>}
+      {/* Featured only over real art, never over the "Screenshots coming" frame (WO-029). */}
+      {d.featured && shot && <span class="pc-feat">Featured</span>}
       {cover?.mockup && <span class="pc-feat">Mock-up</span>}
       {d.status === 'placeholder' && <Placeholder />}
     </p>

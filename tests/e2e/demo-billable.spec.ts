@@ -177,6 +177,35 @@ test('billable layout band under the game', async ({ page, isMobile }) => {
   expect(section.y + section.height - (band.y + band.height)).toBeLessThanOrEqual(96);
 });
 
+// WO-029: on a phone, a tap on Play that lands before the island has hydrated still starts the
+// game. The island's scripts are held back a moment (a slow network) under 4x CPU throttling, so
+// the tap reliably lands on the server-rendered button, which has no handler of its own.
+test('first tap starts the game', async ({ page, context, isMobile }) => {
+  test.skip(!isMobile, 'a phone tap');
+  test.setTimeout(60_000);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await page.route(/\/_astro\/.*\.js$/, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+
+  await page.goto(CASE_STUDY, { waitUntil: 'domcontentloaded' });
+  const play = page.locator('#play .bm-btn-play');
+  await play.scrollIntoViewIfNeeded();
+  await expect(play).toBeVisible();
+  const early = await page.evaluate(() =>
+    document.querySelector('#play astro-island')!.hasAttribute('ssr'),
+  );
+  expect(early, 'the tap lands before hydration').toBe(true);
+  await play.tap();
+
+  await expect(page.locator('#play canvas')).toHaveCount(1, { timeout: 20_000 });
+  await expect(page.locator('.bm')).not.toHaveAttribute('data-status', 'poster');
+  await expect(page.locator('.bm[data-status="playing"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#play astro-island[data-pending]')).toHaveCount(0);
+});
+
 // WO-024: the case study says "playable" up front: a "Play it" link in the hero goes to #play.
 test('billable play it link', async ({ page, isMobile }) => {
   await page.goto(CASE_STUDY);

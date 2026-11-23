@@ -126,7 +126,15 @@ const { projects } = Astro.props;
     padding: 0 var(--ln-gutter);
     max-width: var(--ln-max);
     list-style: none;
-    border-top: var(--ln-hairline);
+  }
+  /* The rule under the lead sits inside the gutter, like every other rule (WO-029): drawn in the
+     list's content box rather than as its border, which would run across the padding too. */
+  @media (max-width: 899px) {
+    .rail::before {
+      content: '';
+      display: block;
+      border-top: var(--ln-hairline);
+    }
   }
 
   @media (min-width: 900px) {

@@ -18,4 +18,26 @@ if (!project) throw new Error('No project with demo: billable');
   next={projects[index + 1]}
 >
   <BillableMini slot="play" client:visible />
+  {/* WO-029: a tap on Play that lands before the island has hydrated (a phone on a slow network)
+      is kept, not lost. The server-rendered button has no handler yet, so this marks the island
+      as pending; BillableMini starts the game when it mounts, and until then the button stays
+      pressed. Once hydrated, the island loses its ssr attribute and this does nothing. */}
+  <script is:inline slot="play">
+    document.addEventListener(
+      'click',
+      (e) => {
+        const i = e.target.closest?.('.bm-btn-play')?.closest('astro-island[ssr]');
+        if (i) i.dataset.pending = '';
+      },
+      true,
+    );
+  </script>
 </CaseStudyLayout>
+
+<style is:global>
+  astro-island[data-pending] .bm-btn-play {
+    translate: 0 4px;
+    box-shadow: 0 2px 0 var(--bm-ink);
+    cursor: progress;
+  }
+</style>
