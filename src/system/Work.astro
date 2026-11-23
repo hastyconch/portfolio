@@ -2,11 +2,14 @@
 // Work: engagements with a demo get the full layout (story, what I did, the live demo inline
 // beside it, after the summary on phones). The rest follow as a compact list, each summary in
 // a disclosure. Sector and role sit inline above each title.
-// WO-015: on laptops each demo engagement is one pane, one viewport tall below the nav, and the
-// page settles on the next one (proximity snapping, set on the root in liner.css). Skills are
-// badges: a deliberate, non-interactive stamp, not a quiet list.
+// WO-015: on laptops each demo engagement is one pane, one viewport tall below the nav (WO-023
+// removed the page snap; the header's stepper moves pane to pane). Skills are badges: a
+// deliberate, non-interactive stamp, not a quiet list.
 // WO-019: the header's stepper and jump list move between panes and put focus on the pane's
 // heading (tabindex -1), so keyboard users land where they went.
+// WO-024: on phones (under 760px, scripting on) only the first demo shows inline. The others
+// wait behind a "Try the demo" button and hydrate when it reveals them (client:visible never
+// fires while they are display: none). Without scripting they all show, as before.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -28,6 +31,13 @@ const LIVE = new Set(['airline', 'grocer', 'pipeline', 'scheduler']);
 const isWide = (frame: string) => frame === 'desktop' || frame === 'diagram';
 const caption = 'Playable. Invented brand, mock data.';
 const featured = work.filter((w) => w.data.demo !== 'none');
+// The "Try the demo" button's name and one line, per demo.
+const TRY: Record<string, { name: string; line: string }> = {
+  airline: { name: 'Airline loyalty app', line: 'Track tier progress, book a reward.' },
+  grocer: { name: 'Grocer loyalty app', line: 'Load offers, build a list, earn points.' },
+  scheduler: { name: 'Nurse scheduler', line: 'Fill an open shift within the rules.' },
+  pipeline: { name: 'AI program pipeline', line: 'Transcript to exec update, step by step.' },
+};
 const others = work.filter((w) => w.data.demo === 'none');
 ---
 
@@ -36,14 +46,15 @@ const others = work.filter((w) => w.data.demo === 'none');
     <SideHead title="Work" id="work-h" lead={lead} layout="aside" />
 
     <ol class="wk-list">
-      {featured.map((w) => {
+      {featured.map((w, i) => {
         const d = w.data;
         const hid = `work-${w.id}`;
         const live = LIVE.has(d.demo);
         const wide = live && isWide(d.demoFrame);
+        const tryIt = live && i > 0 ? TRY[d.demo] : undefined;
         return (
           <li class:list={['wk', live && 'wk-live', wide && 'wk-wide']}>
-            <article aria-labelledby={hid}>
+            <article aria-labelledby={hid} class:list={[tryIt && 'wk-collapse']}>
               <div class="wk-head">
                 <p class="wk-meta">
                   <span class="label">{d.sector}</span>
@@ -60,7 +71,20 @@ const others = work.filter((w) => w.data.demo === 'none');
                 <p class="wk-summary">{d.summary}</p>
               </div>
 
-              <div class="wk-demo">
+              {tryIt && (
+                <button type="button" class="wk-try" data-wk-try aria-controls={`${hid}-demo`}>
+                  <span class="wk-try-k label">Try the demo</span>
+                  <span class="wk-try-n">{tryIt.name}</span>
+                  <span class="wk-try-d">{tryIt.line}</span>
+                </button>
+              )}
+              <div
+                class="wk-demo"
+                id={tryIt ? `${hid}-demo` : undefined}
+                role={tryIt ? 'region' : undefined}
+                aria-label={tryIt ? `${tryIt.name} demo` : undefined}
+                tabindex={tryIt ? -1 : undefined}
+              >
                 {d.demo === 'airline' && (
                   <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
                     <AirlineDemo client:visible />
@@ -167,6 +191,17 @@ const others = work.filter((w) => w.data.demo === 'none');
   </div>
 </section>
 
+<script>
+  // Reveal a collapsed demo (phones): it becomes visible, so client:visible hydrates it now,
+  // and focus moves into it.
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-wk-try]')) {
+    btn.addEventListener('click', () => {
+      btn.closest('article')?.setAttribute('data-open', '');
+      document.getElementById(btn.getAttribute('aria-controls') ?? '')?.focus();
+    });
+  }
+</script>
+
 <style>
   .wk-list {
     margin: 0;
@@ -176,11 +211,9 @@ const others = work.filter((w) => w.data.demo === 'none');
   }
   .wk {
     border-bottom: var(--ln-hairline);
-    /* A snap point, live only where the root snaps (760px and up, motion allowed). The root's
-       scroll padding already clears the nav plus a little air; this pulls the pane back up so
-       its top meets the nav exactly. */
-    scroll-snap-align: start;
-    scroll-margin-top: calc(var(--ln-header) - var(--ln-scroll-pad, var(--ln-header)));
+    /* A jump or a step to a pane lands its top flush under the header, like a section band
+       (liner.css). There is no page-level snap (WO-023). */
+    scroll-margin-top: var(--ln-flush);
   }
   .wk article {
     display: grid;
@@ -274,6 +307,68 @@ const others = work.filter((w) => w.data.demo === 'none');
   }
   .wk:not(.wk-live) .wk-demo :global(.df) {
     justify-items: start;
+  }
+  /* Focus lands on a revealed demo; keyboard users see where. */
+  .wk-demo:focus-visible {
+    outline-offset: var(--space-2);
+  }
+
+  /* Try the demo (phones): a full-width plate in the demo's place, until it is pressed. */
+  .wk-try {
+    display: none;
+    grid-area: demo;
+    gap: var(--space-1);
+    justify-items: start;
+    width: 100%;
+    min-height: 44px;
+    margin-top: var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--ln-rule);
+    border-left: 3px solid var(--ln-accent);
+    border-radius: var(--radius-2);
+    background: var(--ln-bg-2);
+    color: var(--ln-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      border-color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
+  }
+  .wk-try:hover,
+  .wk-try:focus-visible {
+    border-color: var(--ln-ink);
+    border-left-color: var(--ln-accent);
+    background: var(--ln-hl-hover);
+  }
+  .wk-try:active {
+    scale: var(--press-scale);
+  }
+  body.ln .wk-try-k {
+    color: var(--ln-accent);
+  }
+  .wk-try-k::after {
+    content: ' ↓' / '';
+  }
+  .wk-try-n {
+    font-family: var(--ln-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+  }
+  .wk-try-d {
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--ln-ink-2);
+  }
+  @media (max-width: 759.98px) and (scripting: enabled) {
+    .wk-collapse:not([data-open]) .wk-try {
+      display: grid;
+    }
+    .wk-collapse:not([data-open]) .wk-demo {
+      display: none;
+    }
   }
 
   /* Skills: badges, a row on phones and a stack in the side column on wider screens. A stamp:

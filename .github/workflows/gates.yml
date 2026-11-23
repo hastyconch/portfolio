@@ -49,6 +49,8 @@ jobs:
         run: npm run -s craft
       - name: internal links
         run: npm run -s links
+      - name: resume pdf
+        run: npm run -s resume:check
       - name: external links
         uses: lycheeverse/lychee-action@v2
         with:

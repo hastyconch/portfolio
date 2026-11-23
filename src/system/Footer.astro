@@ -1,5 +1,7 @@
 ---
 // Footer: contact links and the fine print.
+// WO-024: a link that isn't real yet (not http(s) or mailto) is plain text, marked "to come".
+// The arrow marks external http(s) links only; mailto gets none.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -8,6 +10,7 @@ interface Props {
 }
 const { profile } = Astro.props;
 const external = (href: string) => /^https?:/.test(href);
+const real = (href: string) => external(href) || href.startsWith('mailto:');
 ---
 
 <footer id="contact" class="ft ln-dark" aria-labelledby="contact-h">
@@ -21,12 +24,21 @@ const external = (href: string) => /^https?:/.test(href);
     <ul class="ft-links">
       {profile.links.map((l) => (
         <li>
-          <a href={l.href} rel={external(l.href) ? 'noopener' : undefined}>
-            <span class="ft-label">{l.label}</span>
-            <span class="ft-arrow" aria-hidden="true">
-              ↗
+          {real(l.href) ? (
+            <a class="ft-row" href={l.href} rel={external(l.href) ? 'noopener' : undefined}>
+              <span class="ft-label">{l.label}</span>
+              {external(l.href) && (
+                <span class="ft-arrow" aria-hidden="true">
+                  ↗
+                </span>
+              )}
+            </a>
+          ) : (
+            <span class="ft-row ft-soon">
+              <span class="ft-label">{l.label}</span>
+              <span class="ft-soon-k">To come</span>
             </span>
-          </a>
+          )}
         </li>
       ))}
     </ul>
@@ -46,7 +58,6 @@ const external = (href: string) => /^https?:/.test(href);
   .ft {
     padding-block: var(--space-8) var(--space-6);
     border-top: var(--ln-hairline);
-    scroll-margin-top: var(--ln-header);
   }
   .ft-grid {
     display: grid;
@@ -69,7 +80,7 @@ const external = (href: string) => /^https?:/.test(href);
     list-style: none;
     border-top: var(--ln-hairline);
   }
-  .ft-links a {
+  .ft-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -77,8 +88,18 @@ const external = (href: string) => /^https?:/.test(href);
     min-height: 60px;
     padding-inline: var(--space-1);
     border-bottom: var(--ln-hairline);
+  }
+  .ft-links a {
     text-decoration: none;
     transition: background-color var(--dur-quick) var(--ease-out);
+  }
+  /* Not a link yet: the label in a quieter ink, with a note where the arrow would be. */
+  .ft-soon .ft-label {
+    color: var(--ln-ink-2);
+  }
+  .ft-soon-k {
+    font-size: var(--text-xs);
+    color: var(--ln-ink-3);
   }
   .ft-label {
     font-family: var(--ln-display);

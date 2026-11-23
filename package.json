@@ -16,6 +16,8 @@
     "craft": "node factory/stations/craftaudit.mjs --ci && node factory/stations/craftaudit.mjs --config .craftrc.demos.json --ci",
     "speclint": "node factory/stations/speclint.mjs",
     "links": "node factory/stations/linkcheck.mjs",
+    "resume:pdf": "astro build --silent && node factory/stations/resume-pdf.mjs",
+    "resume:check": "node factory/stations/resume-pdf.mjs --check",
     "e2e": "playwright test",
     "lhci": "lhci autorun",
     "gates": "bash factory/stations/gates.sh"

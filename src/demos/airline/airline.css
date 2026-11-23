@@ -105,6 +105,8 @@
 /* Home */
 .sky-home {
   display: grid;
+  /* one column the panel's width, so the cards shrink with a narrow phone (WO-024) */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--dk-3);
   padding: var(--dk-1) var(--dk-4) var(--dk-4);
   background: linear-gradient(var(--sky-plum) 0 7.5rem, transparent 7.5rem);
@@ -146,6 +148,7 @@
   position: relative;
   z-index: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--dk-2);
@@ -177,6 +180,7 @@
 }
 .sky-mcard-n {
   font-size: var(--dk-fs-4xl);
+  overflow-wrap: anywhere;
   font-weight: 800;
   line-height: var(--dk-lh-tight);
   letter-spacing: var(--dk-track-tight);
@@ -234,6 +238,7 @@
 }
 .sky-meter-head {
   display: flex;
+  flex-wrap: wrap;
   white-space: nowrap;
   align-items: baseline;
   justify-content: space-between;
@@ -803,7 +808,7 @@
 /* Tab bar */
 .sky-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--sky-line);
   background: var(--sky-card);
 }

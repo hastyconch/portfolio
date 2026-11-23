@@ -32,6 +32,8 @@ const frame = cover?.frame ?? 'browser';
 const isGame = frame === 'game';
 const gallery = d.gallery?.items.map((g) => ({ ...g, src: g.image ?? fromSlot(g.slot) }));
 const pending = gallery?.some((g) => !g.src);
+// WO-024: a playable case study says so in its hero, so phones see it before scrolling.
+const playable = d.demo === 'billable' && Astro.slots.has('play');
 const contents = [
   ...(d.demo === 'billable' ? [{ id: 'play', label: 'Play a room' }] : []),
   { id: 'problem', label: 'Problem' },
@@ -120,6 +122,13 @@ const contents = [
               <dd>{d.platforms.join(' · ')}</dd>
             </div>
           </dl>
+          {playable && (
+            <p class="cs-playit">
+              <a href="#play">
+                Play it <span aria-hidden="true">↓</span>
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </header>
@@ -506,6 +515,29 @@ const contents = [
   }
   .cs-cap {
     text-transform: capitalize;
+  }
+  .cs-playit a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-2);
+    background: var(--ln-accent);
+    color: var(--ln-accent-ink);
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      scale var(--dur-quick) var(--ease-out);
+  }
+  .cs-playit a:hover,
+  .cs-playit a:focus-visible {
+    background: var(--ln-ink);
+    color: var(--ln-bg);
+  }
+  .cs-playit a:active {
+    scale: var(--press-scale);
   }
 
   /* Body */

@@ -111,3 +111,19 @@ test('billable layout band under the game', async ({ page, isMobile }) => {
   // The section ends at the band.
   expect(section.y + section.height - (band.y + band.height)).toBeLessThanOrEqual(96);
 });
+
+// WO-024: the case study says "playable" up front: a "Play it" link in the hero goes to #play.
+test('billable play it link', async ({ page, isMobile }) => {
+  await page.goto(CASE_STUDY);
+  const link = page.locator('.cs-head').getByRole('link', { name: /^Play it/ });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', '#play');
+  if (isMobile) {
+    const box = (await link.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.y + box.height, 'Play it is in the first screen').toBeLessThanOrEqual(812);
+  }
+  await link.click();
+  await expect(page).toHaveURL(/#play$/);
+  await expect(page.locator('#play-h')).toBeInViewport();
+});

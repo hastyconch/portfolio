@@ -1,8 +1,10 @@
 ---
-// Music: the one section where the record theme lives. It opens with the music story (from
-// src/content/music.json), then the songs as a tablist of sleeves; each song panel has art,
-// credits, a call-out to the song's page (full lyrics, notes on the lines and story; no lyric lines
-// here) and click-to-load players. SongArt and Players are shared with the song pages.
+// Music: the one section where the record theme lives. It opens with a title and the music story
+// (from src/content/music.json), then a stage: the selected song's panel and the songs as a
+// tablist (a tracklist beside the panel on laptops, a strip of covers above it on phones). Each
+// panel has the sleeve, one line of credits and release, a link to the song's page (full lyrics,
+// notes on the lines and story; no lyric lines here) and click-to-load players. SongArt and
+// Players are shared with the song pages. The selected song is kept in the URL (#song-<id>).
 import type { Music, Song } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 import SongArt from './SongArt.astro';
@@ -34,7 +36,7 @@ const [lead, ...story] = music.story.map(say);
 >
   <div class="ln-wrap">
     <header class="mu-intro">
-      <h2 id="music-h" class="mu-h2 label">
+      <h2 id="music-h" class="mu-h2">
         Music
       </h2>
       <div class="mu-story" data-story>
@@ -60,110 +62,94 @@ const [lead, ...story] = music.story.map(say);
       </div>
     </header>
 
-    <div class="mu-tabs" role="tablist" aria-label="Songs">
-      {songs.map((s, i) => (
-        <button
-          type="button"
-          role="tab"
-          class="mu-tab"
-          id={`mu-tab-${s.id}`}
-          aria-controls={`mu-panel-${s.id}`}
-          aria-selected={i === 0 ? 'true' : 'false'}
-          tabindex={i === 0 ? 0 : -1}
-          data-c1={s.data.artColors[0]}
-          style={`--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`}
-        >
-          <span class:list={['mu-tab-art', s.data.art && 'has-art']} aria-hidden="true">
-            {s.data.art && (
-              <Image
-                class="mu-tab-img"
-                src={s.data.art}
-                alt=""
-                widths={[96, 192]}
-                sizes="96px"
-                loading="lazy"
-                decoding="async"
-              />
-            )}
-            <span class="ln-num">{pad(i + 1)}</span>
-          </span>
-          <span class="mu-tab-text">
+    <div class="mu-stage">
+      <div class="mu-tabs" role="tablist" aria-label="Songs" data-tabs>
+        {songs.map((s, i) => (
+          <button
+            type="button"
+            role="tab"
+            class="mu-tab"
+            id={`mu-tab-${s.id}`}
+            aria-controls={`mu-panel-${s.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            data-song={s.id}
+            data-c1={s.data.artColors[0]}
+            style={`--c1: ${s.data.artColors[0]}; --c2: ${s.data.artColors[1]}`}
+          >
+            <span class="mu-tab-n ln-num" aria-hidden="true">
+              {pad(i + 1)}
+            </span>
+            <span class:list={['mu-tab-art', s.data.art && 'has-art']} aria-hidden="true">
+              {s.data.art && (
+                <Image
+                  class="mu-tab-img"
+                  src={s.data.art}
+                  alt=""
+                  widths={[80, 160]}
+                  sizes="(min-width: 900px) 40px, 80px"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </span>
             <span class="mu-tab-t">{s.data.title}</span>
             <span class="mu-tab-y ln-num">{s.data.year}</span>
-          </span>
-        </button>
-      ))}
-    </div>
+          </button>
+        ))}
+      </div>
 
-    {songs.map((s, i) => {
-      const d = s.data;
-      const notes = d.lyrics.filter((l) => l.note).length;
-      // Promise the stories only once the song has notes on its lines (art. 7).
-      const cta =
-        notes > 0
-          ? 'Read the lyrics and the stories behind the lines'
-          : d.lyrics.length > 0
-            ? 'Read the full lyrics'
-            : 'Read about this song';
-      return (
-        <div
-          class="mu-panel"
-          role="tabpanel"
-          id={`mu-panel-${s.id}`}
-          aria-labelledby={`mu-tab-${s.id}`}
-          hidden={i !== 0}
-          style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
-        >
-          <div class="mu-head">
-            <SongArt song={s} index={i} />
-            <div class="mu-info">
-              <p class="mu-k">
-                <span class="label">
-                  Track {i + 1} · {d.year}
-                </span>
-                {d.status === 'placeholder' && <Placeholder />}
-              </p>
-              <h3 class="mu-title">{d.title}</h3>
-              <p class="mu-credits">{say(d.credits)}</p>
-              {d.release && <p class="mu-release">{d.release}</p>}
-              <div class="mu-about">
-                <h4 class="label">About this song</h4>
-                <p>{say(d.meaning)}</p>
-              </div>
-              <div class="mu-call">
-                <span class="mu-call-disc ln-vinyl" aria-hidden="true" />
-                <div class="mu-call-body">
-                  <p class="mu-call-k label">Liner notes</p>
+      {songs.map((s, i) => {
+        const d = s.data;
+        const notes = d.lyrics.filter((l) => l.note).length;
+        // Promise the stories only once the song has notes on its lines (art. 7).
+        const cta =
+          notes > 0
+            ? 'Read the lyrics and the stories behind the lines'
+            : d.lyrics.length > 0
+              ? 'Read the full lyrics'
+              : 'Read about this song';
+        const release = [say(d.credits), d.release].filter(Boolean).join(' · ');
+        return (
+          <div
+            class="mu-panel"
+            role="tabpanel"
+            id={`mu-panel-${s.id}`}
+            aria-labelledby={`mu-tab-${s.id}`}
+            hidden={i !== 0}
+            style={`--c1: ${d.artColors[0]}; --c2: ${d.artColors[1]}`}
+          >
+            <div class="mu-head">
+              <SongArt song={s} index={i} />
+              <div class="mu-info">
+                <p class="mu-k">
+                  <span class="label">
+                    Track {i + 1} · {d.year}
+                  </span>
+                  {d.status === 'placeholder' && <Placeholder />}
+                </p>
+                <h3 class="mu-title">{d.title}</h3>
+                <p class="mu-release">{release}</p>
+                <div class="mu-about">
+                  <h4 class="label">About this song</h4>
+                  <p>{say(d.meaning)}</p>
+                </div>
+                <p class="mu-call">
                   <a class="mu-call-a" href={`/music/${s.id}/`} data-song-link>
                     {cta}
                     <span class="visually-hidden">: {d.title}</span>
                   </a>
-                  <p class="mu-call-m">
-                    {d.title}
-                    {d.lyrics.length > 0 && (
-                      <>
-                        {' '}
-                        · <span class="ln-num">{d.lyrics.length}</span> lines
-                      </>
-                    )}
-                    {notes > 0 && (
-                      <>
-                        {' '}
-                        · <span class="ln-num">{notes}</span> notes
-                      </>
-                    )}
-                  </p>
-                </div>
-                <span class="mu-call-arrow" aria-hidden="true">
-                  →
-                </span>
+                  <span class="mu-call-arrow" aria-hidden="true">
+                    →
+                  </span>
+                </p>
+                <Players song={s} onlyAvailable />
               </div>
-              <Players song={s} />
             </div>
           </div>
-        </div>
-      );
-    })}
+        );
+      })}
+    </div>
 
     {features.length > 0 && (
       <section class="mu-feat" aria-labelledby="mu-feat-h">
@@ -203,13 +189,18 @@ const [lead, ...story] = music.story.map(say);
 </section>
 
 <script>
-  // Tabs (automatic activation, roving tabindex). Lyrics and the players bring their own scripts.
+  // Tabs (automatic activation, roving tabindex). The selected song lives in the URL as
+  // #song-<id> (replaced, not pushed), so a reload, a shared link, the song page's "All songs"
+  // link and Back from a song page all come back to it. Lyrics and the players bring their own
+  // scripts.
   const root = document.getElementById('music');
-  if (root) {
+  const strip = root?.querySelector<HTMLElement>('[data-tabs]');
+  if (root && strip) {
     const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const motion = matchMedia('(prefers-reduced-motion: no-preference)');
     const panelOf = (t: HTMLButtonElement) =>
       document.getElementById(t.getAttribute('aria-controls') ?? '');
-    const select = (tab: HTMLButtonElement, focus = false) => {
+    const select = (tab: HTMLButtonElement, focus = false, remember = true) => {
       tabs.forEach((t) => {
         const on = t === tab;
         t.setAttribute('aria-selected', String(on));
@@ -223,7 +214,16 @@ const [lead, ...story] = music.story.map(say);
       });
       // The section's tint cross-fades to the song's colour (a registered custom property).
       if (tab.dataset.c1) root.style.setProperty('--mu-tint', tab.dataset.c1);
+      if (remember && tab.dataset.song)
+        history.replaceState(history.state, '', `#song-${tab.dataset.song}`);
       if (focus) tab.focus();
+    };
+    // Phones: the panel sits under the strip; if a tap leaves it mostly below the fold, bring it up
+    // (otherwise the tap seems to do nothing).
+    const reveal = (tab: HTMLButtonElement) => {
+      const panel = panelOf(tab);
+      if (!panel || panel.getBoundingClientRect().top < innerHeight * 0.6) return;
+      panel.scrollIntoView({ block: 'nearest', behavior: motion.matches ? 'smooth' : 'auto' });
     };
     // Start fetching a song's cover on hover or focus, so it's usually ready by the click.
     const warm = (t: HTMLButtonElement) => {
@@ -231,7 +231,10 @@ const [lead, ...story] = music.story.map(say);
       if (img) img.loading = 'eager';
     };
     tabs.forEach((t, i) => {
-      t.addEventListener('click', () => select(t));
+      t.addEventListener('click', () => {
+        select(t);
+        reveal(t);
+      });
       t.addEventListener('pointerenter', () => warm(t));
       t.addEventListener('focus', () => warm(t));
       t.addEventListener('keydown', (e) => {
@@ -246,6 +249,25 @@ const [lead, ...story] = music.story.map(say);
         select(tabs[next], true);
       });
     });
+
+    // Arriving on /#song-<id>: select that song and land on the section. On Back or Forward the
+    // browser restores the scroll position itself.
+    const fromHash = () => {
+      const id = /^#song-(.+)$/.exec(location.hash)?.[1];
+      const tab = id && tabs.find((t) => t.dataset.song === decodeURIComponent(id));
+      if (!tab) return;
+      if (tab.getAttribute('aria-selected') !== 'true') select(tab, false, false);
+      // Keep the selected cover in view in the phone strip (without moving the page).
+      strip.scrollLeft = Math.max(0, tab.offsetLeft - tab.offsetWidth / 2);
+      return tab;
+    };
+    const nav = performance.getEntriesByType('navigation')[0] as
+      PerformanceNavigationTiming | undefined;
+    if (fromHash() && nav?.type !== 'back_forward') root.scrollIntoView();
+    // Restored from the back/forward cache, or the hash edited by hand.
+    addEventListener('hashchange', () => {
+      if (fromHash()) root.scrollIntoView();
+    });
   }
 </script>
 
@@ -259,25 +281,32 @@ const [lead, ...story] = music.story.map(say);
   .music {
     position: relative;
     overflow-x: clip;
+    /* The title sits close under the header after a jump to #music. */
+    padding-top: var(--space-7);
     background-color: color-mix(in srgb, var(--mu-tint) 12%, var(--ln-bg));
     border-block: var(--ln-hairline);
     transition: --mu-tint var(--dur-slow) var(--ease-out);
   }
 
-  /* Intro: the section opens with the story, not a big title. */
+  /* Intro: the section title (the same as the other sections'), then the story. */
   .mu-intro {
     display: grid;
-    gap: var(--space-4);
-    margin-bottom: var(--space-7);
+    gap: var(--space-3) var(--space-6);
+    margin-bottom: var(--space-6);
+  }
+  body.ln .mu-h2 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
   }
   .mu-story {
     display: grid;
-    gap: var(--space-4);
+    gap: var(--space-3);
     max-width: var(--measure);
   }
   .mu-story-lead {
     font-family: var(--ln-display);
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: 600;
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-title);
@@ -302,47 +331,75 @@ const [lead, ...story] = music.story.map(say);
     min-height: 24px;
   }
 
-  /* Song tabs */
-  .mu-tabs {
+  /* Stage: the tablist directly above the panel (phones), or beside it (laptops). */
+  .mu-stage {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-3);
-    margin-bottom: var(--space-7);
+    gap: var(--space-5);
+    align-items: start;
+  }
+  .mu-panel {
+    container-type: inline-size;
+    min-width: 0;
+    scroll-margin-top: var(--ln-scroll-pad);
+    scroll-margin-bottom: var(--space-4);
+  }
+
+  /* Song tabs. Phones: a strip of covers with titles, scrolled sideways. */
+  .mu-tabs {
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 88px;
+    gap: var(--space-2);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--space-1);
+    /* Room for the focus ring inside the scroller. */
+    padding: var(--space-2);
+    margin-inline: calc(var(--space-2) * -1);
   }
   .mu-tab {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-1);
     align-content: start;
-    padding: var(--space-2);
-    border: var(--ln-hairline);
-    border-radius: var(--radius-3);
+    padding: var(--space-1);
+    border: 0;
+    border-radius: var(--radius-2);
     background: transparent;
-    color: var(--ln-ink);
+    color: var(--ln-ink-2);
     font: inherit;
     text-align: left;
     cursor: pointer;
+    scroll-snap-align: start;
     transition:
       background-color var(--dur-quick) var(--ease-out),
-      border-color var(--dur-quick) var(--ease-out),
-      scale var(--dur-quick) var(--ease-out);
+      color var(--dur-quick) var(--ease-out),
+      box-shadow var(--dur-quick) var(--ease-out);
   }
   .mu-tab:hover,
   .mu-tab:focus-visible {
     background: var(--ln-hl);
+    color: var(--ln-ink);
   }
   .mu-tab:active {
-    scale: var(--press-scale);
+    background: var(--ln-hl-hover);
   }
+  /* Selected: the highlight plus an accent edge (not colour alone). */
   .mu-tab[aria-selected='true'] {
-    border-color: var(--ln-ink-2);
-    background: var(--ln-bg-3);
+    background: var(--ln-hl);
+    color: var(--ln-ink);
     box-shadow: inset 0 -2px 0 var(--ln-accent);
   }
+  .mu-tab-n,
+  .mu-tab-y {
+    display: none;
+  }
   .mu-tab-art {
-    display: flex;
-    align-items: flex-end;
+    position: relative;
+    display: block;
     aspect-ratio: 1;
-    padding: var(--space-1) var(--space-2);
+    overflow: hidden;
     border-radius: var(--radius-1);
     background:
       repeating-linear-gradient(var(--c1) 0 12%, transparent 12% 26%) 0 52% / 100% 22% no-repeat,
@@ -353,24 +410,24 @@ const [lead, ...story] = music.story.map(say);
         var(--c1) 42%,
         color-mix(in oklab, var(--c1) 45%, #000) 100%
       );
-    color: #fff;
-    font-family: var(--ln-display);
-    font-weight: 800;
-    font-size: var(--text-md);
-    line-height: var(--leading-tight);
   }
-  .mu-tab-text {
-    display: grid;
-    min-width: 0;
+  .mu-tab-art :global(.mu-tab-img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   .mu-tab-t {
-    font-weight: 700;
-    font-size: var(--text-sm);
-    line-height: var(--leading-snug);
-  }
-  .mu-tab-y {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: calc(2em * var(--leading-snug));
+    font-weight: 600;
     font-size: var(--text-xs);
-    color: var(--ln-ink-3);
+    line-height: var(--leading-snug);
   }
 
   /* Song head */
@@ -390,12 +447,14 @@ const [lead, ...story] = music.story.map(say);
     align-items: center;
     gap: var(--space-2) var(--space-3);
   }
+  /* One step under the section title, so "Music" leads and the song is the panel's focus. */
   body.ln .mu-title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
     font-weight: 800;
     line-height: var(--leading-tight);
   }
-  .mu-credits {
+  .mu-release {
+    font-size: var(--text-sm);
     color: var(--ln-ink-2);
   }
   .mu-about {
@@ -403,46 +462,24 @@ const [lead, ...story] = music.story.map(say);
     gap: var(--space-1);
     max-width: 52ch;
     margin-top: var(--space-2);
-    padding-left: var(--space-4);
-    border-left: 2px solid var(--ln-rule);
   }
   .mu-about p {
     color: var(--ln-ink-2);
   }
 
-  /* Lyrics call-out: a liner-notes card that sends visitors to the song page. The whole card is
-     the link's target (stretched ::after); the focus ring sits on the card. */
+  /* The way to the song page: one primary link, as wide as the players below it. The whole row
+     is the link's target (stretched ::after); the focus ring sits on the row. */
   .mu-call {
     position: relative;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: var(--space-4);
-    max-width: 34rem;
     margin-top: var(--space-2);
-    padding: var(--space-4);
-    border: var(--ln-hairline);
-    border-radius: var(--radius-3);
-    background: var(--ln-bg-3);
-    transition:
-      background-color var(--dur-quick) var(--ease-out),
-      border-color var(--dur-quick) var(--ease-out);
-  }
-  /* The disc and arrow move (rotate, translate), which paints them above the link's ::after:
-     let clicks through to the link. */
-  .mu-call-disc,
-  .mu-call-arrow {
-    pointer-events: none;
-  }
-  .mu-call-disc {
-    width: 48px;
-    --ln-label: var(--c2);
-    transition: rotate var(--dur-base) var(--ease-out);
-  }
-  .mu-call-body {
-    display: grid;
-    gap: var(--space-1);
-    min-width: 0;
+    padding: var(--space-3) var(--space-1);
+    border-block: var(--ln-hairline);
+    border-radius: var(--radius-1);
+    transition: background-color var(--dur-quick) var(--ease-out);
   }
   .mu-call-a {
     font-family: var(--ln-display);
@@ -463,23 +500,21 @@ const [lead, ...story] = music.story.map(say);
     inset: 0;
     border-radius: inherit;
   }
-  /* The card carries the focus ring (below). */
+  /* The row carries the focus ring (below). */
   body.ln .mu-call-a:focus-visible {
     outline: none;
   }
-  .mu-call-m {
-    font-size: var(--text-sm);
-    color: var(--ln-ink-2);
-  }
+  /* The arrow moves (translate), which paints it above the link's ::after: let clicks through. */
   .mu-call-arrow {
+    pointer-events: none;
     color: var(--ln-accent);
     font-size: var(--text-xl);
     font-weight: 700;
+    line-height: 1;
     transition: translate var(--dur-quick) var(--ease-out);
   }
   .mu-call:hover,
   .mu-call:focus-within {
-    border-color: var(--ln-ink-2);
     background: var(--ln-hl);
   }
   .mu-call:has(:focus-visible) {
@@ -500,10 +535,20 @@ const [lead, ...story] = music.story.map(say);
   .mu-call:active .mu-call-arrow {
     translate: 0 0;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .mu-call:hover .mu-call-disc,
-    .mu-call:focus-within .mu-call-disc {
-      rotate: 30deg;
+
+  /* Phones: a smaller sleeve, so the song's title is close under the strip. */
+  .mu-head :global(.sa) {
+    width: min(100%, 15rem);
+  }
+  /* Sleeve beside the details once the panel has the room. */
+  @container (min-width: 40rem) {
+    .mu-head {
+      grid-template-columns: 17.5rem minmax(0, 1fr);
+      gap: var(--space-7);
+      align-items: start;
+    }
+    .mu-head :global(.sa) {
+      width: 100%;
     }
   }
 
@@ -513,40 +558,63 @@ const [lead, ...story] = music.story.map(say);
       column-gap: clamp(2.5rem, 4vw, 4rem);
       align-items: baseline;
     }
-    .mu-head {
-      grid-template-columns: 360px minmax(0, 1fr);
-      gap: var(--space-8);
-      align-items: start;
+    .music {
+      padding-top: var(--space-8);
     }
+    .mu-story-lead {
+      font-size: var(--text-xl);
+    }
+    /* Laptops: the selected song on the left, the tracklist on the right. */
+    .mu-stage {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      column-gap: var(--space-6);
+    }
+    .mu-tabs {
+      grid-column: 2;
+      grid-row: 1;
+      grid-auto-flow: row;
+      grid-auto-columns: auto;
+      gap: 0;
+      overflow: visible;
+      padding: 0;
+      margin: 0;
+      border-block: var(--ln-hairline);
+    }
+    .mu-panel {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    /* One row per song: number, cover, title, year; hairlines between rows, no cards. */
     .mu-tab {
-      grid-template-columns: 64px minmax(0, 1fr);
+      grid-template-columns: 2ch 40px minmax(0, 1fr) auto;
       align-items: center;
-      gap: var(--space-4);
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      border-radius: 0;
+    }
+    .mu-tab + .mu-tab {
+      border-top: var(--ln-hairline);
+    }
+    .mu-tab[aria-selected='true'] {
+      box-shadow: inset 2px 0 0 var(--ln-accent);
+    }
+    .mu-tab-n,
+    .mu-tab-y {
+      display: block;
+      font-size: var(--text-sm);
+      color: var(--ln-ink-3);
     }
     .mu-tab-t {
+      display: block;
+      min-height: 0;
+      overflow: visible;
       font-size: var(--text-md);
     }
   }
-  .mu-release {
-    font-size: var(--text-sm);
-    color: var(--ln-ink-3);
-  }
-  .mu-tab-art.has-art {
-    position: relative;
-    overflow: hidden;
-  }
-  .mu-tab-art :global(.mu-tab-img) {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .mu-tab-art.has-art .ln-num {
-    position: relative;
-    padding: 0 var(--space-1);
-    border-radius: var(--radius-1);
-    background: rgb(0 0 0 / 0.6);
+  @media (min-width: 1100px) {
+    .mu-stage {
+      column-gap: var(--space-8);
+    }
   }
 
   /* Appears on: songs by other artists that feature me */
@@ -595,6 +663,9 @@ const [lead, ...story] = music.story.map(say);
     margin: var(--space-1) 0 var(--space-3);
     font-size: var(--text-sm);
     color: var(--ln-ink-3);
+  }
+  .mu-feat-text :global(.pl) {
+    max-width: 30rem;
   }
   @media (min-width: 760px) {
     .mu-feat-item {

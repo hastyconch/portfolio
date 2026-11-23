@@ -229,13 +229,18 @@ const thumbs = cur
 </header>
 
 <script>
-  // The menu closes after a jump, and on Escape.
+  // The phone menu closes after a jump, when focus leaves it, and on Escape from anywhere
+  // (focus then returns to its toggle), so it never stays open over the page you tabbed into.
   const menu = document.querySelector<HTMLDetailsElement>('.np-menu');
   menu?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('a')) menu.open = false;
   });
-  menu?.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && menu.open) {
+  menu?.addEventListener('focusout', (e) => {
+    const to = e.relatedTarget as Node | null;
+    if (menu.open && to && !menu.contains(to)) menu.open = false;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu?.open) {
       menu.open = false;
       menu.querySelector('summary')?.focus();
     }
@@ -324,9 +329,17 @@ const thumbs = cur
   let item = -1;
   let pending: number | null = null;
 
+  // An end-of-list step says so with aria-disabled, and the item stays shown while it holds
+  // focus, so focus never falls to the page (WO-023). It hides once focus moves on.
+  const off = (b: HTMLButtonElement) => b.getAttribute('aria-disabled') === 'true';
+  function able(b: HTMLButtonElement, on: boolean) {
+    if (on) b.removeAttribute('aria-disabled');
+    else b.setAttribute('aria-disabled', 'true');
+  }
   function renderItem() {
     if (!itemLi || !itemT || !stops.length) return;
     const show = section === 'work' && item >= 0;
+    if (!show && itemLi.contains(document.activeElement)) return;
     itemLi.hidden = !show;
     mark(
       stops.map((s) => s.a),
@@ -338,14 +351,14 @@ const thumbs = cur
     const p = stops[item - 1];
     const n = stops[item + 1];
     if (prevB) {
-      prevB.disabled = !p;
+      able(prevB, !!p);
       prevB.setAttribute(
         'aria-label',
         p ? `Previous engagement: ${p.label}` : 'Previous engagement',
       );
     }
     if (nextB) {
-      nextB.disabled = !n;
+      able(nextB, !!n);
       const kind = item + 1 < panes ? 'Next engagement' : 'Next';
       nextB.setAttribute('aria-label', n ? `${kind}: ${n.label}` : 'Next engagement');
     }
@@ -370,7 +383,7 @@ const thumbs = cur
     );
   }
 
-  // Previous and next scroll the pane into view (the snap settles it) and put focus on its
+  // Previous and next scroll the pane into view, flush under the header, and put focus on its
   // heading, so keyboard users land in the right place.
   function go(i: number) {
     const s = stops[i];
@@ -391,8 +404,13 @@ const thumbs = cur
     );
     addEventListener('scrollend', () => (pending = null));
     for (const b of [prevB, nextB]) {
-      b?.addEventListener('click', () => go((pending ?? item) + Number(b.dataset.step)));
+      b?.addEventListener('click', () => {
+        if (!off(b)) go((pending ?? item) + Number(b.dataset.step));
+      });
     }
+    itemLi?.addEventListener('focusout', (e) => {
+      if (!itemLi.contains(e.relatedTarget as Node | null)) renderItem();
+    });
     stops.forEach((s, i) =>
       s.a.addEventListener('click', (e) => {
         e.preventDefault();
@@ -439,12 +457,22 @@ const thumbs = cur
     position: sticky;
     top: 0;
     z-index: 50;
-    background: color-mix(in srgb, var(--ln-bg) 94%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* Solid, so nothing scrolling under it reads through (WO-023). */
+    background: var(--ln-bg);
     border-bottom: var(--ln-hairline);
     /* It holds still while a page changes underneath it (cross-document view transitions). */
     view-transition-name: site-header;
+  }
+  /* The header holds still: its scroll margin cancels the root's scroll padding (liner.css), so
+     focusing or clicking anything in it never scrolls the page to "reveal" it. */
+  .np,
+  .np :global(*) {
+    scroll-margin-top: calc(var(--ln-scroll-pad) * -1);
+  }
+  /* The jump list scrolls on its own (a fixed popover): its entries scroll fully into its view. */
+  .np-jump,
+  .np-jump :global(*) {
+    scroll-margin-top: 0;
   }
   .np-bar {
     display: flex;
@@ -649,15 +677,15 @@ const thumbs = cur
     rotate: -135deg;
     translate: -0.1em 0;
   }
-  .np-arrow:is(a, :enabled):hover,
-  .np-arrow:is(a, :enabled):focus-visible {
+  .np-arrow:is(a, button:not([aria-disabled='true'])):hover,
+  .np-arrow:is(a, button:not([aria-disabled='true'])):focus-visible {
     background: var(--ln-hl);
     color: var(--ln-ink);
   }
-  .np-arrow:is(a, :enabled):active {
+  .np-arrow:is(a, button:not([aria-disabled='true'])):active {
     scale: var(--press-scale);
   }
-  .np-arrow:disabled,
+  .np-arrow[aria-disabled='true'],
   .np-arrow[data-off] {
     color: var(--ln-rule);
     cursor: default;

@@ -2,6 +2,9 @@
 // Hero: the album cover (the one place the record theme and grain appear outside Music; the
 // record slides out once) beside the name, set as the site's one display moment: Bricolage's
 // condensed width with tight tracking. Then what I do, in plain words.
+// WO-024: on phones the cover is capped at about 60% of the width, so the name, headline and
+// links all sit in the first screen. A contact link that isn't real yet (not http(s) or
+// mailto) shows as plain text, marked "to come".
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -10,6 +13,7 @@ interface Props {
 }
 const { profile } = Astro.props;
 const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
+const real = (href: string) => /^(https?|mailto):/.test(href);
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
@@ -36,11 +40,19 @@ const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
         <a class="ln-link" href="#resume">
           Résumé
         </a>
-        {email && (
-          <a class="ln-link" href={email.href}>
-            Email
-          </a>
-        )}
+        {email &&
+          (real(email.href) ? (
+            <a class="ln-link" href={email.href}>
+              Email
+            </a>
+          ) : (
+            <span class="hero-soon">
+              Email <span class="hero-soon-k">to come</span>
+            </span>
+          ))}
+        <a class="hero-quiet" href="#work">
+          See the work <span aria-hidden="true">↓</span>
+        </a>
       </p>
       <dl class="hero-facts">
         {profile.pillars.map((p) => (
@@ -59,7 +71,6 @@ const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
     /* the record's rotated box can poke past the viewport while it slides in */
     overflow-x: clip;
     padding-block: var(--space-7) var(--space-8);
-    scroll-margin-top: var(--ln-header);
   }
   .hero-grid {
     display: grid;
@@ -176,10 +187,38 @@ const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-5);
   }
-  .hero-links a {
+  .hero-links > * {
     display: inline-flex;
     align-items: center;
+    gap: var(--space-2);
     min-height: 44px;
+  }
+  /* Not a link yet: plain text, with a quiet note. */
+  .hero-soon {
+    color: var(--ln-ink-3);
+  }
+  .hero-soon-k {
+    font-size: var(--text-xs);
+  }
+  /* See the work: quieter than the accent links beside it. */
+  .hero-quiet {
+    font-weight: 600;
+    color: var(--ln-ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--ln-rule);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition:
+      color var(--dur-quick) var(--ease-out),
+      text-decoration-color var(--dur-quick) var(--ease-out);
+  }
+  .hero-quiet:hover,
+  .hero-quiet:focus-visible {
+    color: var(--ln-ink);
+    text-decoration-color: currentColor;
+  }
+  .hero-quiet:active {
+    color: var(--ln-ink-3);
   }
   .hero-facts {
     margin: var(--space-2) 0 0;
@@ -202,6 +241,19 @@ const email = profile.links.find((l) => l.label.toLowerCase() === 'email');
     color: var(--ln-ink-2);
   }
 
+  /* Phones: a smaller cover and tighter spacing, so who I am fits the first screen. */
+  @media (max-width: 759.98px) {
+    .hero {
+      padding-block: var(--space-5) var(--space-7);
+    }
+    .hero-grid {
+      gap: var(--space-5);
+    }
+    .hero-sleeve {
+      /* the cover is 84% of the sleeve: about 60% of the width */
+      max-width: 72%;
+    }
+  }
   @media (min-width: 1000px) {
     .hero-grid {
       grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);

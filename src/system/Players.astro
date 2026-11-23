@@ -18,40 +18,48 @@ const players = [
 ].filter((p) => !onlyAvailable || (p.url && p.embed));
 ---
 
-<ul class="pl" aria-label="Listen">
-  {players.map((p) => (
-    <li class="pl-player">
-      {p.url && p.embed ? (
-        <>
-          <button
-            type="button"
-            class="pl-play"
-            data-src={p.embed}
-            data-kind={p.key}
-            data-title={`${d.title} on ${p.name}`}
-          >
+{players.length > 0 && (
+  <ul class="pl" aria-label="Listen">
+    {players.map((p) => (
+      <li class="pl-player">
+        {p.url && p.embed ? (
+          <>
+            <button
+              type="button"
+              class="pl-play"
+              data-src={p.embed}
+              data-kind={p.key}
+              data-title={`${d.title} on ${p.name}`}
+              aria-describedby={`pl-${song.id}-${p.key}`}
+            >
+              <span class="pl-ico" aria-hidden="true" />
+              <span class="pl-text">
+                <strong>
+                  Play on {p.name}
+                  <span class="visually-hidden">: {d.title}</span>
+                </strong>
+              </span>
+            </button>
+            <span id={`pl-${song.id}-${p.key}`} hidden>
+              Loads the {p.name} player
+            </span>
+            <a class="pl-link" href={p.url} rel="noopener">
+              Open on {p.name}
+            </a>
+          </>
+        ) : (
+          <p class="pl-play is-soon">
             <span class="pl-ico" aria-hidden="true" />
             <span class="pl-text">
-              <strong>Play on {p.name}</strong>
-              <small>Loads the {p.name} player</small>
+              <strong>{p.name}</strong>
+              <small>Link coming. Player loads on click.</small>
             </span>
-          </button>
-          <a class="pl-link" href={p.url} rel="noopener">
-            Open on {p.name}
-          </a>
-        </>
-      ) : (
-        <p class="pl-play is-soon">
-          <span class="pl-ico" aria-hidden="true" />
-          <span class="pl-text">
-            <strong>{p.name}</strong>
-            <small>Link coming. Player loads on click.</small>
-          </span>
-        </p>
-      )}
-    </li>
-  ))}
-</ul>
+          </p>
+        )}
+      </li>
+    ))}
+  </ul>
+)}
 
 <script>
   document.querySelectorAll<HTMLButtonElement>('button.pl-play[data-src]').forEach((b) => {
@@ -158,9 +166,10 @@ const players = [
     font-size: var(--text-xs);
     color: var(--ln-ink-3);
   }
+  /* Lined up with the button's left edge (the padding is vertical only, for the target size). */
   .pl-link {
     justify-self: start;
-    padding: var(--space-1) var(--space-4);
+    padding: var(--space-1) 0;
     font-size: var(--text-sm);
     color: var(--ln-ink-2);
     text-underline-offset: 0.2em;
@@ -185,9 +194,10 @@ const players = [
     aspect-ratio: 16 / 9;
     height: auto;
   }
+  /* Side by side when there is room; a lone player takes the whole row. */
   @media (min-width: 900px) {
     .pl {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
     }
   }
 </style>
