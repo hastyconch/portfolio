@@ -1,6 +1,8 @@
 ---
 // Résumé: experience beside capabilities and education. Print-friendly.
-import type { Resume } from '../lib/content';
+// WO-024: "Download PDF" serves /resume.pdf, generated from this section's print view by
+// factory/stations/resume-pdf.mjs (npm run resume:pdf).
+import { getSiteContent, type Resume } from '../lib/content';
 import SideHead from './SideHead.astro';
 import Placeholder from './Placeholder.astro';
 
@@ -9,14 +11,26 @@ interface Props {
 }
 const { resume } = Astro.props;
 const span = (a: string, b: string) => (a === b ? a : `${a} – ${b}`);
+// The printed (and PDF) résumé opens with who it is, and only the contact links that are real.
+const { profile } = await getSiteContent();
+const contacts = profile.links
+  .filter((l) => /^(https?|mailto):/.test(l.href))
+  .map((l) => l.href.replace(/^(https?:\/\/|mailto:)/, ''));
 ---
 
 <section id="resume" class="ln-sec resume" aria-labelledby="resume-h">
   <div class="ln-wrap">
+    <div class="cv-print-head">
+      <p class="cv-print-name">{profile.name}</p>
+      <p>{[profile.roleLine, profile.location, ...contacts].join(' · ')}</p>
+    </div>
     <SideHead title="Résumé" id="resume-h">
       <div class="cv-actions">
         {resume.status === 'placeholder' && <Placeholder label="Some details to come" />}
-        <button type="button" class="cv-print" data-print>
+        <a class="cv-btn" href="/resume.pdf" download>
+          Download PDF
+        </a>
+        <button type="button" class="cv-btn" data-print>
           Print résumé
         </button>
       </div>
@@ -86,7 +100,9 @@ const span = (a: string, b: string) => (a === b ? a : `${a} – ${b}`);
     align-items: center;
     gap: var(--space-4);
   }
-  .cv-print {
+  .cv-btn {
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
     padding: var(--space-2) var(--space-4);
     border: 1px solid var(--ln-ink);
@@ -96,18 +112,19 @@ const span = (a: string, b: string) => (a === b ? a : `${a} – ${b}`);
     font: inherit;
     font-weight: 600;
     font-size: var(--text-sm);
+    text-decoration: none;
     cursor: pointer;
     transition:
       background-color var(--dur-quick) var(--ease-out),
       color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .cv-print:hover,
-  .cv-print:focus-visible {
+  .cv-btn:hover,
+  .cv-btn:focus-visible {
     background: var(--ln-ink);
     color: var(--ln-bg);
   }
-  .cv-print:active {
+  .cv-btn:active {
     scale: var(--press-scale);
   }
   .cv-summary {
@@ -207,9 +224,30 @@ const span = (a: string, b: string) => (a === b ? a : `${a} – ${b}`);
       align-self: start;
     }
   }
+  .cv-print-head {
+    display: none;
+  }
   @media print {
     .cv-actions {
       display: none;
+    }
+    .cv-item,
+    .cv-caps > div {
+      break-inside: avoid;
+    }
+    .cv-print-head {
+      display: grid;
+      gap: var(--space-1);
+      margin-bottom: var(--space-6);
+      font-size: var(--text-sm);
+      color: var(--ln-ink-2);
+    }
+    .cv-print-name {
+      font-family: var(--ln-display);
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      line-height: var(--leading-tight);
+      color: var(--ln-ink);
     }
   }
 </style>

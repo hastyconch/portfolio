@@ -109,3 +109,79 @@ test('skill badges are text, not controls', async ({ page }) => {
     page.getByRole('list', { name: 'Skills Airline loyalty program' }).getByRole('listitem'),
   ).toHaveCount(4);
 });
+
+// WO-024: on phones only the first demo shows inline; the others wait behind "Try the demo" and
+// load nothing until it is pressed. Pressing one reveals the demo, hydrates it and focuses it.
+const LATER_DEMOS = /(GrocerDemo|SchedulerDemo|PipelineDemo)[^/]*\.js/;
+
+test('work phone demos expand on demand', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  const chunks: string[] = [];
+  page.on('request', (r) => {
+    if (LATER_DEMOS.test(r.url())) chunks.push(r.url());
+  });
+  await page.goto('/');
+
+  // Projects starts within about eight screens.
+  const projectsTop = await page.evaluate(
+    () => document.querySelector('#projects')!.getBoundingClientRect().top + window.scrollY,
+  );
+  expect(projectsTop, 'Projects top at 375 x 812').toBeLessThanOrEqual(6500);
+
+  const buttons = page.getByRole('button', { name: /^Try the demo/ });
+  await expect(buttons).toHaveCount(3);
+  // The first engagement keeps its demo inline; the others are collapsed.
+  const articles = page.locator('#work .wk article');
+  await expect(articles.first().locator('.wk-demo')).toBeVisible();
+  await expect(articles.first().getByRole('button', { name: /^Try the demo/ })).toHaveCount(0);
+  for (const b of await buttons.all()) {
+    const box = await b.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.width).toBeGreaterThanOrEqual(300);
+  }
+  await expect(page.locator('#work .wk-collapse .wk-demo:visible')).toHaveCount(0);
+
+  // Scrolling the whole page past them loads no demo code.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y < height; y += 400) {
+    await page.evaluate((top) => window.scrollTo(0, top), y);
+    await page.waitForTimeout(30);
+  }
+  await page.waitForLoadState('networkidle');
+  expect(chunks, 'collapsed demo code requested before Try the demo').toEqual([]);
+
+  // Press the first one: the demo shows, takes focus, and its code loads and hydrates.
+  const id = await buttons.first().getAttribute('aria-controls');
+  const first = page.locator(`[aria-controls="${id}"]`);
+  const region = page.locator(`#${id}`);
+  const loaded = page.waitForRequest((r) => LATER_DEMOS.test(r.url()));
+  await first.click();
+  await expect(region).toBeVisible();
+  await expect(region).toBeFocused();
+  await expect(region).toHaveAttribute('role', 'region');
+  await loaded;
+  await expect(region.locator('astro-island')).not.toHaveAttribute('ssr');
+  await expect(first).toBeHidden();
+  // The other two stay collapsed.
+  expect(chunks).toHaveLength(1);
+  await expect(page.getByRole('button', { name: /^Try the demo/ })).toHaveCount(2);
+});
+
+test('work demos all show inline on laptops and without scripting', async ({
+  browser,
+  baseURL,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'one pass covers both cases');
+  for (const opts of [
+    { viewport: { width: 1440, height: 900 } },
+    { viewport: { width: 375, height: 812 }, javaScriptEnabled: false },
+  ]) {
+    const ctx = await browser.newContext({ ...opts, baseURL });
+    const page = await ctx.newPage();
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: /^Try the demo/ })).toHaveCount(0);
+    await expect(page.locator('#work .wk-live .wk-demo:visible')).toHaveCount(4);
+    await ctx.close();
+  }
+});
