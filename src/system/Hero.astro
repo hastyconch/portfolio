@@ -12,6 +12,14 @@
 // the pillars are three parallel claims, so side by side they scan as a set at a glance, the
 // notes column ends on its links, and the row costs one pillar's height instead of three. Copy,
 // the cover's size and the one display moment (the name) are unchanged. Phones keep the stack.
+// WO-032: the pillars are quiet. No rules and no bold column heads: each pillar is one run of
+// small text, the title run in at weight 600 and ended with a full stop, then the body in the
+// second ink. They join the notes column as one compact list under the links, at every width,
+// rather than a row of three under the hero. Beside the cover the list sits in space the notes
+// left empty (the cover is taller than them), so the hero ends sooner and Work's title shows on
+// common laptops; and a list of sentences under the links reads as more about me, not as a
+// landing page's feature grid. Tablets (760 to 999px, one column) cap the sleeve at 300px wide,
+// so the name sits in the first half of the screen.
 import type { Profile } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -58,16 +66,14 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
           See the work <span aria-hidden="true">↓</span>
         </a>
       </p>
+      <dl class="hero-facts">
+        {profile.pillars.map((p) => (
+          <div>
+            <dt>{p.title}.</dt> <dd>{p.body}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
-
-    <dl class="hero-facts">
-      {profile.pillars.map((p) => (
-        <div>
-          <dt>{p.title}</dt>
-          <dd>{p.body}</dd>
-        </div>
-      ))}
-    </dl>
   </div>
 </section>
 
@@ -218,24 +224,24 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
   .hero-quiet:active {
     color: var(--ln-ink-3);
   }
+  /* The pillars: one quiet run each, title then body, at the same small size. */
   .hero-facts {
-    margin: 0;
-    border-top: var(--ln-hairline);
-  }
-  .hero-facts div {
     display: grid;
-    gap: var(--space-1);
-    padding-block: var(--space-4);
-    border-bottom: var(--ln-hairline);
-  }
-  .hero-facts dt {
-    font-weight: 700;
-    line-height: var(--leading-snug);
-  }
-  .hero-facts dd {
+    gap: var(--space-3);
     margin: 0;
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
+  }
+  .hero-facts dt,
+  .hero-facts dd {
+    display: inline;
+    margin: 0;
+  }
+  .hero-facts dt {
+    font-weight: 600;
+    color: var(--ln-ink);
+  }
+  .hero-facts dd {
     color: var(--ln-ink-2);
   }
 
@@ -252,31 +258,21 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
       max-width: 72%;
     }
   }
-  /* Tablets and up: the pillars are one row of three under the hero, one hairline above and
-     below, with less padding than the phone stack. */
   @media (min-width: 760px) {
     .hero {
-      padding-block: var(--space-7) var(--space-6);
+      padding-block: var(--space-6);
     }
-    .hero-facts {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: var(--space-6);
-      border-bottom: var(--ln-hairline);
-    }
-    .hero-facts div {
-      align-content: start;
-      padding-block: var(--space-3);
-      border-bottom: 0;
+  }
+  /* Tablets: one column, so the sleeve is capped and the name comes sooner. */
+  @media (min-width: 760px) and (max-width: 999.98px) {
+    .hero-sleeve {
+      max-width: 300px;
     }
   }
   @media (min-width: 1000px) {
     .hero-grid {
       grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
       gap: var(--space-6) var(--space-8);
-    }
-    .hero-facts {
-      grid-column: 1 / -1;
     }
   }
 </style>

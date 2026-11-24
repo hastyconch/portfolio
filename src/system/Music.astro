@@ -374,7 +374,8 @@ const [lead, ...story] = music.story.map(say);
     transition: --mu-tint var(--dur-slow) var(--ease-out);
   }
 
-  /* Intro: the section title (the same as the other sections'), then the story. */
+  /* Intro: the section title (the same size as the other sections'), then the story under it,
+     in one column at every width (WO-033: no two-column split, unlike Work). */
   .mu-intro {
     display: grid;
     gap: var(--space-3) var(--space-6);
@@ -685,11 +686,6 @@ const [lead, ...story] = music.story.map(say);
       .mu-head :global(.sa) {
         width: 100%;
       }
-    }
-    .mu-intro {
-      grid-template-columns: 11rem minmax(0, 1fr);
-      column-gap: clamp(2.5rem, 4vw, 4rem);
-      align-items: baseline;
     }
     .music {
       padding-top: var(--space-8);

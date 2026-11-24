@@ -200,10 +200,53 @@ test('first tap starts the game', async ({ page, context, isMobile }) => {
   expect(early, 'the tap lands before hydration').toBe(true);
   await play.tap();
 
+  // WO-033: until the game is up, the wait says so: the stage is busy, the status line says
+  // "Loading the game…" and a label shows under the button.
+  const stage = page.locator('#play .bm-stage');
+  const status = page.locator('#play .bm-sr[role="status"]');
+  const label = () =>
+    page
+      .locator('#play .bm-overlay-clear')
+      .evaluate((el) => getComputedStyle(el, '::after').content);
+  const seen = await label();
+  const pending = await page.evaluate(() =>
+    document.querySelector('#play astro-island')!.hasAttribute('ssr'),
+  );
+  if (pending) {
+    expect(seen).toContain('Loading…');
+    await expect(stage).toHaveAttribute('aria-busy', 'true');
+    await expect(status).toHaveText('Loading the game…');
+  }
+
   await expect(page.locator('#play canvas')).toHaveCount(1, { timeout: 20_000 });
   await expect(page.locator('.bm')).not.toHaveAttribute('data-status', 'poster');
   await expect(page.locator('.bm[data-status="playing"]')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('#play astro-island[data-pending]')).toHaveCount(0);
+  await expect(stage).not.toHaveAttribute('aria-busy', /.*/);
+  await expect(status).not.toHaveText('Loading the game…');
+  expect(pending, 'the loading state was seen before hydration').toBe(true);
+});
+
+// WO-033: if the island never hydrates, Play does not stay pressed: after about 10s the
+// pending look, the busy state and the status line clear.
+test('pending tap clears if the game never loads', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a phone tap');
+  test.setTimeout(40_000);
+  await page.route(/\/_astro\/.*\.js$/, (route) => route.abort());
+  await page.goto(CASE_STUDY, { waitUntil: 'domcontentloaded' });
+  const play = page.locator('#play .bm-btn-play');
+  await play.scrollIntoViewIfNeeded();
+  await play.tap();
+  const island = page.locator('#play astro-island');
+  await expect(island).toHaveAttribute('data-pending', '');
+  await expect(page.locator('#play .bm-stage')).toHaveAttribute('aria-busy', 'true');
+  await expect(island).not.toHaveAttribute('data-pending', /.*/, { timeout: 15_000 });
+  await expect(page.locator('#play .bm-stage')).not.toHaveAttribute('aria-busy', /.*/);
+  await expect(page.locator('#play .bm-sr[role="status"]')).toHaveText('');
+  const label = await page
+    .locator('#play .bm-overlay-clear')
+    .evaluate((el) => getComputedStyle(el, '::after').content);
+  expect(label).toBe('none');
 });
 
 // WO-024: the case study says "playable" up front: a "Play it" link in the hero goes to #play.

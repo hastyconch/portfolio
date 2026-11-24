@@ -99,9 +99,17 @@ const frame = cover?.frame ?? 'browser';
     /* rail cards stretch to the tallest; keep the extra space at the bottom so titles align */
     align-content: start;
     padding: var(--space-4) 0;
-    border-bottom: var(--ln-hairline);
     border-radius: var(--radius-1);
     transition: background-color var(--dur-quick) var(--ease-out);
+  }
+  /* The rule under each phone card is drawn off the rounded box, so it runs straight to both
+     ends; the radius is the pressed background's alone (WO-033). */
+  .pc::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    border-bottom: var(--ln-hairline);
+    pointer-events: none;
   }
   .pc:has(.pc-link:focus-visible) {
     outline: var(--focus-width) solid var(--ln-accent);
@@ -285,10 +293,12 @@ const frame = cover?.frame ?? 'browser';
       grid-template-columns: 1fr;
       gap: var(--space-4);
       padding: 0;
-      border-bottom: 0;
       width: 290px;
       flex: none;
       scroll-snap-align: start;
+    }
+    .pc::before {
+      display: none;
     }
     .pc:active {
       background: none;

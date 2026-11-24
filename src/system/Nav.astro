@@ -260,16 +260,47 @@ const thumbs = cur
       menu.querySelector('summary')?.focus();
     }
   });
+  // It also closes once the page scrolls under it (more than a few pixels) or a finger drags
+  // outside it (WO-033). Focus moves only if it was in the menu: back to the toggle. Opened while
+  // a jump is still gliding, it measures from where the page comes to rest.
+  let y0 = NaN;
+  let t: ReturnType<typeof setTimeout> | undefined;
+  let still = true;
+  const shut = () => {
+    if (!menu?.open) return;
+    const back = menu.contains(document.activeElement);
+    menu.open = false;
+    if (back) menu.querySelector('summary')?.focus({ preventScroll: true });
+  };
+  menu?.addEventListener('toggle', () => (y0 = menu.open && still ? scrollY : NaN));
+  addEventListener(
+    'scroll',
+    () => {
+      still = false;
+      clearTimeout(t);
+      t = setTimeout(() => {
+        still = true;
+        if (menu?.open && isNaN(y0)) y0 = scrollY;
+      }, 150);
+      if (Math.abs(scrollY - y0) > 8) shut();
+    },
+    { passive: true },
+  );
+  addEventListener('touchmove', (e) => menu?.contains(e.target as Node) || shut(), {
+    passive: true,
+  });
 
-  // Home: the header's in-page links (#work, #projects, ...) replace the current history entry
-  // instead of adding one, so Back leaves the page rather than scrolling back through it
-  // (WO-027). location.replace keeps the browser's own fragment jump: the same scroll, landing
-  // and :target as a plain link. The jump list's links are handled below.
-  document.querySelector('.np[data-home]')?.addEventListener('click', (e) => {
-    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
+  // In-page links to a section (the header's #work, #projects, ..., the hero's, a case study's
+  // "On this page") replace the current history entry instead of adding one, so Back leaves the
+  // page rather than scrolling back through it (WO-027, WO-033). location.replace keeps the
+  // browser's own fragment jump: the same scroll, landing and :target as a plain link. The jump
+  // list's links (data-target) are handled by the wayfinding script.
+  document.addEventListener('click', (e) => {
+    const a = (e.target as Element).closest?.<HTMLAnchorElement>('a[href^="#"]');
     const me = e as MouseEvent;
     if (!a || a.dataset.target || me.defaultPrevented) return;
     if (me.button !== 0 || me.metaKey || me.ctrlKey || me.shiftKey || me.altKey) return;
+    if (!a.closest('.np') && !document.getElementById(a.hash.slice(1))?.matches('section')) return;
     e.preventDefault();
     location.replace(a.hash);
   });
@@ -509,9 +540,6 @@ const thumbs = cur
   /* A song page: the song's band, in the dark palette (.ln-dark), whatever the scheme. */
   .np[data-band] {
     background: color-mix(in srgb, var(--c1) 12%, var(--ln-bg));
-    /* --ln-hairline resolves its colour on :root (cream in light mode); re-resolve it here, so
-       the header's edge, the Menu button and the menu's rules take the band's own. */
-    --ln-hairline: 1px solid var(--ln-rule);
   }
   /* The header holds still: its scroll margin cancels the root's scroll padding (liner.css), so
      focusing or clicking anything in it never scrolls the page to "reveal" it. */
@@ -1022,6 +1050,16 @@ const thumbs = cur
   @media (max-width: 359px) {
     .np[data-deep] .np-step {
       display: none;
+    }
+    /* The separator goes too, and the gaps around the item tighten, so the name keeps room for
+       about 6ch even under WCAG 1.4.12 text spacing (WO-033). "Projects" and the name stay
+       apart by the item's own padding. */
+    .np[data-deep] .np-c-item .np-sep {
+      display: none;
+    }
+    .np[data-deep] .np-bar,
+    .np[data-deep] .np-here {
+      gap: var(--space-1);
     }
   }
   @media (min-width: 760px) {
