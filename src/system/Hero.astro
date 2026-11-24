@@ -258,9 +258,11 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
       max-width: 72%;
     }
   }
+  /* Laptops and tablets: the header-to-content gap of every other page (WO-034), and a short
+     end, so the Work title shows in the first screen (WO-032). */
   @media (min-width: 760px) {
     .hero {
-      padding-block: var(--space-6);
+      padding-block: var(--rhythm-top) var(--space-6);
     }
   }
   /* Tablets: one column, so the sleeve is capped and the name comes sooner. */

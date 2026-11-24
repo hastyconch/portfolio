@@ -337,6 +337,65 @@ test('sections land under the header', async ({ page, isMobile }) => {
   }
 });
 
+// WO-034: every section lands at the same place. After a header link, the Work, Projects and Music
+// titles' tops sit at one distance under the header (the shared --rhythm-top, liner.css), within
+// 2px of each other, at 1440 x 900 and 1280 x 800 on laptops and at 375 x 812 on a phone.
+test('every section lands at the same place', async ({ page, isMobile }) => {
+  const sizes = isMobile
+    ? [{ width: 375, height: 812 }]
+    : [
+        { width: 1440, height: 900 },
+        { width: 1280, height: 800 },
+      ];
+  for (const size of sizes) {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    // Hydrate the demos first (see above): one that grows mid-jump moves the target.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < height; y += 600) {
+      await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+      await page.waitForTimeout(30);
+    }
+    await page.waitForLoadState('networkidle');
+    const lands: Record<string, number> = {};
+    for (const id of ['work', 'projects', 'music']) {
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      if (isMobile) {
+        await page.locator('.np-menu summary').click();
+        await page.locator(`.np-menu-list a[href="#${id}"]`).click();
+      } else {
+        await page.locator(`.np-links a[href="#${id}"]`).click();
+      }
+      const title = () =>
+        page.evaluate(
+          (id) =>
+            Math.round(
+              document.getElementById(id)!.querySelector('h2')!.getBoundingClientRect().top -
+                document.querySelector('.np')!.getBoundingClientRect().bottom,
+            ),
+          id,
+        );
+      // Settled: the same reading twice, a beat apart.
+      let prev = NaN;
+      await expect
+        .poll(async () => {
+          const now = await title();
+          const still = now === prev;
+          prev = now;
+          return still;
+        })
+        .toBe(true);
+      lands[id] = prev;
+    }
+    const values = Object.values(lands);
+    expect(
+      Math.max(...values) - Math.min(...values),
+      `${size.width} x ${size.height}: ${JSON.stringify(lands)}`,
+    ).toBeLessThanOrEqual(2);
+    expect(values[0], 'the title sits clear of the header').toBeGreaterThan(0);
+  }
+});
+
 // WO-023: the header holds still. Clicking or focusing anything in it never scrolls the page.
 test('header never scrolls the page', async ({ page }) => {
   await page.goto('/projects/billable/');

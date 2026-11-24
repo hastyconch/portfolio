@@ -324,8 +324,10 @@ const contents = [
 </Shell>
 
 <style>
+  /* The page rhythm (WO-034): the head and the body are blocks of the shared section rhythm, so
+     the header-to-content gap and the gap between them match the home's. */
   .cs-head {
-    padding-block: var(--space-7) var(--space-8);
+    padding-block: var(--rhythm-top) var(--rhythm-end);
     border-bottom: var(--ln-hairline);
   }
   .cs-head-grid {
@@ -546,7 +548,7 @@ const contents = [
   .cs-body {
     display: grid;
     gap: var(--space-6);
-    padding-block: var(--space-7) var(--space-8);
+    padding-block: var(--rhythm-top) var(--rhythm-end);
   }
   .cs-toc ol {
     display: flex;
@@ -586,20 +588,22 @@ const contents = [
   }
   .cs-main {
     display: grid;
-    gap: var(--space-8);
+    gap: var(--rhythm-end);
     min-width: 0;
   }
   .cs-sec {
-    scroll-margin-top: calc(var(--ln-header) + var(--space-4));
+    /* A jump lands the title where a home section's lands (WO-034: --ln-land). */
+    scroll-margin-top: var(--ln-land);
   }
+  /* A section title to its lead or content: the home's title-to-lead step. */
   body.ln .cs-h {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--rhythm-title);
     font-size: var(--text-2xl);
     font-weight: 700;
     line-height: var(--leading-tight);
   }
   .cs-sub {
-    margin: calc(var(--space-2) * -1) 0 var(--space-5);
+    margin: 0 0 var(--rhythm-stack);
     color: var(--ln-ink-2);
   }
   .cs-problem {
@@ -700,7 +704,7 @@ const contents = [
   /* Pager */
   .cs-pager {
     display: grid;
-    padding-bottom: var(--space-8);
+    padding-bottom: var(--rhythm-end);
   }
   /* The labels start and end where their rule does (WO-029, as the footer rows in WO-027). */
   .cs-pg {

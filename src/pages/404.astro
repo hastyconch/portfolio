@@ -27,7 +27,8 @@ import Shell from '../system/Shell.astro';
     display: grid;
     gap: var(--space-4);
     justify-items: start;
-    padding-block: var(--space-9);
+    /* The page rhythm (WO-034): content starts where every page's does. */
+    padding-block: var(--rhythm-top) var(--rhythm-end);
   }
   body :global(.nf h1) {
     font-size: var(--text-3xl);

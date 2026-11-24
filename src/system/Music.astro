@@ -367,8 +367,8 @@ const [lead, ...story] = music.story.map(say);
   .music {
     position: relative;
     overflow-x: clip;
-    /* The title sits close under the header after a jump to #music. */
-    padding-top: var(--space-7);
+    /* Its top and bottom padding are the shared section rhythm (.ln-sec): a jump to #music lands
+       the title where every other section's lands (WO-034). */
     background-color: color-mix(in srgb, var(--mu-tint) 12%, var(--ln-bg));
     border-block: var(--ln-hairline);
     transition: --mu-tint var(--dur-slow) var(--ease-out);
@@ -378,8 +378,8 @@ const [lead, ...story] = music.story.map(say);
      in one column at every width (WO-033: no two-column split, unlike Work). */
   .mu-intro {
     display: grid;
-    gap: var(--space-3) var(--space-6);
-    margin-bottom: var(--space-6);
+    gap: var(--rhythm-title) var(--space-6);
+    margin-bottom: var(--rhythm-head);
   }
   body.ln .mu-h2 {
     font-size: var(--text-2xl);
@@ -686,9 +686,6 @@ const [lead, ...story] = music.story.map(say);
       .mu-head :global(.sa) {
         width: 100%;
       }
-    }
-    .music {
-      padding-top: var(--space-8);
     }
     .mu-story-lead {
       font-size: var(--text-lg);

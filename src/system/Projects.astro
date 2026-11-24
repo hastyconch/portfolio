@@ -96,27 +96,9 @@ const { projects } = Astro.props;
 </script>
 
 <style>
-  .projects {
-    padding-bottom: var(--space-8);
-  }
-  /* One section per screen (WO-021): on laptops Projects is one pane below the nav, heading and
-     rail together. A jump lands it flush under the header (.ln-sec). Taller content grows the
-     pane rather than clipping it. */
-  @media (min-width: 1100px) and (min-height: 600px) {
-    .projects {
-      display: grid;
-      /* minmax(0, …): the rail scrolls sideways inside its column instead of widening it */
-      grid-template-columns: minmax(0, 1fr);
-      align-content: center;
-      min-height: calc(100svh - var(--ln-header));
-      padding-block: clamp(var(--space-4), 4svh, var(--space-6));
-    }
-    /* Auto margins would size the rail to its cards (fit-content) in the grid; no margins let it
-       stretch to the column and scroll inside it. */
-    .projects .rail {
-      margin-inline: 0;
-    }
-  }
+  /* One section per screen (WO-021): on laptops the heading and the rail fit one screen below
+     the nav. The section keeps the shared rhythm (.ln-sec, WO-034): its title lands where every
+     other section's does, at the top, instead of in a pane centred around it. */
   .rail-btns {
     display: none;
   }
@@ -137,6 +119,10 @@ const { projects } = Astro.props;
   }
 
   @media (min-width: 900px) {
+    /* The rail's own bottom padding (room for its scrollbar) is part of the section's end. */
+    .projects {
+      padding-bottom: calc(var(--rhythm-end) - var(--space-6));
+    }
     .rail-btns {
       display: flex;
       gap: var(--space-2);
