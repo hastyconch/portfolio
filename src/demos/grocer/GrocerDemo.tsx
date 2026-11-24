@@ -398,7 +398,7 @@ export default function GrocerDemo() {
                 </button>
               </div>
               {picks.length > 0 && (
-                <ul className="gro-offers" aria-label="Offers picked for you">
+                <ul className="gro-bleed gro-offers" aria-label="Offers picked for you">
                   {picks.map(offerRow)}
                 </ul>
               )}
@@ -417,7 +417,7 @@ export default function GrocerDemo() {
                 </button>
               </div>
               {left.length > 0 && (
-                <ul className="gro-group gro-peek">
+                <ul className="gro-bleed gro-peek">
                   {left.slice(0, 3).map((i) => (
                     <li key={i.id}>
                       <span>{i.name}</span>
@@ -470,7 +470,7 @@ export default function GrocerDemo() {
                 )}
               </div>
             </div>
-            <ul className="gro-offers" aria-label="Personalized offers">
+            <ul className="gro-bleed gro-offers" aria-label="Personalized offers">
               {offers.map(offerRow)}
             </ul>
             <p className="gro-cap gro-foot">Loaded offers apply when you scan your card.</p>
@@ -487,6 +487,12 @@ export default function GrocerDemo() {
                 </div>
                 {ledger(lastShop)}
                 <ul className="gro-ledger gro-ledger-sum">
+                  {lastShop.bonus.some((b) => b.save) && (
+                    <li>
+                      <span>You saved</span>
+                      <span>${lastShop.bonus.reduce((n, b) => n + (b.save ?? 0), 0)}.00</span>
+                    </li>
+                  )}
                   <li>
                     <span>Points earned</span>
                     <span>+{lastShop.base + lastShop.bonus.reduce((n, b) => n + b.points, 0)}</span>
@@ -607,7 +613,7 @@ export default function GrocerDemo() {
                 <dd>+{recipeBonus} pts</dd>
               </div>
             </dl>
-            <ul className="gro-group gro-ingredients" aria-label="Ingredients">
+            <ul className="gro-bleed gro-ingredients" aria-label="Ingredients">
               {recipe.ingredients.map((g) => {
                 const o = offerById(g.offer);
                 const has = onList(g.name);

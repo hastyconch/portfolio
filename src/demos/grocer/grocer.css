@@ -208,25 +208,28 @@
   font-weight: 600;
 }
 
+/* Rows read as a ledger: full bleed, edge to edge with hairlines. Only the shopping checklist
+   is an inset group. */
+.gro-bleed {
+  margin-inline: calc(var(--dk-4) * -1) !important;
+  border-block: 1px solid var(--gro-line);
+  background: var(--gro-card);
+}
+.gro-bleed > li + li {
+  border-top: 1px solid var(--gro-line);
+}
+
 .gro-peek li {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--dk-2);
-  padding: var(--dk-2) var(--dk-3);
+  padding: var(--dk-2) var(--dk-4);
   font-size: var(--dk-fs-md);
 }
 
-/* Offers: a full-bleed ledger, edge to edge with hairlines, unlike the inset groups elsewhere.
-   The bonus is the biggest thing in the row and sits in its own column, like a price list. */
-.gro-offers {
-  margin-inline: calc(var(--dk-4) * -1) !important;
-  border-block: 1px solid var(--gro-line);
-  background: var(--gro-card);
-}
-.gro-offers > li + li {
-  border-top: 1px solid var(--gro-line);
-}
+/* Offers: the bonus is the biggest thing in the row and sits in its own column, like a price
+   list. */
 .gro-offer {
   display: grid;
   grid-template-columns: 3.5rem 1fr auto;
@@ -593,7 +596,7 @@
   align-items: center;
   gap: var(--dk-2);
   min-height: 2.75rem;
-  padding: var(--dk-2) var(--dk-3);
+  padding: var(--dk-2) var(--dk-4);
   font-size: var(--dk-fs-md);
 }
 .gro-ingredients .gro-qty {
