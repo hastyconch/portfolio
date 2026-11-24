@@ -16,7 +16,7 @@
   --sch-focus: #14181f;
   --sch-day-bg: #eef0f3;
   --sch-day-ink: #14181f;
-  --sch-night-bg: #cdd3db;
+  --sch-night-bg: #b9c1cc;
   --sch-night-ink: #14181f;
   --sch-bad: #b42318;
   --sch-bad-soft: #fcefed;
@@ -49,9 +49,9 @@
     --sch-accent-soft: #15302d;
     --sch-on-accent: #062320;
     --sch-focus: #e7e9ec;
-    --sch-day-bg: #22282f;
+    --sch-day-bg: #1f252b;
     --sch-day-ink: #e7e9ec;
-    --sch-night-bg: #3a4450;
+    --sch-night-bg: #485464;
     --sch-night-ink: #ffffff;
     --sch-bad: #ff8b7e;
     --sch-bad-soft: #36201e;
@@ -281,6 +281,10 @@
 .sch-extra {
   font-weight: 400;
   color: var(--sch-muted);
+}
+/* With overtime flagged, the course note drops to its own line instead of crowding the grid. */
+.sch-hours.is-warn .sch-extra {
+  display: block;
 }
 .sch-grid tbody tr + tr > * {
   border-top: 1px solid var(--sch-rule);

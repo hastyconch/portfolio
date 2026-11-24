@@ -200,7 +200,7 @@ const tickets: (Ticket & { src: number })[] = [
 
 /** A transcript line reference, in the same form everywhere. */
 function Cite({ src }: { src: number }) {
-  return <span className="pl-ln">Line {src + 1}</span>;
+  return <span className="pl-ref">line {src + 1}</span>;
 }
 
 /** `uid` groups one demo's citations, so opening one closes the others (one source at a time). */

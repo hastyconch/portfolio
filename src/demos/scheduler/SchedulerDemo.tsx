@@ -405,7 +405,7 @@ export default function SchedulerDemo() {
                             <span className="sch-pill" aria-hidden="true">
                               <span className="sch-glyph">
                                 {have}/{TARGET[shift]}
-                              </span>
+                              </span>{' '}
                               <span className="sch-state">
                                 <Dot tone={state.tone} />
                                 {state.text}

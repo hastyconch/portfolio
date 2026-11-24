@@ -324,8 +324,15 @@
   font-size: var(--dk-fs-sm);
   color: var(--pl-ink-2);
 }
-.pl-src .pl-ln {
-  min-width: 3.25rem;
+/* Line references: sans, tabular, tertiary ink, the same form on every step. */
+.pl-ref {
+  font-size: var(--dk-fs-xs);
+  color: var(--pl-ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pl-src .pl-ref {
+  min-width: 3rem;
   text-align: right;
 }
 .pl-cite summary {
@@ -582,7 +589,6 @@
   color: var(--pl-ink-3);
 }
 .pl-moved.is-new {
-  font-weight: 600;
   color: var(--pl-ink-2);
 }
 .pl-done {
