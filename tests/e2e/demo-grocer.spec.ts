@@ -77,6 +77,144 @@ test('grocer demo is keyboard operable', async ({ page, isMobile }) => {
   await expect(tab('Lists')).toHaveAttribute('aria-selected', 'true');
   await expect(demo.getByRole('checkbox', { name: 'Greek yogurt' })).toBeVisible();
   await expect(demo.getByRole('checkbox', { name: 'Berries' })).toBeVisible();
+
+  // WO-036: at 375 no ring in the demo is clipped, on any tab (Phase 11 found the second Home
+  // offer's ring cut by 4px in the old snapping carousel).
+  await page.setViewportSize({ width: 375, height: 812 });
+  const small = await grocerOnHome(page);
+  const names = ['Home', 'Offers', 'Lists', 'Recipes'];
+  for (const [k, name] of names.entries()) {
+    const t = small.getByRole('tab', { name });
+    if (k > 0) {
+      // The tabs are one Tab stop: from the current tab, the arrow key moves to the next.
+      await tabInto(page, small.getByRole('tab', { name: names[k - 1] }));
+      await page.keyboard.press('ArrowRight');
+    }
+    await expect(t).toHaveAttribute('aria-selected', 'true');
+    const stops = small.locator(
+      '[role="tabpanel"] :is(button, input, a[href]), [role="tab"][aria-selected="true"]',
+    );
+    const n = await stops.count();
+    expect(n, `${name}: has controls`).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      const el = stops.nth(i);
+      await tabInto(page, el);
+      const r = await ring(el, '--gro-teal');
+      const what = `${name} #${i}: ${await el.evaluate((e) => e.textContent?.trim() || e.tagName)}`;
+      expect(r.width, what).toBeGreaterThanOrEqual(2);
+      expect(r.ratio, what).toBeGreaterThanOrEqual(3);
+      expect(r.clipped, what).toEqual([]);
+    }
+  }
+});
+
+test('demo-grocer offers clip in place', async ({ page }) => {
+  await page.goto('/demos/grocer/');
+  await page.waitForSelector('astro-island:not([ssr])');
+  const demo = page.getByRole('group', { name: /grocer loyalty app/i });
+  await demo.getByRole('tab', { name: 'Offers' }).click();
+
+  // Each row's bonus or discount is its largest text.
+  const rows = demo.locator('.gro-offer');
+  expect(await rows.count()).toBeGreaterThanOrEqual(4);
+  for (const row of await rows.all()) {
+    const sizes = await row.evaluate((li) => {
+      const px = (el: Element) => parseFloat(getComputedStyle(el).fontSize);
+      const hero = li.querySelector('.gro-bonus')!;
+      let other = 0;
+      for (const el of li.querySelectorAll('*')) {
+        if (el === hero || hero.contains(el) || el.closest('.dk-sr')) continue;
+        const own = [...el.childNodes].some((c) => c.nodeType === 3 && c.textContent!.trim());
+        if (own) other = Math.max(other, px(el));
+      }
+      return { hero: px(hero), other, text: hero.textContent };
+    });
+    expect(sizes.hero, `${sizes.text} is the biggest text in its row`).toBeGreaterThan(sizes.other);
+  }
+
+  const tally = demo.locator('.gro-tally-n');
+  const badge = demo.getByRole('tab', { name: 'Offers' }).locator('.gro-badge');
+  await expect(tally).toHaveText(/^\+120\s*pts/);
+  await expect(badge).toHaveText('1');
+
+  // Load cereal: the same button, in the same place, turns filled with a check and "Loaded".
+  const load = demo.getByRole('button', { name: 'Load offer: Buy any cereal' });
+  const before = await load.boundingBox();
+  const fill = () => load.evaluate((b) => getComputedStyle(b).backgroundColor);
+  const off = await fill();
+  await expect(load).toHaveAttribute('aria-pressed', 'false');
+  await load.click();
+  await page.mouse.move(0, 0); // off the button, so the fill is the resting one, not the hover
+  await expect(load).toHaveAttribute('aria-pressed', 'true');
+  await expect(load.locator('.gro-load-on')).toHaveCSS('opacity', '1');
+  await expect(load.locator('.gro-load-on')).toHaveText('Loaded');
+  await expect(load.locator('.gro-load-on svg')).toBeVisible();
+  await expect(load.locator('.gro-load-off')).toHaveCSS('opacity', '0');
+  await expect.poll(fill, { message: 'filled once loaded' }).not.toBe(off);
+  const hi = await demo.evaluate((app) => {
+    const probe = document.createElement('i');
+    probe.style.color = getComputedStyle(app).getPropertyValue('--gro-hi');
+    app.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+  await expect.poll(fill, { message: 'the highlight colour' }).toBe(hi);
+  const after = await load.boundingBox();
+  expect(after?.x, 'in place').toBeCloseTo(before!.x, 0);
+  expect(after?.width, 'same size').toBeCloseTo(before!.width, 0);
+
+  // The running total and the tab badge follow.
+  await expect(tally).toHaveText(/^\+170\s*pts/);
+  await expect(badge).toHaveText('2');
+  await expect(demo.locator('[aria-live="polite"]')).toContainText('Loaded offer: Buy any cereal');
+
+  // And back: unloading reverses all three.
+  await load.click();
+  await expect(load).toHaveAttribute('aria-pressed', 'false');
+  await expect(tally).toHaveText(/^\+120\s*pts/);
+  await expect(badge).toHaveText('1');
+});
+
+test('demo-grocer home leads with the balance', async ({ page }) => {
+  await page.goto('/demos/grocer/');
+  await page.waitForSelector('astro-island:not([ssr])');
+  const demo = page.getByRole('group', { name: /grocer loyalty app/i });
+  const panel = demo.getByRole('tabpanel');
+
+  // The balance is the first thing in the panel and its biggest text.
+  const balance = panel.locator('.gro-points');
+  await expect(balance).toHaveText(/^4,650\s*pts$/);
+  const biggest = await panel.evaluate((root) => {
+    let max = 0;
+    let who = '';
+    for (const el of root.querySelectorAll('*')) {
+      const own = [...el.childNodes].some((c) => c.nodeType === 3 && c.textContent!.trim());
+      const px = parseFloat(getComputedStyle(el).fontSize);
+      if (own && px > max) [max, who] = [px, el.className];
+    }
+    return who;
+  });
+  expect(biggest).toBe('gro-points');
+  const firstText = await panel.evaluate((root) => root.textContent!.trim().slice(0, 40));
+  expect(firstText).toMatch(/^Hi Sam · Pantry Points4,650/);
+
+  // A labelled bar to the next reward, not a bare percentage.
+  const bar = panel.getByRole('progressbar', { name: '350 pts to $10 off' });
+  await expect(bar).toBeVisible();
+  await expect(bar).toHaveAttribute('aria-valuenow', '4650');
+  await expect(bar).toHaveAttribute('aria-valuemax', '5000');
+  await expect(panel.getByText('350 pts to $10 off')).toBeVisible();
+  await expect(panel.getByText('%')).toHaveCount(0);
+  const box = await bar.boundingBox();
+  expect(box!.width, 'a bar, not a ring').toBeGreaterThan(box!.height * 10);
+
+  // Then a short picked-for-you run, then the list.
+  const order = await panel.evaluate((root) =>
+    [...root.querySelectorAll('.gro-balance, .gro-picks, .gro-next')].map((n) => n.className),
+  );
+  expect(order).toEqual(['gro-balance', 'gro-picks', 'gro-next']);
+  expect(await panel.locator('.gro-picks .gro-offer').count()).toBeLessThanOrEqual(3);
 });
 
 test('grocer checkout earns points and unlocks the reward', async ({ page }) => {
@@ -91,6 +229,10 @@ test('grocer checkout earns points and unlocks the reward', async ({ page }) => 
   for (const name of ['cereal', 'Greek yogurts', 'berries']) {
     await demo.getByRole('button', { name: new RegExp(`Load offer: .*${name}`, 'i') }).click();
   }
+  await demo.getByRole('button', { name: 'Load all' }).click();
+  for (const b of await demo.getByRole('button', { name: /^Load offer/ }).all()) {
+    await expect(b).toHaveAttribute('aria-pressed', 'true');
+  }
   // The recipe adds yogurt and berries to the list.
   await tab('Recipes').click();
   await demo.getByRole('button', { name: 'Add ingredients to list' }).click();
@@ -102,10 +244,15 @@ test('grocer checkout earns points and unlocks the reward', async ({ page }) => 
   }
   await demo.getByRole('button', { name: /^Check out/ }).click();
   await expect(live).toContainText('Reward earned');
+  await expect(live).toContainText('plus 435 points');
+  await expect(live).toContainText('$2 off');
+  await expect(demo.getByText('Reward unlocked')).toBeVisible();
+  await expect(demo.getByText('5,085', { exact: true })).toBeVisible();
 
   await tab('Home').click();
   await expect(demo.getByText('Reward ready')).toBeVisible();
-  await expect(demo.getByText('All 4 offers earned this week')).toBeVisible();
+  await expect(demo.locator('.gro-points')).toHaveText(/^5,085/);
+  await expect(demo.getByText('All 5 offers earned this week')).toBeVisible();
 });
 
 // WO-031: on home the demo's own teal ring wins over the site's (it lost on specificity before),
@@ -197,7 +344,7 @@ async function ring(el: Locator, own: string) {
 
 /** An inset ring, from a screenshot: on each side, the contrast between the ring (half a ring
  *  width in from the edge) and the pixels just inside it (one ring width further in). The sides
- *  are sampled 40px from the top (in Home's band) and 40px from the bottom. */
+ *  are sampled 40px from the top and 40px from the bottom. */
 async function insetEdges(page: Page, el: Locator, ring: number) {
   const png = (await el.screenshot({ scale: 'css', animations: 'disabled' })).toString('base64');
   const { width: w, height: h } = (await el.boundingBox())!;
@@ -233,8 +380,8 @@ async function insetEdges(page: Page, el: Locator, ring: number) {
       const b = ring * 1.5;
       const at: Record<string, [number, number, number, number]> = {
         top: [w - 12, a, w - 12, b],
-        'left (band)': [a, 40, b, 40],
-        'right (band)': [w - a, 40, w - b, 40],
+        'left (top)': [a, 40, b, 40],
+        'right (top)': [w - a, 40, w - b, 40],
         left: [a, h - 40, b, h - 40],
         right: [w - a, h - 40, w - b, h - 40],
         bottom: [8, h - a, 8, h - b],
@@ -272,7 +419,7 @@ test('demo-grocer panel and tab bar rings are inset', async ({ page }) => {
   expect(r.color).toBe(r.own);
   expect(r.offset + r.width, 'the ring sits inside the panel').toBeLessThanOrEqual(0);
   expect(r.clipped, 'all four sides show').toEqual([]);
-  // Home's teal band sits under the top and the upper sides: check the pixels.
+  // Check the pixels: the ring shows against whatever is inside it on every side.
   for (const [side, ratio] of Object.entries(await insetEdges(page, panel, r.width))) {
     expect(ratio, `${side} edge of the ring against the pixels inside it`).toBeGreaterThanOrEqual(
       3,

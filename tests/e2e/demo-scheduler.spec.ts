@@ -43,7 +43,7 @@ test('scheduler grid is keyboard operable', async ({ page }) => {
 
   // Coverage rows are part of the grid but read-only.
   await page.keyboard.press('Control+End');
-  await expect(cell(/^4\/4 \+4 more: RNs on the Sunday night shift/)).toBeFocused();
+  await expect(cell(/^4\/4 met: RNs on the Sunday night shift/)).toBeFocused();
 
   // Cells are locked until the open shift is filled.
   await cell(/^Renee, Monday/).focus();
@@ -78,7 +78,7 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
 
   await expect(task.getByRole('heading')).toHaveText('Sat night, ICU: 3 of 4 RNs');
   await expect(openCover).toHaveAccessibleName(
-    '3/4 open shift: Saturday night, 1 short, including 2 RNs not shown here.',
+    '3/4 under by 1, open shift: Saturday night, including 2 RNs not shown here.',
   );
   await expect(demo.locator('.sch-status')).toHaveText('1 problem.');
 
@@ -98,7 +98,7 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   await sam.focus();
   await page.keyboard.press('Enter');
   await expect(live).toHaveText('Sam can’t be assigned: 4th night in a row.');
-  await expect(openCover).toHaveAccessibleName(/^3\/4 open shift/);
+  await expect(openCover).toHaveAccessibleName(/^3\/4 under by 1, open shift/);
   await expect(cell(/^Sam, Saturday: Off/)).toHaveCount(1);
 
   // Assigning an eligible nurse covers the shift and is announced.
@@ -106,7 +106,7 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   await expect(live).toContainText('Renee assigned to Saturday night: 4 of 4 RNs.');
   await expect(live).toContainText('All rules pass.');
   await expect(openCover).toHaveAccessibleName(
-    '4/4 +2 more: RNs on the Saturday night shift, including 2 RNs not shown here.',
+    '4/4 met: RNs on the Saturday night shift, including 2 RNs not shown here.',
   );
   await expect(glyph(/^Renee, Saturday: Night/)).toHaveText('N');
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
@@ -115,7 +115,7 @@ test('scheduler guided fill covers the open shift', async ({ page }) => {
   // Reset restores the scenario; the overtime pick is a warning, not a block.
   await demo.getByRole('button', { name: 'Reset' }).click();
   await expect(live).toContainText('Scenario reset');
-  await expect(openCover).toHaveAccessibleName(/^3\/4 open shift/);
+  await expect(openCover).toHaveAccessibleName(/^3\/4 under by 1, open shift/);
   await task.getByRole('button', { name: 'Assign Jordan' }).click();
   await expect(demo.locator('.sch-status')).toHaveText('1 warning.');
   await expect(demo.locator('.sch-issues')).toContainText('Jordan: 44h this week, 4h overtime.');
@@ -135,4 +135,79 @@ test('scheduler finds cover for a gap the visitor opens', async ({ page }) => {
   await expect(task.locator('.sch-cand strong').first()).toHaveText('Odette');
   await task.getByRole('button', { name: 'Assign Odette' }).click();
   await expect(task.getByRole('heading')).toHaveText('Every shift meets its target');
+});
+
+// WO-037: coverage is text plus a shape in every state, so it reads without colour. Each cover
+// cell says its count and its state in words ("Met", "Under by 1", "Over by 1"), and the dot
+// beside the words changes shape with the state: a filled disc when under, an open ring when
+// met, an open square when over.
+test('scheduler coverage reads without colour', async ({ page }) => {
+  const { demo, cell } = await open(page);
+  const covers = demo.locator('.sch-count');
+  await expect(covers).toHaveCount(14);
+
+  const read = () =>
+    covers.evaluateAll((els) =>
+      els.map((el) => {
+        const dot = el.querySelector('.sch-dot');
+        const s = dot ? getComputedStyle(dot) : null;
+        return {
+          text: (el.textContent ?? '').replace(/\s+/g, ' ').trim(),
+          name: el.getAttribute('aria-label') ?? '',
+          tone: dot?.getAttribute('data-tone') ?? '',
+          filled: !!s && s.backgroundColor !== 'rgba(0, 0, 0, 0)',
+          round: !!s && s.borderTopLeftRadius === '50%',
+        };
+      }),
+    );
+  const check = async () => {
+    const cells = await read();
+    for (const c of cells) {
+      const m = c.text.match(/^(\d)\/(\d) ?(Met|Under by (\d)|Over by (\d))$/);
+      expect(m, `cover cell text: "${c.text}"`).not.toBeNull();
+      const [have, need] = [Number(m![1]), Number(m![2])];
+      const word = m![3].split(' ')[0].toLowerCase();
+      expect(c.tone, c.text).toBe(word);
+      if (word === 'under') expect(need - have, c.text).toBe(Number(m![4]));
+      if (word === 'over') expect(have - need, c.text).toBe(Number(m![5]));
+      if (word === 'met') expect(have, c.text).toBe(need);
+      // The shape, not the colour, tells the states apart.
+      expect({ filled: c.filled, round: c.round }, c.text).toEqual(
+        word === 'under'
+          ? { filled: true, round: true }
+          : word === 'met'
+            ? { filled: false, round: true }
+            : { filled: false, round: false },
+      );
+      // The accessible name starts with the same words.
+      expect(c.name.toLowerCase(), c.text).toMatch(
+        new RegExp(`^${have}/${need} ${m![3].toLowerCase()}`),
+      );
+    }
+    return cells.map((c) => c.tone);
+  };
+
+  // Start: one shift under, the rest met.
+  let tones = await check();
+  expect(tones.filter((t) => t === 'under')).toHaveLength(1);
+  await expect(demo.locator('.sch-task')).toContainText('Open shift · Under by 1 RN');
+
+  // All met once the open shift is filled.
+  await demo.getByRole('button', { name: 'Assign Renee' }).click();
+  tones = await check();
+  expect(tones.every((t) => t === 'met')).toBe(true);
+
+  // Renee's Monday day becomes a night: Monday day is under, Monday night is over.
+  await cell(/^Renee, Monday: Day/).click();
+  tones = await check();
+  expect(tones).toContain('under');
+  expect(tones).toContain('over');
+  await expect(cell(/^3\/4 under by 1, open shift: Monday day/)).toHaveCount(1);
+  await expect(cell(/^5\/4 over by 1: RNs on the Monday night shift/)).toHaveCount(1);
+
+  // The rule check and the header figures carry a word or number next to their dot too.
+  // (two problems: Monday day is short, and a Monday night then a Tuesday day leaves Renee
+  // under 12h rest)
+  await expect(demo.locator('.sch-status')).toHaveText('2 problems.');
+  await expect(demo.locator('.sch-status .sch-dot')).toHaveAttribute('data-tone', 'under');
 });

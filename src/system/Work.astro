@@ -21,6 +21,13 @@
 // open, aria-expanded) and its one line stays as the demo's caption; a hidden demo stays mounted;
 // open demos come back after Back (sessionStorage). The demo's own group is the only group. The
 // skill tags are plain text separated by middots.
+// WO-034: the panes lock in again. On laptops (a fine pointer, 760px and up) one wheel or trackpad
+// gesture moves exactly one demo pane, flush under the header, never back to the pane it started
+// in, and the page scrolls natively past the last pane and above the first. It is a small module
+// script (work-paging.ts), not `scroll-snap-type: y mandatory`: mandatory snapping would need snap
+// points over the whole page, can snap back to the starting pane (WO-023's trap) and carries a
+// trackpad fling differently in Chromium, Firefox and Safari. The reasons are in the module.
+// Spacing: the section's padding is the shared rhythm (.ln-sec in liner.css).
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -209,6 +216,8 @@ const others = work.filter((w) => w.data.demo === 'none');
 </section>
 
 <script>
+  import './work-paging';
+
   // The phone "Try the demo" toggle (WO-032). Opening shows the demo, so client:visible hydrates
   // it as it comes into view, and moves focus to the demo's own group (the only group: the
   // wrapper has no role or name) without scrolling; then the page brings the engagement's head
@@ -303,8 +312,8 @@ const others = work.filter((w) => w.data.demo === 'none');
   }
   .wk {
     border-bottom: var(--ln-hairline);
-    /* A jump or a step to a pane lands its top flush under the header, like a section band
-       (liner.css). There is no page-level snap (WO-023). */
+    /* A jump, a step or a wheel page (work-paging.ts) lands a pane's top flush under the header,
+       like a section band (liner.css). There is no CSS scroll snap (WO-023, WO-034). */
     scroll-margin-top: var(--ln-flush);
   }
   .wk article {
@@ -517,21 +526,11 @@ const others = work.filter((w) => w.data.demo === 'none');
     color: var(--ln-ink-3);
   }
 
-  /* More client work: a compact list. Its last rule ends the section: no bottom padding on top of
-     the next section's own (WO-025), so the gap before Projects is one section rhythm. */
-  .work {
-    padding-bottom: 0;
-  }
-  /* Right after the hero, on laptops and tablets, Work starts a step sooner than the shared
-     section rhythm (WO-032): the hero's own bottom padding already parts them, and the work's
-     title then shows in the first screen of common laptops. Other sections keep the rhythm. */
-  @media (min-width: 760px) {
-    :global(#hero) + .work {
-      padding-top: var(--space-7);
-    }
-  }
+  /* More client work: a compact list. Its last rule ends the section's content; the section's
+     padding (.ln-sec) is the shared rhythm, so the gap before Projects is the same as between any
+     two sections (WO-034). */
   .wk-more {
-    padding-top: var(--space-7);
+    padding-top: var(--rhythm-top);
   }
   .wk-more-list {
     display: grid;
@@ -541,7 +540,7 @@ const others = work.filter((w) => w.data.demo === 'none');
     border-top: var(--ln-hairline);
   }
   .wk-item {
-    padding-block: var(--space-5);
+    padding-block: var(--rhythm-stack);
     border-bottom: var(--ln-hairline);
   }
   body.ln .wk-item-title {
@@ -611,7 +610,7 @@ const others = work.filter((w) => w.data.demo === 'none');
         'skills demo'
         'skills details';
       grid-template-rows: auto auto 1fr;
-      column-gap: 2.5rem;
+      column-gap: var(--rhythm-column);
     }
     .wk-demo,
     .wk-details {
@@ -624,7 +623,7 @@ const others = work.filter((w) => w.data.demo === 'none');
     .wk-more {
       display: grid;
       grid-template-columns: 11rem minmax(0, 1fr);
-      column-gap: 2.5rem;
+      column-gap: var(--rhythm-column);
       align-items: start;
     }
     .wk-more-h {
@@ -645,7 +644,6 @@ const others = work.filter((w) => w.data.demo === 'none');
         'skills head demo'
         'skills details demo';
       grid-template-rows: auto 1fr;
-      column-gap: clamp(2.5rem, 4vw, 4rem);
     }
     .wk-demo {
       margin-top: 0;
@@ -664,9 +662,6 @@ const others = work.filter((w) => w.data.demo === 'none');
     }
     .wk-wide .wk-demo {
       margin-top: var(--space-6);
-    }
-    .wk-more {
-      column-gap: clamp(2.5rem, 4vw, 4rem);
     }
     .wk-more-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));

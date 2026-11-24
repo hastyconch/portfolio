@@ -126,7 +126,7 @@ test('project switcher', async ({ page, isMobile }) => {
   await expect(marked).toHaveText('Projects');
   if (!isMobile) {
     await expect(page.getByRole('link', { name: 'Next project: Felt & Tiles' })).toBeVisible();
-    await expect(crumbs(page).locator('.np-count')).toHaveText(`1 / ${projects}`);
+    await expect(crumbs(page).locator('.np-count')).toHaveText(`2 / ${projects}`);
   }
 
   const trigger = crumbs(page).getByRole('button', { name: 'Billable., switch project' });
@@ -208,7 +208,7 @@ test('crumb trigger names its action', async ({ page, isMobile }) => {
   await expect(jump).toBeHidden();
 });
 
-// WO-027: on a phone the case-study crumb reads "Projects / Felt & Tiles 2 / 8": no stray "/"
+// WO-027: on a phone the case-study crumb reads "Projects / Felt & Tiles 3 / 9": no stray "/"
 // after the folded name, and a count that says the item is one of several.
 test('phone crumb', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'the folded crumb is for phones');
@@ -221,7 +221,7 @@ test('phone crumb', async ({ page, isMobile }) => {
       .filter((el) => el.checkVisibility())
       .map((el) => el.textContent!.trim()),
   );
-  expect(shown).toEqual(['Projects', '/', 'Felt & Tiles', `2 / ${projects}`]);
+  expect(shown).toEqual(['Projects', '/', 'Felt & Tiles', `3 / ${projects}`]);
   await expect(crumbs(page).locator('.np-count')).toBeVisible();
   await expect(crumbs(page).locator('.np-arrow').first()).toBeHidden();
   const bar = await page.locator('.np-bar').boundingBox();
@@ -334,6 +334,65 @@ test('sections land under the header', async ({ page, isMobile }) => {
     // and stays there once the smooth scroll has settled
     await page.waitForTimeout(300);
     expect(Math.abs(await gap()), `#${id}`).toBeLessThanOrEqual(2);
+  }
+});
+
+// WO-034: every section lands at the same place. After a header link, the Work, Projects and Music
+// titles' tops sit at one distance under the header (the shared --rhythm-top, liner.css), within
+// 2px of each other, at 1440 x 900 and 1280 x 800 on laptops and at 375 x 812 on a phone.
+test('every section lands at the same place', async ({ page, isMobile }) => {
+  const sizes = isMobile
+    ? [{ width: 375, height: 812 }]
+    : [
+        { width: 1440, height: 900 },
+        { width: 1280, height: 800 },
+      ];
+  for (const size of sizes) {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    // Hydrate the demos first (see above): one that grows mid-jump moves the target.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < height; y += 600) {
+      await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+      await page.waitForTimeout(30);
+    }
+    await page.waitForLoadState('networkidle');
+    const lands: Record<string, number> = {};
+    for (const id of ['work', 'projects', 'music']) {
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      if (isMobile) {
+        await page.locator('.np-menu summary').click();
+        await page.locator(`.np-menu-list a[href="#${id}"]`).click();
+      } else {
+        await page.locator(`.np-links a[href="#${id}"]`).click();
+      }
+      const title = () =>
+        page.evaluate(
+          (id) =>
+            Math.round(
+              document.getElementById(id)!.querySelector('h2')!.getBoundingClientRect().top -
+                document.querySelector('.np')!.getBoundingClientRect().bottom,
+            ),
+          id,
+        );
+      // Settled: the same reading twice, a beat apart.
+      let prev = NaN;
+      await expect
+        .poll(async () => {
+          const now = await title();
+          const still = now === prev;
+          prev = now;
+          return still;
+        })
+        .toBe(true);
+      lands[id] = prev;
+    }
+    const values = Object.values(lands);
+    expect(
+      Math.max(...values) - Math.min(...values),
+      `${size.width} x ${size.height}: ${JSON.stringify(lands)}`,
+    ).toBeLessThanOrEqual(2);
+    expect(values[0], 'the title sits clear of the header').toBeGreaterThan(0);
   }
 });
 

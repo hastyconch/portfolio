@@ -113,7 +113,8 @@ const allSongs = `/#song-${song.id}`;
   .sg-layout {
     display: grid;
     gap: var(--space-6);
-    padding-block: var(--space-7) var(--space-8);
+    /* The page rhythm (WO-034): the same header-to-content gap and end as every page. */
+    padding-block: var(--rhythm-top) var(--rhythm-end);
   }
   .sg-side {
     display: grid;
@@ -164,7 +165,8 @@ const allSongs = `/#song-${song.id}`;
   }
 
   .sg-sec {
-    scroll-margin-top: calc(var(--ln-header) + var(--space-4));
+    /* A jump lands the title where a home section's lands (WO-034: --ln-land). */
+    scroll-margin-top: var(--ln-land);
     min-width: 0;
   }
   .sg-about {
@@ -182,7 +184,7 @@ const allSongs = `/#song-${song.id}`;
 
   .sg-pager {
     display: grid;
-    padding-bottom: var(--space-8);
+    padding-bottom: var(--rhythm-end);
   }
   .sg-pg {
     display: grid;

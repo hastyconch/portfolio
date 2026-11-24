@@ -83,7 +83,7 @@ gallery:
       }
 demo: billable
 accent: '#2f7d32'
-order: 1
+order: 2
 featured: true
 status: ready
 ---

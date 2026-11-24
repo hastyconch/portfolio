@@ -71,9 +71,9 @@ test('alignments', async ({ page, isMobile }) => {
       expect(Math.abs(x - title), 'label is flush with the title').toBeLessThanOrEqual(1);
   }
 
-  // Billable, the first project, has only a "Next project" link: its rule spans the content
-  // column, from the column's start to its end.
-  await page.goto('/projects/billable/');
+  // The first project (Potluck Picker since WO-039) has only a "Next project" link: its rule
+  // spans the content column, from the column's start to its end.
+  await page.goto('/projects/potluck-picker/');
   const main = (await page.locator('.cs-main').boundingBox())!;
   const pager = page.locator('.cs-pager .cs-pg');
   await expect(pager).toHaveCount(1);
@@ -127,4 +127,154 @@ test('404 way out', async ({ page }) => {
   expect((await projects.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await projects.click();
   await expect(page).toHaveURL(/\/#projects$/);
+});
+
+// WO-038: the résumé redesign. It lands like the other sections, uses colour with contrast, and
+// its two columns end together.
+
+/** Walks the page once, so the demo islands have hydrated and no longer move the target. */
+const hydrate = async (page: Page) => {
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y < height; y += 600) {
+    await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+    await page.waitForTimeout(40);
+  }
+  await page.waitForLoadState('networkidle');
+};
+/** Clicks the header link to a section; returns its title's top once the scroll has settled. */
+const landing = async (page: Page, isMobile: boolean, id: string) => {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  if (isMobile) {
+    await page.locator('.np-menu summary').click();
+    await page.locator(`.np-menu-list a[href="#${id}"]`).click();
+  } else {
+    await page.locator(`.np-links a[href="#${id}"]`).click();
+  }
+  const top = () =>
+    page.evaluate(
+      (id) => Math.round(document.getElementById(`${id}-h`)!.getBoundingClientRect().top),
+      id,
+    );
+  let last = Number.NaN;
+  await expect
+    .poll(
+      async () => {
+        const now = await top();
+        const settled = now === last;
+        last = now;
+        return settled;
+      },
+      { intervals: [300], timeout: 8000 },
+    )
+    .toBe(true);
+  return last;
+};
+
+test('résumé lands like the other sections', async ({ page, isMobile }) => {
+  await page.goto('/');
+  await hydrate(page);
+  const resume = await landing(page, isMobile, 'resume');
+  if (isMobile) {
+    const work = await landing(page, isMobile, 'work');
+    expect(Math.abs(resume - work), `résumé ${resume}, work ${work}`).toBeLessThanOrEqual(2);
+  } else {
+    expect(Math.abs(resume - 108), `résumé title top ${resume}`).toBeLessThanOrEqual(2);
+  }
+});
+
+test('résumé has colour with contrast', async ({ page }) => {
+  await page.goto('/');
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    // Let the colour transitions (150ms) finish, so the resting state is measured.
+    await page.waitForTimeout(400);
+    const found = await page.locator('#resume').evaluate((section) => {
+      // Any CSS colour (color-mix included) to sRGB, through a canvas.
+      const ctx = document.createElement('canvas').getContext('2d', {
+        willReadFrequently: true,
+      })!;
+      const rgba = (c: string) => {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = '#000';
+        ctx.fillStyle = c;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+        return { r, g, b, a: a / 255 };
+      };
+      const lum = (c: string) => {
+        const f = (v: number) => {
+          const s = v / 255;
+          return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+        };
+        const { r, g, b } = rgba(c);
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const ratio = (a: string, b: string) => {
+        const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+        return (x + 0.05) / (y + 0.05);
+      };
+      const bgOf = (start: Element) => {
+        for (let el: Element | null = start; el; el = el.parentElement) {
+          const bg = getComputedStyle(el).backgroundColor;
+          if (rgba(bg).a > 0.5) return bg;
+        }
+        return getComputedStyle(document.body).backgroundColor;
+      };
+      const key = (c: string) => {
+        const { r, g, b } = rgba(c);
+        return `${r},${g},${b}`;
+      };
+      const body = getComputedStyle(document.body);
+      const plain = new Set([key(body.color), key(body.backgroundColor)]);
+      const accent = key(body.getPropertyValue('--ln-accent'));
+      const texts: { text: string; ratio: number }[] = [];
+      const roles = new Set<string>();
+      for (const el of section.querySelectorAll('*')) {
+        if (!el.getClientRects().length) continue;
+        const cs = getComputedStyle(el);
+        const bg = bgOf(el);
+        // Every visible run of text, its colour on its own background.
+        const own = [...el.childNodes].some(
+          (n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim(),
+        );
+        if (own) {
+          texts.push({ text: el.textContent!.trim().slice(0, 40), ratio: ratio(cs.color, bg) });
+          if (!plain.has(key(bg))) roles.add('tinted surface');
+          if (key(cs.color) === accent) roles.add('accent text');
+        }
+        // The timeline's marks (borders on pseudo-elements, so they print too).
+        for (const pseudo of ['::before', '::after']) {
+          const p = getComputedStyle(el, pseudo);
+          if (p.content !== 'none' && parseFloat(p.borderLeftWidth) > 0)
+            if (key(p.borderLeftColor) === accent) roles.add('accent marks');
+        }
+      }
+      return { texts, roles: [...roles] };
+    });
+    expect(found.roles, `${scheme}: a tinted panel`).toContain('tinted surface');
+    expect(found.roles, `${scheme}: accent text`).toContain('accent text');
+    expect(found.roles, `${scheme}: accent marks`).toContain('accent marks');
+    expect(found.texts.length).toBeGreaterThan(20);
+    for (const t of found.texts)
+      expect(t.ratio, `${scheme}: "${t.text}"`).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
+test('résumé columns balance', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'two columns from 1000px');
+  await page.goto('/');
+  const [main, side] = await page.evaluate(() =>
+    ['.cv-main', '.cv-side'].map((s) => {
+      const col = document.querySelector(`#resume ${s}`)!;
+      return {
+        top: col.getBoundingClientRect().top,
+        end: col.lastElementChild!.getBoundingClientRect().bottom,
+      };
+    }),
+  );
+  expect(Math.abs(main.top - side.top), 'side by side').toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(main.end - side.end),
+    `experience ends at ${main.end}, the side column at ${side.end}`,
+  ).toBeLessThanOrEqual(240);
 });

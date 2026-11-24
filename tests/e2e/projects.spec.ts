@@ -287,3 +287,54 @@ test('projects rail keeps its place', async ({ page, isMobile }) => {
   await page.reload();
   expect(await rail.evaluate((r) => r.scrollLeft)).toBe(0);
 });
+
+// WO-039: Potluck Picker, the newest project, leads the rail with its own screen, and its case
+// study tells the story, with the live address and no link to the private repo.
+test('projects potluck picker leads the rail', async ({ page }) => {
+  await page.goto('/');
+  const first = page.locator('#rail > li').first();
+  await expect(first.locator('a.pc-link')).toHaveAttribute('href', '/projects/potluck-picker/');
+  await expect(first.locator('.pc-title')).toHaveText('Potluck Picker');
+  const art = first.locator('.pc-art img');
+  await expect(art).toHaveCount(1);
+  await expect(art).toHaveAttribute('src', /01-board/);
+  await expect(first.locator('.pa-soon')).toHaveCount(0);
+});
+
+test('projects potluck picker case study', async ({ page }) => {
+  await page.goto('/projects/potluck-picker/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Potluck Picker' })).toBeVisible();
+  await expect(page.locator('.cs-problem')).toContainText('My mom wanted one link');
+  expect(await page.locator('.cs-features li').count()).toBeGreaterThanOrEqual(5);
+  expect(await page.locator('.cs-stack tbody tr').count()).toBeGreaterThanOrEqual(4);
+  await expect(page.locator('.cs-note')).toHaveCount(3);
+
+  // Five real screenshots, each described, and a hero that has loaded.
+  const hero = page.locator('.cs-hero img');
+  await expect(hero).toHaveAttribute('alt', /\S/);
+  await expect
+    .poll(() => hero.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0))
+    .toBe(true);
+  const shots = page.locator('#gallery .cs-gal img');
+  await expect(shots).toHaveCount(5);
+  await expect(page.locator('#gallery .cs-gal-soon')).toHaveCount(0);
+  for (const img of await shots.all()) {
+    await expect(img).toHaveAttribute('alt', /\S/);
+    await img.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+      .toBe(true);
+  }
+  await expect(page.locator('#gallery figcaption')).toHaveCount(5);
+
+  // The live app is a real link in the facts; the repo is private, so nothing links to it.
+  await expect(
+    page.locator('.cs-facts a', { hasText: 'potluck-picker.pages.dev' }),
+  ).toHaveAttribute('href', 'https://potluck-picker.pages.dev');
+  for (const a of await page.locator('a[href]').all()) {
+    const href = (await a.getAttribute('href'))!;
+    expect(href).not.toMatch(/github\.com\/[^/]+\/potluck/i);
+    if (/potluck-picker\.pages\.dev/.test(href))
+      expect(href).toMatch(/^https:\/\/potluck-picker\.pages\.dev\/?$/);
+  }
+});
