@@ -86,7 +86,8 @@ test('work wheel is never trapped', async ({ page, isMobile }) => {
 
 // WO-025: the wide demos' frames don't trap the wheel. With the pointer over the Scheduler or the
 // Pipeline, the page keeps scrolling: a frame its content fits doesn't scroll at all, and there is
-// no overscroll containment.
+// no overscroll containment. WO-034: from the pane's top, the wheel pages on to the next pane (the
+// Scheduler) or, past the last pane (the Pipeline), scrolls the page natively.
 const WIDE = ['.df-screen:has(.sch-app)', '.df-screen:has(.pl)'];
 
 test('work wheel passes over demos', async ({ page, isMobile }) => {
@@ -95,7 +96,9 @@ test('work wheel passes over demos', async ({ page, isMobile }) => {
   await page.goto('/');
   for (const sel of WIDE) {
     const screen = page.locator(`#work ${sel}`);
-    await screen.scrollIntoViewIfNeeded();
+    await screen.evaluate((s) =>
+      s.closest('.wk')!.scrollIntoView({ block: 'start', behavior: 'instant' }),
+    );
     await expect(screen.locator('astro-island')).not.toHaveAttribute('ssr');
     const box = (await screen.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, Math.max(box.y + 60, 200));
@@ -107,6 +110,8 @@ test('work wheel passes over demos', async ({ page, isMobile }) => {
     await expect
       .poll(() => page.evaluate(() => window.scrollY), { message: `wheel over ${sel}` })
       .toBeGreaterThanOrEqual(start + 800);
+    // Let the gesture end before the next one: a run of notches without a pause is one gesture.
+    await page.waitForTimeout(600);
   }
 });
 
@@ -412,4 +417,167 @@ test('work demos all show inline on laptops and without scripting', async ({
     await expect(page.locator('#work .wk-live .wk-demo:visible')).toHaveCount(4);
     await ctx.close();
   }
+});
+
+// WO-034: the Work panes lock in again, with a small wheel script (work-paging.ts), not a CSS
+// snap. These use page.mouse.wheel, which sends real wheel events (Phase 11 found that
+// Input.synthesizeScrollGesture differs between macOS and Linux).
+const paneTop = (page: Page, i: number) =>
+  page.evaluate(
+    (i) =>
+      Math.round(
+        (document.querySelectorAll('#work .wk')[i] as HTMLElement).getBoundingClientRect().top,
+      ),
+    i,
+  );
+
+// Open the home at a laptop size, let the demos hydrate (a pass over the page), then put pane
+// `i`'s top flush under the header with the pointer over its story.
+async function atPane(page: Page, i: number, size = { width: 1440, height: 900 }) {
+  await page.setViewportSize(size);
+  await page.goto('/');
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y < height; y += 600) {
+    await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+    await page.waitForTimeout(30);
+  }
+  await page.waitForLoadState('networkidle');
+  await page.evaluate((i) => {
+    (document.querySelectorAll('#work .wk')[i] as HTMLElement).scrollIntoView({
+      block: 'start',
+      behavior: 'instant',
+    });
+  }, i);
+  await page.mouse.move(Math.min(500, size.width / 2), 500);
+  const nav = await navHeight(page);
+  expect(await paneTop(page, i)).toBe(nav);
+  return nav;
+}
+
+// One gesture's notches, `gap` ms apart.
+async function notches(page: Page, n: number, dy: number, gap = 30) {
+  for (let k = 0; k < n; k++) {
+    await page.mouse.wheel(0, dy);
+    if (k < n - 1) await page.waitForTimeout(gap);
+  }
+}
+
+test('work panes lock in on one notch', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'a mouse wheel on a laptop');
+  const nav = await atPane(page, 0);
+  const t0 = Date.now();
+  await page.mouse.wheel(0, 100);
+  await expect.poll(() => paneTop(page, 1), { timeout: 2000 }).toBe(nav);
+  expect(Date.now() - t0, 'the move is short').toBeLessThan(1200);
+  // It stays there: never back to the pane it started in.
+  await page.waitForTimeout(800);
+  expect(await paneTop(page, 1)).toBe(nav);
+
+  await page.mouse.wheel(0, -100);
+  await expect.poll(() => paneTop(page, 0), { timeout: 2000 }).toBe(nav);
+  await page.waitForTimeout(800);
+  expect(await paneTop(page, 0)).toBe(nav);
+});
+
+test('work one gesture moves one pane', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'a mouse wheel on a laptop');
+  const nav = await atPane(page, 0);
+  await notches(page, 6, 100);
+  await page.waitForTimeout(800);
+  expect(await paneTop(page, 1), 'six quick notches: one pane').toBe(nav);
+  // A second gesture, once the first has settled, moves one more.
+  await notches(page, 6, 100);
+  await page.waitForTimeout(800);
+  expect(await paneTop(page, 2), 'the next gesture: one more').toBe(nav);
+  // And up again, one pane.
+  await notches(page, 6, -100);
+  await page.waitForTimeout(800);
+  expect(await paneTop(page, 1)).toBe(nav);
+  // A trackpad fling: a swipe, then a long tail of inertia that dies away. Still one pane.
+  for (let k = 0; k < 50; k++) {
+    await page.mouse.wheel(0, Math.max(1, Math.round(60 * 0.92 ** k)));
+    await page.waitForTimeout(16);
+  }
+  await page.waitForTimeout(800);
+  expect(await paneTop(page, 2), 'a fling and its inertia: one pane').toBe(nav);
+});
+
+test('work paging releases at the ends', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'a mouse wheel on a laptop');
+  await page.goto('/');
+  const last = (await page.locator('#work .wk').count()) - 1;
+  const nav = await atPane(page, last);
+  // Past the last pane, the wheel scrolls the page natively into the rest of Work.
+  const start = await page.evaluate(() => window.scrollY);
+  await notches(page, 5, 100, 60);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 400);
+  await page.waitForTimeout(600);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 400);
+
+  // Up from the first pane: natively back towards the hero.
+  await atPane(page, 0);
+  const top = await page.evaluate(() => window.scrollY);
+  await notches(page, 5, -100, 60);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(top - 400);
+  await page.waitForTimeout(600);
+  expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(top - 400);
+
+  // From the top of the page, a notch is a notch: no jump while the first pane is far down.
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(600);
+  const y = await page.evaluate(() => window.scrollY);
+  expect(y).toBeGreaterThan(0);
+  expect(y).toBeLessThanOrEqual(150);
+
+  // Lock in from above: once the first pane's top is near the header, a notch brings it flush.
+  await page.evaluate((nav) => {
+    const pane = document.querySelector('#work .wk') as HTMLElement;
+    window.scrollTo({
+      top: pane.getBoundingClientRect().top + window.scrollY - nav - 150,
+      behavior: 'instant',
+    });
+  }, nav);
+  await page.mouse.wheel(0, 100);
+  await expect.poll(() => paneTop(page, 0), { timeout: 2000 }).toBe(nav);
+});
+
+test('work paging respects motion and touch', async ({ page, browser, baseURL, isMobile }) => {
+  test.skip(!!isMobile, 'one pass covers each case');
+  // Reduced motion: a notch still moves one pane, at once.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const nav = await atPane(page, 0);
+  await page.mouse.wheel(0, 100);
+  await expect.poll(() => paneTop(page, 1), { timeout: 150 }).toBe(nav);
+  await page.waitForTimeout(600);
+  expect(await paneTop(page, 1)).toBe(nav);
+
+  // At 375 there is no paging: a notch scrolls about a notch.
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await atPane(page, 0, { width: 375, height: 812 });
+  const y0 = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(600);
+  const moved = (await page.evaluate(() => window.scrollY)) - y0;
+  expect(moved).toBeGreaterThan(0);
+  expect(moved).toBeLessThanOrEqual(150);
+
+  // A coarse pointer (a touch tablet) at a laptop size: no paging either.
+  const ctx = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    hasTouch: true,
+    isMobile: true,
+    baseURL,
+  });
+  const tablet = await ctx.newPage();
+  await tablet.goto('/');
+  expect(await tablet.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true);
+  await atPane(tablet, 0, { width: 1280, height: 900 });
+  const t0 = await tablet.evaluate(() => window.scrollY);
+  await tablet.mouse.wheel(0, 100);
+  await tablet.waitForTimeout(600);
+  const went = (await tablet.evaluate(() => window.scrollY)) - t0;
+  expect(went).toBeGreaterThan(0);
+  expect(went).toBeLessThanOrEqual(150);
+  await ctx.close();
 });
