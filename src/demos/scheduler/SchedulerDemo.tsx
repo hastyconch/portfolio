@@ -92,6 +92,8 @@ export default function SchedulerDemo() {
   const busy = gap ? NURSES.filter((_, r) => week[r][gap.day] !== 'O').map((n) => n.name) : [];
   // The best eligible nurse gets the one filled button; the others are outlined.
   const best = candidates.find((c) => !c.blocks.length)?.nurse;
+  // Only the nurses who can take the open shift get its tint in the grid.
+  const eligible = new Set(candidates.filter((c) => !c.blocks.length).map((c) => c.nurse));
   const gridWrap = useRef<HTMLDivElement | null>(null);
   // Which edges of the roster have more columns past them (drives the fade and the hint).
   const [edges, setEdges] = useState<'' | 'start' | 'end' | 'both'>('');
@@ -271,13 +273,6 @@ export default function SchedulerDemo() {
               {overtime}h
             </dd>
           </div>
-          <div>
-            <dt>Rule problems</dt>
-            <dd>
-              {blocks > 0 && <Dot tone="under" />}
-              {blocks}
-            </dd>
-          </div>
         </dl>
         <button type="button" className="sch-btn sch-reset" onClick={reset}>
           Reset
@@ -344,7 +339,7 @@ export default function SchedulerDemo() {
                             role="gridcell"
                             tabIndex={tab(r, c)}
                             aria-label={nurseCellLabel(week, r, c, cellIssues)}
-                            className={`sch-cell is-${s}${cellIssues ? ' is-bad' : ''}${leave ? ' is-leave' : ''}${gap && c === gap.day ? ' in-open' : ''}`}
+                            className={`sch-cell is-${s}${cellIssues ? ' is-bad' : ''}${leave ? ' is-leave' : ''}${gap && c === gap.day ? ' in-open' : ''}${eligible.has(r) && gap && c === gap.day ? ' is-cand' : ''}`}
                             onClick={() => {
                               focusCell(r, c);
                               cycle(r, c);
@@ -464,7 +459,7 @@ export default function SchedulerDemo() {
                 {issues.map((i) => (
                   <li key={i.key} className={i.severity === 'block' ? 'is-block' : 'is-warn'}>
                     <span className="sch-sev">
-                      {i.severity === 'block' ? 'Problem:' : 'Warning:'}
+                      {i.severity === 'block' ? 'Problem' : 'Warning'}
                     </span>{' '}
                     {i.text}
                   </li>
@@ -532,7 +527,10 @@ export default function SchedulerDemo() {
                         aria-describedby={why}
                         onClick={() => assign(cand)}
                       >
-                        {blocked ? `Can’t assign ${n.name}` : `Assign ${n.name}`}
+                        {/* The name sits beside the button already; it stays in the button's
+                            accessible name, after the visible words (WCAG 2.5.3). */}
+                        {blocked ? 'Can’t assign' : 'Assign'}
+                        <span className="dk-sr"> {n.name}</span>
                       </button>
                       <p className="sch-reason" id={why}>
                         <span className={`sch-lead is-${tone}`}>

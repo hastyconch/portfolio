@@ -14,10 +14,10 @@
   --sch-accent-soft: #e5f1ef;
   --sch-on-accent: #ffffff;
   --sch-focus: #14181f;
-  --sch-day-bg: #e6e9ee;
+  --sch-day-bg: #eef0f3;
   --sch-day-ink: #14181f;
-  --sch-night-bg: #485364;
-  --sch-night-ink: #ffffff;
+  --sch-night-bg: #cdd3db;
+  --sch-night-ink: #14181f;
   --sch-bad: #b42318;
   --sch-bad-soft: #fcefed;
   --sch-warn: #8a4b00;
@@ -49,9 +49,9 @@
     --sch-accent-soft: #15302d;
     --sch-on-accent: #062320;
     --sch-focus: #e7e9ec;
-    --sch-day-bg: #262c34;
+    --sch-day-bg: #22282f;
     --sch-day-ink: #e7e9ec;
-    --sch-night-bg: #4a5768;
+    --sch-night-bg: #3a4450;
     --sch-night-ink: #ffffff;
     --sch-bad: #ff8b7e;
     --sch-bad-soft: #36201e;
@@ -252,6 +252,8 @@
   z-index: 1;
   min-width: 9rem;
   background: var(--sch-surface);
+  /* a hairline on the name column's edge, so cells scrolling under it end cleanly */
+  box-shadow: inset -1px 0 0 var(--sch-rule);
 }
 .sch-grid .sch-corner {
   padding-left: var(--dk-3);
@@ -327,7 +329,7 @@
 .sch-cell.is-O .sch-pill {
   color: var(--sch-muted);
 }
-.sch-cell.is-O.in-open .sch-pill {
+.sch-cell.is-O.is-cand .sch-pill {
   background: var(--sch-accent-soft);
 }
 .sch-cell.is-leave.is-O .sch-pill {
@@ -375,6 +377,11 @@
   line-height: var(--dk-lh-snug);
 }
 .sch-count .sch-glyph {
+  font-weight: 400;
+  color: var(--sch-muted);
+}
+.sch-count:is(.is-under, .is-over) .sch-glyph {
+  font-weight: 600;
   color: var(--sch-ink);
 }
 .sch-state {
@@ -530,6 +537,11 @@
 .sch-sev {
   font-weight: 600;
 }
+.sch-sev::after {
+  content: ' ·';
+  font-weight: 400;
+  color: var(--sch-muted);
+}
 .is-block > .sch-sev {
   color: var(--sch-bad);
 }
@@ -660,6 +672,7 @@
 }
 .sch-assign {
   grid-area: btn;
+  min-width: 6.5rem;
   border-color: var(--sch-accent);
   color: var(--sch-accent);
 }
@@ -677,7 +690,7 @@
   background: var(--sch-ink);
 }
 .sch-assign[aria-disabled='true'] {
-  border-color: transparent;
+  border-color: var(--sch-rule);
   font-weight: 500;
   color: var(--sch-muted);
   background: transparent;

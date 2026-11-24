@@ -119,20 +119,30 @@ const extracted = [
   },
 ] as const;
 
-const workstreams: { name: string; owner: string; was: Rag; rag: Rag; note: string }[] = [
+// `src` is the transcript line (index) each output traces back to, as in the extraction step.
+const workstreams: {
+  name: string;
+  owner: string;
+  was: Rag;
+  rag: Rag;
+  note: string;
+  src: number;
+}[] = [
   {
     name: 'Tenant dashboard',
     owner: 'Carmen',
     was: 'green',
     rag: 'green',
     note: 'On track; scope trimmed by agreement.',
+    src: 2,
   },
   {
     name: 'Lease-data migration',
     owner: 'Theo',
     was: 'green',
     rag: 'amber',
-    note: 'Review 2 days overdue; nudge sent.',
+    note: 'Review 2 days overdue; nudge drafted.',
+    src: 1,
   },
   {
     name: 'Payments integration',
@@ -140,35 +150,58 @@ const workstreams: { name: string; owner: string; was: Rag; rag: Rag; note: stri
     was: 'amber',
     rag: 'red',
     note: 'Sandbox unstable; fallback plan agreed.',
+    src: 3,
   },
 ];
 
 const followUps = [
-  { who: 'Theo', task: 'Migration script review', due: '2 days overdue', overdue: true },
-  { who: 'Carmen', task: 'Final tenant specs', due: 'Due Thursday', overdue: false },
-  { who: 'Jonah', task: 'Sandbox ticket', due: 'Due today', overdue: false },
+  { who: 'Theo', task: 'Migration script review', due: '2 days overdue', overdue: true, src: 1 },
+  { who: 'Carmen', task: 'Final tenant specs', due: 'Due Thursday', overdue: false, src: 4 },
+  { who: 'Jonah', task: 'Sandbox ticket', due: 'Due today', overdue: false, src: 3 },
 ];
 
 const columns = ['To do', 'In progress', 'Done'] as const;
 type Column = (typeof columns)[number];
-const tickets: { id: string; title: string; who: string; from: Column | 'New'; to: Column }[] = [
-  { id: 'LAR-157', title: 'Payments sandbox ticket', who: 'Jonah', from: 'New', to: 'To do' },
+type Ticket = { id: string; title: string; who: string; from: Column | 'New'; to: Column };
+const tickets: (Ticket & { src: number })[] = [
+  {
+    id: 'LAR-157',
+    title: 'Payments sandbox ticket',
+    who: 'Jonah',
+    from: 'New',
+    to: 'To do',
+    src: 3,
+  },
   {
     id: 'LAR-142',
     title: 'Review migration script',
     who: 'Theo',
     from: 'To do',
     to: 'In progress',
+    src: 1,
   },
-  { id: 'LAR-131', title: 'Final tenant specs', who: 'Carmen', from: 'To do', to: 'In progress' },
+  {
+    id: 'LAR-131',
+    title: 'Final tenant specs',
+    who: 'Carmen',
+    from: 'To do',
+    to: 'In progress',
+    src: 4,
+  },
   {
     id: 'LAR-118',
     title: 'Drop saved search from R3',
     who: 'Lorna',
     from: 'In progress',
     to: 'Done',
+    src: 2,
   },
 ];
+
+/** A transcript line reference, in the same form everywhere. */
+function Cite({ src }: { src: number }) {
+  return <span className="pl-ln">Line {src + 1}</span>;
+}
 
 /** `uid` groups one demo's citations, so opening one closes the others (one source at a time). */
 type View = { nudged: boolean; synced: boolean; uid: string };
@@ -241,7 +274,19 @@ const steps: Step[] = [
               {g.items.map((it) => (
                 <li key={it.text}>
                   <details className="pl-cite" name={`${v.uid}-cite`}>
-                    <summary>{it.text}</summary>
+                    <summary>
+                      <svg
+                        className="pl-chev"
+                        viewBox="0 0 16 16"
+                        width="12"
+                        height="12"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path d="M6 3.5 10.5 8 6 12.5" />
+                      </svg>
+                      {it.text}
+                    </summary>
                     <p className="pl-quote">
                       <span className="pl-meta">
                         Source · line {it.src + 1}, {transcript[it.src].who},{' '}
@@ -252,7 +297,7 @@ const steps: Step[] = [
                   </details>
                   <span className="pl-src">
                     {'owner' in it && <span className="pl-src-owner">{it.owner}</span>}
-                    <span className="pl-ln">Line {it.src + 1}</span>
+                    <Cite src={it.src} />
                   </span>
                 </li>
               ))}
@@ -287,8 +332,8 @@ const steps: Step[] = [
           </div>
         </dl>
         <p className="pl-summary">
-          On track for the 14 March release. Payments testing is at risk; a fallback plan is agreed
-          and the migration review has been chased.
+          The 14 March date holds. Payments testing is at risk, with a fallback plan agreed, and the
+          overdue migration review is being chased.
         </p>
         <table className="pl-table">
           <thead>
@@ -312,7 +357,9 @@ const steps: Step[] = [
                 <td>
                   <RagChip rag={w.rag} />
                 </td>
-                <td className="pl-ws-note">{w.note}</td>
+                <td className="pl-ws-note">
+                  {w.note} <Cite src={w.src} />
+                </td>
                 <td className="pl-owner">{w.owner}</td>
               </tr>
             ))}
@@ -335,19 +382,24 @@ const steps: Step[] = [
             <span className="pl-meta">3 open</span>
           </p>
           <ul className="pl-follow">
-            {followUps.map((f) => (
-              <li key={f.who} className={f.overdue ? 'is-flagged' : undefined}>
-                <span className="pl-follow-t">
-                  <strong>{f.who}</strong>
-                  <span>{f.task}</span>
-                </span>
-                <span className="pl-due">
-                  {f.overdue && <Icon name="flag" />}
-                  {f.due}
-                  {f.overdue && <span className="dk-sr"> (flagged)</span>}
-                </span>
-              </li>
-            ))}
+            {followUps.map((f) => {
+              const flagged = f.overdue && !v.nudged;
+              return (
+                <li key={f.who} className={flagged ? 'is-flagged' : undefined}>
+                  <span className="pl-follow-t">
+                    <strong>{f.who}</strong>
+                    <span>
+                      {f.task} · <Cite src={f.src} />
+                    </span>
+                  </span>
+                  <span className="pl-due">
+                    {flagged && <Icon name="flag" />}
+                    {f.overdue && v.nudged ? 'Nudged · replied' : f.due}
+                    {flagged && <span className="dk-sr"> (flagged)</span>}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
         <div className="pl-panel pl-chat">
@@ -363,15 +415,15 @@ const steps: Step[] = [
                   : 'Draft to Theo · AI-written, waiting for TPM review'}
               </p>
               <p>
-                Hi Theo, hope your week is going well! Jonah’s migration script is ready for review
-                whenever you have a moment; it’s the last step before cut-over. Could you take a
-                look by Wednesday? Happy to pair on it if that helps. Thanks, Lorna
+                Hi Theo, the migration script review (LAR-142) is 2 days past Friday and it’s the
+                last step before cut-over. Could you review it by Wednesday? Happy to pair if that
+                helps. Thanks, Lorna
               </p>
             </div>
             {v.nudged && (
               <div className="pl-msg pl-in pl-reply">
                 <span className="pl-meta">Theo replied · 4 min later</span>
-                <p>On it. Reviewing this afternoon, sorry for the delay!</p>
+                <p>On it. Reviewing this afternoon.</p>
               </div>
             )}
           </div>
@@ -405,7 +457,8 @@ const steps: Step[] = [
                       <span className="pl-ticket-t">{t.title}</span>
                       {v.synced && (
                         <span className={`pl-moved${t.from === 'New' ? ' is-new' : ''}`}>
-                          {t.from === 'New' ? 'Created by AI' : `Moved from ${t.from}`}
+                          {t.from === 'New' ? 'Created by AI' : `Moved from ${t.from}`} ·{' '}
+                          <Cite src={t.src} />
                         </span>
                       )}
                     </li>

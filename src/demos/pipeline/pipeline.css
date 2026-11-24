@@ -127,7 +127,7 @@
   background: var(--pl-rule-2);
 }
 .pl-track li.is-done + li::before {
-  background: var(--pl-accent);
+  background: var(--pl-ink-3);
 }
 .pl-node {
   display: grid;
@@ -161,8 +161,8 @@
     color var(--dk-quick) var(--dk-ease);
 }
 .is-done .pl-num {
-  border-color: var(--pl-accent);
-  color: var(--pl-accent);
+  border-color: var(--pl-ink-3);
+  color: var(--pl-ink-2);
 }
 .is-on .pl-num {
   border-color: var(--pl-accent);
@@ -329,33 +329,44 @@
   text-align: right;
 }
 .pl-cite summary {
-  width: fit-content;
+  display: flex;
+  align-items: baseline;
+  gap: var(--dk-2);
+  margin-left: calc(-1 * var(--dk-2));
+  padding: 2px var(--dk-2);
   border-radius: var(--dk-r1);
   cursor: pointer;
   list-style: none;
   line-height: var(--dk-lh-snug);
-  text-decoration: underline dotted var(--pl-ink-3);
-  text-underline-offset: 3px;
 }
 .pl-cite summary::-webkit-details-marker {
   display: none;
 }
+/* No transitions here: the fit test waits on every running animation while focus moves. */
 .pl-cite summary:is(:hover, :focus-visible) {
-  color: var(--pl-accent);
-  text-decoration-color: currentColor;
-  text-decoration-style: solid;
+  background: var(--pl-sunk);
 }
 .pl-cite summary:active {
-  color: var(--pl-ink-2);
+  background: var(--pl-rule);
 }
 .pl-cite[open] summary {
-  text-decoration: none;
   font-weight: 600;
 }
+.pl-chev {
+  flex: none;
+  fill: none;
+  stroke: var(--pl-ink-3);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pl-cite[open] .pl-chev {
+  rotate: 90deg;
+}
 .pl-quote {
-  margin: var(--dk-1) 0 2px !important;
+  margin: var(--dk-1) 0 2px calc(12px + var(--dk-2)) !important;
   padding-left: var(--dk-3);
-  border-left: 2px solid var(--pl-accent);
+  border-left: 2px solid var(--pl-rule-2);
   font-size: var(--dk-fs-sm);
   color: var(--pl-ink-2);
 }
@@ -512,12 +523,12 @@
   border-radius: var(--dk-r2);
 }
 .pl-out {
-  border: 1px dashed var(--pl-rule-2);
+  border: 1px solid var(--pl-rule-2);
   background: var(--pl-sunk);
 }
 .pl-out.is-sent {
   border: 1px solid var(--pl-rule);
-  border-left: 2px solid var(--pl-accent);
+  border-left: 2px solid var(--pl-ink-3);
   border-radius: 0 var(--dk-r2) var(--dk-r2) 0;
   background: none;
 }
@@ -572,7 +583,7 @@
 }
 .pl-moved.is-new {
   font-weight: 600;
-  color: var(--pl-accent);
+  color: var(--pl-ink-2);
 }
 .pl-done {
   display: flex;
@@ -628,15 +639,16 @@
 .pl-btn:active {
   scale: var(--dk-press);
 }
+/* The step's action is ink, not accent (the site's rule: accent fills only start something
+   playable). The accent stays for the current stage and focus. */
 .pl-next {
-  border-color: var(--pl-accent);
-  color: var(--pl-on-accent);
-  background: var(--pl-accent);
-}
-.pl-next:is(:hover, :focus-visible) {
   border-color: var(--pl-ink);
   color: var(--pl-surface);
   background: var(--pl-ink);
+}
+.pl-next:is(:hover, :focus-visible) {
+  border-color: var(--pl-ink-2);
+  background: var(--pl-ink-2);
 }
 .pl-btn[aria-disabled='true'] {
   border-color: var(--pl-rule);
