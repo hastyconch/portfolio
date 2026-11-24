@@ -39,28 +39,92 @@ test('hero first screen on phones', async ({ page, isMobile }) => {
   await expect(hero.getByRole('link', { name: /See the work/ })).toHaveAttribute('href', '#work');
 });
 
-// WO-028: on a laptop the first screen shows the work. At 1440 x 900 the Work title is in the first
-// viewport; at 1366 x 768 the name, headline and hero links still are.
+// WO-028, WO-032: on a laptop the first screen shows the work. The Work title is in the first
+// viewport at 1366 x 768 and 1280 x 800, and at 1440 x 900 the first engagement's kicker is too;
+// at 1366 x 768 the name, headline and hero links still are.
 test('hero shows the work above the fold', async ({ page, isMobile }) => {
   test.skip(isMobile, 'laptop layout');
   const inView = async (sel: string, height: number) => {
-    const el = page.locator(sel);
+    const el = page.locator(sel).first();
     await expect(el).toBeVisible();
     const box = (await el.boundingBox())!;
     expect(box.y, `${sel} top`).toBeGreaterThanOrEqual(0);
     expect(box.y + box.height, `${sel} is in the first ${height}px`).toBeLessThanOrEqual(height);
   };
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await page.evaluate(() => document.fonts.ready);
+  const open = async (width: number, height: number) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+  };
+  await open(1440, 900);
   await inView('#work-h', 900);
+  await inView('#work .wk-kicker', 900);
 
-  await page.setViewportSize({ width: 1366, height: 768 });
-  await page.goto('/');
-  await page.evaluate(() => document.fonts.ready);
+  for (const [width, height] of [
+    [1366, 768],
+    [1280, 800],
+  ]) {
+    await open(width, height);
+    await inView('#work-h', height);
+  }
+
+  await open(1366, 768);
   for (const sel of ['#hero .hero-name', '#hero .hero-headline', '#hero .hero-links']) {
     await inView(sel, 768);
   }
+});
+
+// WO-032: the pillars are quiet. No rules above, below or between them, and each title runs in at
+// the same size as its body (weight 600, not a bold column head).
+test('hero pillars are quiet', async ({ page }) => {
+  for (const width of [375, 800, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const facts = page.locator('#hero .hero-facts');
+    await expect(facts.locator('dt')).toHaveCount(3);
+    const borders = await facts.evaluate((dl) =>
+      [dl, ...dl.querySelectorAll('*')].flatMap((el) => {
+        const s = getComputedStyle(el);
+        return ['top', 'right', 'bottom', 'left']
+          .filter((side) => parseFloat(s.getPropertyValue(`border-${side}-width`)) > 0)
+          .map((side) => `${el.tagName.toLowerCase()} border-${side}`);
+      }),
+    );
+    expect(borders, `${width}: pillar rules`).toEqual([]);
+    const runs = await facts.locator(':scope > div').evaluateAll((pillars) =>
+      pillars.map((d) => {
+        const [dt, dd] = [d.querySelector('dt')!, d.querySelector('dd')!].map((el) =>
+          getComputedStyle(el),
+        );
+        return {
+          title: dt.fontSize,
+          body: dd.fontSize,
+          weight: dt.fontWeight,
+          display: dt.display,
+        };
+      }),
+    );
+    for (const r of runs) {
+      expect(r.title, `${width}: title size is the body size`).toBe(r.body);
+      expect(r.weight, `${width}: title weight`).toBe('600');
+      expect(r.display, `${width}: the title runs in`).toBe('inline');
+    }
+  }
+});
+
+// WO-032: on a tablet (one column) the sleeve is capped, so the name is in the top half of an
+// 800 x 1000 screen, and no pillar title wraps (a run-in title takes one line).
+test('hero on tablets', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'tablet layout');
+  await page.setViewportSize({ width: 800, height: 1000 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  const name = (await page.locator('#hero .hero-name').boundingBox())!;
+  expect(name.y, 'name top at 800 x 1000').toBeLessThanOrEqual(500);
+  const lines = await page
+    .locator('#hero .hero-facts dt')
+    .evaluateAll((dts) => dts.map((dt) => dt.getClientRects().length));
+  expect(lines, 'lines per pillar title').toEqual([1, 1, 1]);
 });
 
 test('contact links are honest', async ({ page }) => {
