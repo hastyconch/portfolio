@@ -540,9 +540,6 @@ const thumbs = cur
   /* A song page: the song's band, in the dark palette (.ln-dark), whatever the scheme. */
   .np[data-band] {
     background: color-mix(in srgb, var(--c1) 12%, var(--ln-bg));
-    /* --ln-hairline resolves its colour on :root (cream in light mode); re-resolve it here, so
-       the header's edge, the Menu button and the menu's rules take the band's own. */
-    --ln-hairline: 1px solid var(--ln-rule);
   }
   /* The header holds still: its scroll margin cancels the root's scroll padding (liner.css), so
      focusing or clicking anything in it never scrolls the page to "reveal" it. */
