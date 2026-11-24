@@ -227,6 +227,43 @@ test('resume pdf', async ({ page, request }) => {
   execFileSync('node', ['factory/stations/resume-pdf.mjs', '--check'], { stdio: 'pipe' });
 });
 
+// WO-038: the redesign keeps every placeholder marker on screen (owner decision): the "Some
+// details to come" chip while the résumé is a placeholder, and every field still marked
+// "Placeholder" or "to come" in resume.json. A date range whose ends are both "Placeholder" shows
+// the word once.
+test('résumé keeps its placeholders', async ({ page }) => {
+  const [resume] = JSON.parse(readFileSync('src/content/resume.json', 'utf8')) as {
+    status: string;
+    experience: { start: string; end: string; bullets: string[] }[];
+    education: { school: string; detail: string }[];
+  }[];
+  const marked = (s: string) => /placeholder|to come/i.test(s);
+  const fields = [
+    ...resume.experience.flatMap((e) => [
+      e.start === e.end ? e.start : `${e.start} – ${e.end}`,
+      ...e.bullets,
+    ]),
+    ...resume.education.flatMap((e) => [e.school, e.detail]),
+  ].filter(marked);
+  expect(fields.length, 'placeholder fields in resume.json').toBeGreaterThan(0);
+
+  await page.goto('/');
+  const section = page.locator('#resume');
+  if (resume.status === 'placeholder')
+    await expect(section.locator('.ln-ph', { hasText: 'Some details to come' })).toBeVisible();
+  // Each field is a visible leaf element of its own (a date, a bullet, a school, a detail).
+  const leaves = await section.evaluate((s) =>
+    [...s.querySelectorAll('*')]
+      .filter((el) => !el.children.length && el.getClientRects().length)
+      .map((el) => el.textContent!.trim()),
+  );
+  for (const f of new Set(fields)) {
+    const want = fields.filter((x) => x === f).length;
+    const have = leaves.filter((x) => x === f).length;
+    expect(have, `"${f}" on screen`).toBe(want);
+  }
+});
+
 test('reflow at 320', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'one narrow pass');
   await page.setViewportSize({ width: 320, height: 640 });
