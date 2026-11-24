@@ -1,6 +1,6 @@
 ---
 title: Potluck Picker
-tagline: One link for the group chat, and everyone says what they're bringing.
+tagline: "One link for the guests, and everyone says what they're bringing."
 category: app
 year: '2026'
 platforms: [Web]
