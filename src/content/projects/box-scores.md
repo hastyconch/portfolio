@@ -57,7 +57,7 @@ gallery:
       }
 demo: boxscores
 accent: '#c2410c'
-order: 3
+order: 4
 featured: false
 status: ready
 ---

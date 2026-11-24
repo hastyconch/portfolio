@@ -73,7 +73,7 @@ gallery:
       }
 demo: mahjong
 accent: '#14532d'
-order: 2
+order: 3
 featured: false
 status: ready
 ---
