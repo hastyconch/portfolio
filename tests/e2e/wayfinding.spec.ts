@@ -427,6 +427,14 @@ test('phone menu closes on scroll', async ({ page, context, isMobile }) => {
   const open = () => menu.evaluate((d: HTMLDetailsElement) => d.open);
   // Back to the top, and at rest (the menu measures a scroll from where the page settles).
   const top = async () => {
+    // A swipe leaves a fling gliding; let it stop before jumping back.
+    await expect
+      .poll(async () => {
+        const a = await page.evaluate(() => scrollY);
+        await page.waitForTimeout(200);
+        return a === (await page.evaluate(() => scrollY));
+      })
+      .toBe(true);
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await page.waitForTimeout(300);
   };
@@ -442,14 +450,17 @@ test('phone menu closes on scroll', async ({ page, context, isMobile }) => {
   await top();
   await toggle.tap();
   expect(await open()).toBe(true);
+  // Real touch events, not Input.synthesizeScrollGesture: CI's Linux Chromium doesn't run
+  // synthesized gestures the way macOS does, and the menu reacts to the touchmove itself.
   const cdp = await context.newCDPSession(page);
-  await cdp.send('Input.synthesizeScrollGesture', {
-    x: 187,
-    y: 700,
-    yDistance: -400,
-    speed: 800,
-    gestureSourceType: 'touch',
-  });
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', y: number) =>
+    cdp.send('Input.dispatchTouchEvent', {
+      type,
+      touchPoints: type === 'touchEnd' ? [] : [{ x: 187, y }],
+    });
+  await touch('touchStart', 700);
+  for (let y = 680; y >= 300; y -= 40) await touch('touchMove', y);
+  await touch('touchEnd', 300);
   await expect.poll(open).toBe(false);
 
   // Focus inside the menu goes back to its toggle.
