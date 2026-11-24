@@ -81,6 +81,112 @@ test('song header matches the band', async ({ page }) => {
   }
 });
 
+// WO-031: the site ring is unchanged outside the demos (the demos' own rings now win inside
+// them): 3px solid, 3px out, in the band's accent; the skip link's ring is ink.
+test('craft focus ring outside demos', async ({ page, isMobile }) => {
+  for (const scheme of ['dark', 'light'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.skip-link')).toBeFocused();
+    const targets = [
+      page.locator('.skip-link'),
+      page.locator('header.np a').first(),
+      page.locator('main a[href]:not(.wk-demo *, .mu-call-a)').first(),
+      page.locator('#music .mu-tab, #music button.pl-play').first(),
+      page.locator('footer .ft-links a').first(),
+    ];
+    if (!isMobile)
+      targets.push(
+        page
+          .getByRole('navigation', { name: 'Sections' })
+          .getByRole('link', { name: 'Work', exact: true }),
+      );
+    for (const [i, t] of targets.entries()) {
+      if (i > 0) await t.focus();
+      const s = await t.evaluate((el) => {
+        const probe = document.createElement('span');
+        probe.style.color = el.classList.contains('skip-link')
+          ? 'var(--ln-ink)'
+          : 'var(--ln-accent)';
+        el.parentElement!.append(probe);
+        const want = getComputedStyle(probe).color;
+        probe.remove();
+        const cs = getComputedStyle(el);
+        return {
+          name: `${el.tagName.toLowerCase()}.${el.className}`,
+          fv: el.matches(':focus-visible'),
+          color: cs.outlineColor,
+          want,
+          style: cs.outlineStyle,
+          width: cs.outlineWidth,
+          offset: cs.outlineOffset,
+        };
+      });
+      const at = `${scheme} ${s.name}`;
+      expect(s.fv, at).toBe(true);
+      expect(s.color, at).toBe(s.want);
+      expect(s.style, at).toBe('solid');
+      expect(s.width, at).toBe('3px');
+      expect(s.offset, at).toBe('3px');
+    }
+  }
+});
+
+// WO-031: --ln-hairline re-resolves in every band, so in light mode the hairlines on the dark
+// surfaces (song players and pager, the Music band, the footer, the 404's footer) are the dark
+// band's rule, not the cream page's.
+test('craft hairlines follow their band', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  const must: Record<string, string[]> = {
+    '/music/roadhouse/': ['.sg-pg', '.pl-play', '.ft-links a'],
+    '/': ['#music .pl-play', '.ft-links a'],
+    '/this-page-does-not-exist/': ['.ft-links a'],
+  };
+  for (const [route, named] of Object.entries(must)) {
+    await page.goto(route);
+    const bands = await page.evaluate((named) => {
+      return [...document.querySelectorAll<HTMLElement>('.ln-dark')].map((band) => {
+        const probe = document.createElement('span');
+        probe.style.color = 'var(--ln-rule)';
+        band.append(probe);
+        const rule = getComputedStyle(probe).color;
+        probe.remove();
+        const off: string[] = [];
+        const lines = new Set<Element>();
+        for (const el of [band, ...band.querySelectorAll('*')]) {
+          if (el.closest('.ln-dark') !== band) continue;
+          const cs = getComputedStyle(el);
+          for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+            if (cs[`border${side}Style`] !== 'solid' || cs[`border${side}Width`] !== '1px')
+              continue;
+            lines.add(el);
+            const c = cs[`border${side}Color`];
+            if (c !== rule) off.push(`${el.tagName.toLowerCase()}.${el.className} ${side}: ${c}`);
+          }
+        }
+        const found = named.filter((sel) =>
+          [...band.querySelectorAll(sel)].some((el) => lines.has(el)),
+        );
+        return { band: band.className, rule, off, found };
+      });
+    }, named);
+    expect(bands.length, route).toBeGreaterThan(0);
+    for (const b of bands) {
+      expect(b.rule, `${route} ${b.band}: the dark band's rule`).toBe('rgb(59, 52, 46)');
+      expect(b.off, `${route} ${b.band}`).toEqual([]);
+    }
+    const found = new Set(bands.flatMap((b) => b.found));
+    for (const sel of named) expect(found.has(sel), `${route}: a hairline on ${sel}`).toBe(true);
+  }
+  // The cream page keeps its own rule.
+  await page.goto('/');
+  const cream = await page.evaluate(() =>
+    getComputedStyle(document.body).getPropertyValue('--ln-hairline').trim(),
+  );
+  expect(cream).toBe('1px solid #c9bba5');
+});
+
 // WO-021 (taste-skill): nothing fades in because the page scrolled. Scroll-linked animations are
 // allowed only for the reading-progress bar in the header.
 for (const route of ['/', '/projects/billable/', '/music/roadhouse/']) {

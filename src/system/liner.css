@@ -18,6 +18,10 @@
   --ln-hl: rgb(255 255 255 / 0.11);
   --ln-hl-hover: rgb(255 155 102 / 0.24);
   --ln-groove: rgb(255 255 255 / 0.06);
+  /* Composite tokens that bake in a colour live in this scope too, so they re-resolve per band:
+     a custom property's var() resolves where it is declared, so one declared on :root alone
+     would carry the cream rule into .ln-dark in light mode (WO-031). */
+  --ln-hairline: 1px solid var(--ln-rule);
 }
 
 @media (prefers-color-scheme: light) {
@@ -44,7 +48,6 @@
   --ln-max: 1240px;
   --ln-gutter: clamp(1rem, 4vw, 2.5rem);
   --ln-header: 60px;
-  --ln-hairline: 1px solid var(--ln-rule);
   /* Hero cover: two warm stops from the accent (#ff9b66 / #a63d17). Art, so it is the same in
      both schemes. */
   --ln-cover: linear-gradient(165deg, #ffab78 0%, #b8441c 100%);
@@ -130,7 +133,10 @@ body.ln > main {
   background-color: var(--ln-bg);
 }
 
-body.ln :focus-visible {
+/* The site ring. `.ln` adds no specificity (0,1,1), so a demo's own ring (`.sky-app
+   :focus-visible`, 0,2,0) and its inset panel offsets win on home exactly as on /demos/*
+   (WO-031). The `body` keeps it above Base.astro's fallback `:focus-visible` (0,1,0). */
+body:where(.ln) :focus-visible {
   outline: var(--focus-width) solid var(--ln-accent);
   outline-offset: var(--focus-offset);
 }

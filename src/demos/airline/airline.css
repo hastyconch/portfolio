@@ -858,6 +858,26 @@
 .sky-panel:focus-visible {
   outline-offset: -3px;
 }
+/* On Home the panel's top 7.5rem is the plum band, which hides a plum ring along the top and the
+   upper sides (WO-031). While the panel has keyboard focus the band stands one ring width clear
+   of the ring, so the ring shows on all four sides against the page colour. */
+.sky-panel:focus-visible > .sky-home {
+  background-position: calc(var(--dk-focus) * 2) calc(var(--dk-focus) * 2);
+  background-size: calc(100% - var(--dk-focus) * 4) 100%;
+  background-repeat: no-repeat;
+}
+/* The tab bar sits on the screen's rounded bottom edge, which clips an outset ring (WO-031): the
+   tabs' ring sits 2px inside them, and the outer two curve with the screen's corners (`--df-r`,
+   DemoFrame), so the ring is concentric with the corner and shows on all four sides. */
+.sky-tabs button:focus-visible {
+  outline-offset: calc(var(--dk-focus) * -1 - 2px);
+}
+.sky-tabs button:first-child:focus-visible {
+  border-bottom-left-radius: var(--df-r, 0px);
+}
+.sky-tabs button:last-child:focus-visible {
+  border-bottom-right-radius: var(--df-r, 0px);
+}
 .sky-sheet h2:focus {
   outline: none;
 }

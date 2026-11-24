@@ -748,6 +748,30 @@
   outline: var(--dk-focus) solid var(--gro-teal);
   outline-offset: 2px;
 }
+/* The panel scrolls inside the app's clipped frame: its ring sits inside it, like Airline's. */
+.gro-panel:focus-visible {
+  outline-offset: calc(var(--dk-focus) * -1);
+}
+/* On Home the panel's top 5.5rem is the teal band, which would hide a teal ring along the top and
+   the upper sides: while the panel has keyboard focus the band stands one ring width clear of
+   the ring, so the ring shows on all four sides against the page colour. */
+.gro-panel:focus-visible > .gro-home {
+  background-position: calc(var(--dk-focus) * 2) calc(var(--dk-focus) * 2);
+  background-size: calc(100% - var(--dk-focus) * 4) 100%;
+  background-repeat: no-repeat;
+}
+/* The tab bar sits on the screen's rounded bottom edge, which clips an outset ring (WO-031): the
+   tabs' ring sits 2px inside them, and the outer two curve with the screen's corners (`--df-r`,
+   DemoFrame), so the ring is concentric with the corner and shows on all four sides. */
+.gro-tabs button:focus-visible {
+  outline-offset: calc(var(--dk-focus) * -1 - 2px);
+}
+.gro-tabs button:first-child:focus-visible {
+  border-bottom-left-radius: var(--df-r, 0px);
+}
+.gro-tabs button:last-child:focus-visible {
+  border-bottom-right-radius: var(--df-r, 0px);
+}
 
 /* Motion: first-view ring fill, offer load pop, receipt arrival. Off under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
