@@ -1,10 +1,11 @@
 ---
 // Section header: a plain title and, optionally, a lead sentence and actions (slot).
-// Two shapes:
+// Two shapes, one title size (WO-033: the layout varies from section to section, the hierarchy
+// does not):
 //   "aside": the title sits in a narrow left column beside the lead (Work, aligned to its
-//            sector / company / role column). Actions, if any, end the lead's row (Projects'
-//            rail arrows). WO-027: Work and Projects share this one pattern.
-//   "stack": the title over the lead, actions on the right (Résumé).
+//            sector / company / role column). Actions, if any, end the lead's row.
+//   "stack": the title over the lead in one column, actions on the right of that block
+//            (Projects' rail arrows, Résumé).
 // Phones stack both shapes.
 interface Props {
   title: string;

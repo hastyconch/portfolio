@@ -21,13 +21,26 @@ if (!project) throw new Error('No project with demo: billable');
   {/* WO-029: a tap on Play that lands before the island has hydrated (a phone on a slow network)
       is kept, not lost. The server-rendered button has no handler yet, so this marks the island
       as pending; BillableMini starts the game when it mounts, and until then the button stays
-      pressed. Once hydrated, the island loses its ssr attribute and this does nothing. */}
+      pressed. Once hydrated, the island loses its ssr attribute and this does nothing.
+      WO-033: the wait says so. The stage is marked busy, the status line (a live region) says
+      "Loading the game…" and a label shows under the button; BillableMini clears them as the
+      game starts. If the island never hydrates, all of it clears after 10s and Play is back. */}
   <script is:inline slot="play">
     document.addEventListener(
       'click',
       (e) => {
         const i = e.target.closest?.('.bm-btn-play')?.closest('astro-island[ssr]');
-        if (i) i.dataset.pending = '';
+        if (!i || i.hasAttribute('data-pending')) return;
+        const stage = i.querySelector('.bm-stage');
+        const sr = i.querySelector('.bm-sr[role=status]');
+        const set = (on) => {
+          i.toggleAttribute('data-pending', on);
+          if (on) stage?.setAttribute('aria-busy', 'true');
+          else stage?.removeAttribute('aria-busy');
+          if (sr) sr.textContent = on ? 'Loading the game…' : '';
+        };
+        set(true);
+        setTimeout(() => i.hasAttribute('ssr') && set(false), 10000);
       },
       true,
     );
@@ -39,5 +52,20 @@ if (!project) throw new Error('No project with demo: billable');
     translate: 0 4px;
     box-shadow: 0 2px 0 var(--bm-ink);
     cursor: progress;
+  }
+  /* The visible half of "Loading the game…" (the status line carries it to screen readers, so
+     the label has empty alt text). It sits under the button without moving it. */
+  astro-island[data-pending] .bm-overlay-clear::after {
+    content: 'Loading…' / '';
+    position: absolute;
+    top: calc(50% + 2.5rem);
+    left: 50%;
+    translate: -50% 0;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--dk-rf);
+    font-size: var(--dk-fs-sm);
+    font-weight: 700;
+    color: var(--bm-paper);
+    background: color-mix(in srgb, var(--bm-ink) 90%, transparent);
   }
 </style>
