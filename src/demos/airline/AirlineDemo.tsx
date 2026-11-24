@@ -1,7 +1,10 @@
+// Direction (WO-035): "Wallet pass". A calm light app on a warm neutral base with one brand colour
+// (plum), a flat member pass, grouped lists instead of rows of cards, and a precise segmented tier
+// track on Status. Colour only where it means something: the tier, the balance, a confirmed booking.
 // Anonymized airline-loyalty member app (constitution art. 3 + 6): invented brand, mocked data.
 // Directions place this inside their own phone frame; they don't restyle its internals.
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { Barcode, Icon, SceneArt, type IconName, type Scene } from './art';
+import { Barcode, Icon, type IconName } from './art';
 import '../kit.css';
 import './airline.css';
 
@@ -62,22 +65,10 @@ type Flight = {
   points: number;
   cash: number;
   fare: number;
-  scene: Scene;
   flight: string;
 };
+// Cheapest first: the list reads as "what your balance reaches".
 const flights: Flight[] = [
-  {
-    id: 'f1',
-    from: 'YYZ',
-    to: 'LIS',
-    city: 'Lisbon',
-    date: 'Mar 14',
-    points: 35_000,
-    cash: 89,
-    fare: 612,
-    scene: 'lisbon',
-    flight: 'SK 238',
-  },
   {
     id: 'f2',
     from: 'YYZ',
@@ -87,20 +78,7 @@ const flights: Flight[] = [
     points: 15_000,
     cash: 42,
     fare: 318,
-    scene: 'vancouver',
     flight: 'SK 115',
-  },
-  {
-    id: 'f3',
-    from: 'YYZ',
-    to: 'NRT',
-    city: 'Tokyo',
-    date: 'Apr 21',
-    points: 75_000,
-    cash: 120,
-    fare: 1_240,
-    scene: 'tokyo',
-    flight: 'SK 9',
   },
   {
     id: 'f4',
@@ -111,8 +89,29 @@ const flights: Flight[] = [
     points: 25_000,
     cash: 64,
     fare: 486,
-    scene: 'cancun',
     flight: 'SK 470',
+  },
+  {
+    id: 'f1',
+    from: 'YYZ',
+    to: 'LIS',
+    city: 'Lisbon',
+    date: 'Mar 14',
+    points: 35_000,
+    cash: 89,
+    fare: 612,
+    flight: 'SK 238',
+  },
+  {
+    id: 'f3',
+    from: 'YYZ',
+    to: 'NRT',
+    city: 'Tokyo',
+    date: 'Apr 21',
+    points: 75_000,
+    cash: 120,
+    fare: 1_240,
+    flight: 'SK 9',
   },
 ];
 
@@ -150,12 +149,32 @@ function useCountUp(to: number, run: boolean) {
   return run ? n : to;
 }
 
-function Logo() {
+/** The wordmark's glyph: a swept wing, one colour. */
+function Mark() {
   return (
-    <svg className="sky-logo" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
-      <path d="M3 18c6-1 13-5 19-13 0 9-6 16-15 16-1.6 0-3-.9-4-3z" fill="#ff8a5c" />
-      <path d="M6 22c5 0 10-2 14-6-2 5-6 8-12 8-.8 0-1.5-.8-2-2z" fill="#f2c96b" />
+    <svg className="sky-mark" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path d="M2 15.5 18 4.5l-5.5 11-2.6-4.1z" fill="currentColor" />
     </svg>
+  );
+}
+
+/** A route, boarding-pass style: two airports, the line between them, then the fields. */
+function Route(props: { from: string; fromCity: string; to: string; toCity: string }) {
+  return (
+    <div className="sky-bp-route">
+      <span className="sky-iata">
+        {props.from}
+        <span className="sky-iata-city">{props.fromCity}</span>
+      </span>
+      <span className="sky-bp-line" aria-hidden="true">
+        <Icon name="plane" size={16} />
+      </span>
+      <span className="sky-iata sky-iata-end">
+        <span className="dk-sr"> to </span>
+        {props.to}
+        <span className="sky-iata-city">{props.toCity}</span>
+      </span>
+    </div>
   );
 }
 
@@ -250,26 +269,70 @@ export default function AirlineDemo() {
 
   const bookedFlight = flights.find((f) => f.id === booked);
   const sheetFlight = flights.find((f) => f.id === sheet);
-  const next = bookedFlight
-    ? {
-        from: bookedFlight.from,
-        to: bookedFlight.to,
-        fromCity: 'Toronto',
-        toCity: bookedFlight.city,
-        date: bookedFlight.date,
-        flight: bookedFlight.flight,
-        seat: 'Pick',
-        boards: '18:40',
-        reward: true,
-      }
-    : { ...trip, reward: false };
+
+  // Redeem groups: the trip just booked, what the balance covers now, then the rest.
+  const groups = [
+    { id: 'booked', title: 'Just booked', items: flights.filter((f) => f.id === booked) },
+    {
+      id: 'reach',
+      title: 'Within your balance',
+      items: flights.filter((f) => f.id !== booked && f.points <= balance),
+    },
+    {
+      id: 'later',
+      title: 'Keep earning',
+      items: flights.filter((f) => f.id !== booked && f.points > balance),
+    },
+  ].filter((g) => g.items.length);
+
+  const destination = (f: Flight) => {
+    const short = f.points > balance && booked !== f.id;
+    return (
+      <li key={f.id} className={`sky-dest${booked === f.id ? ' is-booked' : ''}`}>
+        <strong className="sky-city">{f.city}</strong>
+        <span className="sky-dest-pts">
+          {fmt(f.points)} <span className="sky-unit">pts</span>
+        </span>
+        <span className="sky-dest-meta">
+          {f.from} <span aria-hidden="true">→</span>
+          <span className="dk-sr"> to </span> {f.to} · {f.date}
+        </span>
+        <span className="sky-dest-tax">+ ${f.cash} taxes</span>
+        <span className="sky-dest-cash">or ${fmt(f.fare)} cash</span>
+        {booked === f.id ? (
+          <span className="sky-booked" ref={bookedRef} tabIndex={-1}>
+            <Icon name="check" size={16} /> Booked
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="sky-book"
+            disabled={short}
+            onClick={() => redeem(f.id)}
+            aria-label={
+              short
+                ? `Need ${fmt(f.points - balance)} more points to book ${f.city}`
+                : `Book ${f.city} for ${fmt(f.points)} points`
+            }
+          >
+            {short ? (
+              `Need ${fmt(f.points - balance)} more`
+            ) : (
+              <>
+                Book <Icon name="chevron" size={16} />
+              </>
+            )}
+          </button>
+        )}
+      </li>
+    );
+  };
 
   return (
     <div className="sky-app" aria-label="Demo: airline loyalty app (mock data)" role="group">
       <header className="sky-top">
-        <Logo />
+        <Mark />
         <span className="sky-brand">Skyward</span>
-        <span className="sky-brand-sub">Rewards</span>
         <span className="dk-av sky-me" aria-hidden="true">
           AM
         </span>
@@ -285,60 +348,89 @@ export default function AirlineDemo() {
         inert={sheet ? true : undefined}
       >
         {tab === 'home' && (
-          <div className={`sky-home${counted ? '' : ' is-first'}`}>
+          <div className={`sky-screen sky-home${counted ? '' : ' is-first'}`}>
             <p className="sky-hello">Good evening, {member.first}</p>
 
             <div
               role="group"
-              className="sky-mcard"
+              className="sky-card"
               data-side={pass ? 'pass' : 'front'}
               aria-label="Member card"
             >
-              <div className="sky-mcard-face sky-mcard-front" aria-hidden={pass}>
-                <div className="sky-mcard-row">
-                  <span className="sky-mcard-brand">
-                    <Icon name="star" size={14} /> Skyward Gold
-                  </span>
-                  <span className="sky-mcard-since">Since {member.since}</span>
+              <div className="sky-card-face sky-card-front" aria-hidden={pass}>
+                <div className="sky-card-row">
+                  <span className="sky-card-k">Member since {member.since}</span>
+                  <span className="sky-card-tier">{member.tier}</span>
                 </div>
-                <div className="sky-mcard-pts">
-                  <span className="sky-mcard-k">Points</span>
-                  <strong className="sky-mcard-n" aria-hidden="true">
+                <div className="sky-card-main">
+                  <span className="sky-card-k">Points</span>
+                  <strong className="sky-card-n" aria-hidden="true">
                     {fmt(shown)}
                   </strong>
                   <span className="dk-sr">{fmt(balance)} points</span>
                 </div>
-                <div className="sky-mcard-row">
-                  <span className="sky-mcard-name">{member.name}</span>
-                  <span className="sky-mcard-num">{member.number}</span>
-                </div>
-                <svg
-                  className="sky-mcard-art"
-                  viewBox="0 0 160 120"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path d="M10 110 Q80 -10 158 60" />
-                  <path d="M30 118 Q96 10 160 84" />
-                  <path d="M60 120 Q110 40 160 104" />
-                </svg>
+                <dl className="sky-card-fields">
+                  <div>
+                    <dt>Member</dt>
+                    <dd>{member.name}</dd>
+                  </div>
+                  <div>
+                    <dt>Number</dt>
+                    <dd>{member.number}</dd>
+                  </div>
+                </dl>
               </div>
-              <div className="sky-mcard-face sky-mcard-pass" aria-hidden={!pass}>
-                <span className="sky-mcard-k">Scan at the lounge or gate</span>
+              <div className="sky-card-face sky-card-back" aria-hidden={!pass}>
                 <Barcode />
-                <span className="sky-mcard-num">
+                <span className="sky-card-k">
                   {member.name} · {member.number}
                 </span>
+                <span className="sky-card-k">Scan at the lounge or gate</span>
               </div>
             </div>
 
+            <ul className="sky-acts" aria-label="Quick actions">
+              <li>
+                <button type="button" className="sky-act" onClick={() => go('redeem')}>
+                  <Icon name="plane" size={18} />
+                  <span>
+                    Book<span className="dk-sr"> reward</span>
+                  </span>
+                </button>
+              </li>
+              <li>
+                <button type="button" className="sky-act" onClick={() => go('status')}>
+                  <Icon name="star" size={18} />
+                  <span>
+                    <span className="dk-sr">Tier </span>Perks
+                  </span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="sky-act"
+                  aria-pressed={pass}
+                  onClick={() => {
+                    setCounted(true);
+                    setPass((p) => !p);
+                  }}
+                >
+                  <Icon name="barcode" size={18} />
+                  <span>
+                    <span className="dk-sr">Member </span>Card
+                  </span>
+                </button>
+              </li>
+            </ul>
+
             <div role="group" className="sky-meter" aria-label={`Progress to ${member.next}`}>
-              <div className="sky-meter-head">
+              <p className="sky-meter-head">
                 <strong>
-                  {fmt(toNext)} SQM to {member.next}
+                  {fmt(toNext)} status miles to {member.next}
                 </strong>
                 <span className="sky-sub">by Dec 31</span>
-              </div>
+              </p>
               <div
                 className="sky-bar"
                 role="progressbar"
@@ -349,165 +441,127 @@ export default function AirlineDemo() {
                 style={{ '--p': segment } as CSSProperties}
               >
                 <span className="sky-bar-fill" />
-                <span className="sky-bar-dot" />
               </div>
-              <div className="sky-meter-ends sky-sub">
+              <p className="sky-meter-ends">
                 <span>
-                  {member.tier} · {fmt(gold.at / 1000)}k
+                  {member.tier} {fmt(gold.at / 1000)}k
                 </span>
-                <span>{fmt(member.sqm)} SQM</span>
                 <span>
-                  {member.next} · {fmt(platinum.at / 1000)}k
+                  {member.next} {fmt(platinum.at / 1000)}k
                 </span>
-              </div>
+              </p>
             </div>
 
-            <ul className="sky-actions" aria-label="Quick actions">
-              <li>
-                <button type="button" className="sky-action" onClick={() => go('redeem')}>
-                  <span className="sky-action-ico">
-                    <Icon name="plane" />
-                  </span>
-                  Book reward
-                </button>
-              </li>
-              <li>
-                <button type="button" className="sky-action" onClick={() => go('status')}>
-                  <span className="sky-action-ico">
-                    <Icon name="star" />
-                  </span>
-                  Tier perks
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="sky-action"
-                  aria-pressed={pass}
-                  onClick={() => {
-                    setCounted(true);
-                    setPass((p) => !p);
-                  }}
-                >
-                  <span className="sky-action-ico">
-                    <Icon name="card" />
-                  </span>
-                  Member card
-                </button>
-              </li>
-            </ul>
-
-            <div
-              role="group"
-              className="sky-trip"
-              aria-label={next.reward ? 'Your reward trip' : 'Next trip'}
-            >
-              <div className="sky-trip-head">
-                <span className="sky-k">{next.reward ? 'Reward trip' : 'Next trip'}</span>
-                <span className="sky-ok">{next.reward ? 'Confirmed' : 'On time'}</span>
+            <div role="group" className="sky-box sky-bp" aria-label="Next trip">
+              <div className="sky-bp-head">
+                <span className="sky-k">Next trip</span>
+                <span className="sky-ok">On time</span>
               </div>
-              <div className="sky-trip-route">
-                <span className="sky-iata">
-                  {next.from}
-                  <span className="sky-sub">{next.fromCity}</span>
-                </span>
-                <svg className="sky-arc" viewBox="0 0 120 32" aria-hidden="true" focusable="false">
-                  <path d="M4 28 Q60 -8 116 28" />
-                  <circle cx="4" cy="28" r="3" />
-                  <circle cx="116" cy="28" r="3" />
-                </svg>
-                <span className="sky-iata sky-iata-end">
-                  <span className="dk-sr"> to </span>
-                  {next.to}
-                  <span className="sky-sub">{next.toCity}</span>
-                </span>
-              </div>
-              <dl className="sky-trip-meta">
+              <Route {...trip} />
+              <dl className="sky-bp-meta">
                 <div>
                   <dt>Date</dt>
-                  <dd>{next.date}</dd>
+                  <dd>{trip.date}</dd>
                 </div>
                 <div>
                   <dt>Flight</dt>
-                  <dd>{next.flight}</dd>
+                  <dd>{trip.flight}</dd>
                 </div>
                 <div>
                   <dt>Seat</dt>
-                  <dd>{next.seat}</dd>
+                  <dd>{trip.seat}</dd>
                 </div>
                 <div>
                   <dt>Boards</dt>
-                  <dd>{next.boards}</dd>
+                  <dd>{trip.boards}</dd>
                 </div>
               </dl>
+              {bookedFlight && (
+                <div className="sky-bp-also" role="group" aria-label="Your reward trip">
+                  <span>
+                    <span className="sky-k">Reward trip </span>
+                    {bookedFlight.from} <span aria-hidden="true">→</span>
+                    <span className="dk-sr"> to </span> {bookedFlight.to} · {bookedFlight.date} ·{' '}
+                    {bookedFlight.flight}
+                  </span>
+                  <span className="sky-ok">Confirmed</span>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {tab === 'status' && (
-          <div className="sky-status">
-            <div role="group" className="sky-hero" aria-label="Qualifying progress">
+          <div className="sky-screen sky-status">
+            <div role="group" className="sky-lead" aria-label="Qualifying progress">
+              <p className="sky-lead-k">
+                <span>Status qualifying miles</span>
+                <span className="sky-tier-tag">{member.tier}</span>
+              </p>
+              <p className="sky-hero">
+                {fmt(member.sqm)} <span className="sky-unit">SQM</span>
+              </p>
               <div
-                className="sky-ring"
+                className="sky-track"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(overall * 100)}
                 aria-label={`${fmt(member.sqm)} of ${fmt(platinum.at)} status qualifying miles`}
-                style={{ '--p': overall } as CSSProperties}
               >
-                <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-                  <circle className="sky-ring-track" cx="50" cy="50" r="42" />
-                  <circle className="sky-ring-fill" cx="50" cy="50" r="42" pathLength="100" />
-                </svg>
-                <span className="sky-ring-n" aria-hidden="true">
-                  {Math.round(overall * 100)}%<span>to {member.next}</span>
-                </span>
+                {tiers.map((t, i) => {
+                  const from = i ? tiers[i - 1].at : 0;
+                  const p = Math.min(1, Math.max(0, (member.sqm - from) / (t.at - from)));
+                  return (
+                    <span
+                      key={t.name}
+                      className="sky-seg"
+                      style={{ '--p': p } as CSSProperties}
+                      aria-hidden="true"
+                    >
+                      <span className="sky-seg-bar">
+                        <span className="sky-seg-fill" />
+                      </span>
+                      <span className="sky-seg-label">
+                        {t.name} <span className="sky-seg-at">{fmt(t.at / 1000)}k</span>
+                      </span>
+                    </span>
+                  );
+                })}
               </div>
-              <div className="sky-hero-text">
-                <span className="sky-medal sky-medal-gold">
-                  <Icon name="star" size={14} /> {member.tier}
-                </span>
-                <strong className="sky-hero-n">{fmt(member.sqm)} SQM</strong>
-                <span className="sky-sub">
-                  {fmt(toNext)} more for {member.next}. Status qualifying miles reset Dec 31.
-                </span>
-              </div>
+              <p className="sky-readout">
+                <strong>
+                  {fmt(toNext)} to {member.next}
+                </strong>{' '}
+                by Dec 31
+              </p>
             </div>
 
-            <ol className="sky-ladder" aria-label="Tiers and their perks">
+            <ol className="sky-tiers" aria-label="Tiers and their perks">
               {tiers.map((t) => {
                 const state =
                   t.name === member.tier ? 'current' : t.at <= member.sqm ? 'done' : 'next';
-                const tid = `${base}-tier-${t.name}`;
                 return (
-                  <li key={t.name} className={`sky-rung is-${state}`}>
-                    <span
-                      className={`sky-node sky-medal-${t.name.toLowerCase()}`}
-                      aria-hidden="true"
-                    >
-                      <Icon
-                        name={state === 'next' ? 'lock' : state === 'done' ? 'check' : 'star'}
-                        size={14}
-                      />
-                    </span>
-                    <div className="sky-rung-head">
-                      <strong id={tid}>{t.name}</strong>
-                      <span className="sky-sub">{fmt(t.at)} SQM</span>
-                      <span className={`sky-state sky-state-${state}`}>
-                        {state === 'current'
-                          ? 'Your tier'
-                          : state === 'done'
-                            ? 'Unlocked'
-                            : `${fmt(t.at - member.sqm)} to go`}
+                  <li key={t.name} className={`sky-tier is-${state}`}>
+                    <div className="sky-tier-head">
+                      <strong>{t.name}</strong>
+                      <span className="sky-tier-at">{fmt(t.at)} SQM</span>
+                      <span className="sky-state">
+                        {state === 'current' ? (
+                          'Your tier'
+                        ) : state === 'done' ? (
+                          <>
+                            <Icon name="check" size={16} /> Unlocked
+                          </>
+                        ) : (
+                          `${fmt(t.at - member.sqm)} to go`
+                        )}
                       </span>
                     </div>
                     <ul className="sky-perks" aria-label={`${t.name} perks`}>
                       {t.perks.map((p) => (
                         <li key={p.label} className="sky-perk">
-                          <span className="sky-perk-ico">
-                            <Icon name={p.icon} />
-                          </span>
+                          <Icon name={p.icon} size={18} />
                           <span>{p.label}</span>
                         </li>
                       ))}
@@ -520,64 +574,23 @@ export default function AirlineDemo() {
         )}
 
         {tab === 'redeem' && (
-          <div className="sky-redeem">
-            <div className="sky-redeem-head">
-              <p className="sky-k">Fly from Toronto</p>
-              <span className="sky-balance-chip">
-                <strong>{fmt(balance)}</strong> pts
-              </span>
+          <div className="sky-screen sky-redeem">
+            <div className="sky-lead">
+              <p className="sky-lead-k">Your balance</p>
+              <p className="sky-hero">
+                {fmt(balance)} <span className="sky-unit">pts</span>
+              </p>
+              <p className="sky-lead-t">Where it gets you</p>
+              <p className="sky-sub">Economy reward seats from Toronto</p>
             </div>
-            <ul className="sky-flights" aria-label="Reward flights from Toronto">
-              {flights.map((f) => {
-                const short = f.points > balance && booked !== f.id;
-                const saves = f.fare - f.cash;
-                return (
-                  <li key={f.id} className={`sky-flight${booked === f.id ? ' is-booked' : ''}`}>
-                    <div className="sky-flight-art">
-                      <SceneArt scene={f.scene} id={`${base}-${f.id}`} />
-                      <span className="sky-date">{f.date}</span>
-                    </div>
-                    <div className="sky-flight-body">
-                      <div className="sky-flight-top">
-                        <strong className="sky-city">{f.city}</strong>
-                        <span className="sky-route">
-                          {f.from} <span aria-hidden="true">→</span>
-                          <span className="dk-sr"> to </span> {f.to}
-                        </span>
-                      </div>
-                      <div className="sky-price">
-                        <span className="sky-price-pts">
-                          <strong>{fmt(f.points)}</strong> pts + ${f.cash}
-                        </span>
-                        <span className="sky-price-cash">or ${fmt(f.fare)} cash</span>
-                      </div>
-                      <div className="sky-flight-foot">
-                        <span className="sky-save">Saves ${fmt(saves)}</span>
-                        {booked === f.id ? (
-                          <span className="sky-booked" ref={bookedRef} tabIndex={-1}>
-                            <Icon name="check" size={16} /> Booked
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="sky-book"
-                            disabled={short}
-                            onClick={() => redeem(f.id)}
-                            aria-label={
-                              short
-                                ? `Need ${fmt(f.points - balance)} more points to book ${f.city}`
-                                : `Book ${f.city} for ${fmt(f.points)} points`
-                            }
-                          >
-                            {short ? `Need ${fmt(f.points - balance)} more` : 'Book'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            {groups.map((g) => (
+              <section key={g.id} className="sky-group" aria-labelledby={`${base}-${g.id}`}>
+                <h3 className="sky-k" id={`${base}-${g.id}`}>
+                  {g.title}
+                </h3>
+                <ul className="sky-dests">{g.items.map(destination)}</ul>
+              </section>
+            ))}
           </div>
         )}
       </div>
@@ -592,29 +605,25 @@ export default function AirlineDemo() {
             aria-labelledby={`${base}-sheet-h`}
             onKeyDown={onSheetKey}
           >
-            <svg className="sky-tick" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
-              <circle cx="26" cy="26" r="23" pathLength="100" />
-              <path d="M15 27 23 35 38 19" pathLength="100" />
-            </svg>
-            <h2 id={`${base}-sheet-h`} tabIndex={-1}>
-              You’re going to {sheetFlight.city}
-            </h2>
-            <div className="sky-pass">
-              <div className="sky-pass-top">
-                <span className="sky-iata">
-                  {sheetFlight.from}
-                  <span>Toronto</span>
-                </span>
-                <span className="sky-pass-plane" aria-hidden="true">
-                  <Icon name="plane" size={22} />
-                </span>
-                <span className="sky-iata sky-iata-end">
-                  <span className="dk-sr"> to </span>
-                  {sheetFlight.to}
-                  <span>{sheetFlight.city}</span>
-                </span>
-              </div>
-              <dl className="sky-pass-meta">
+            <div className="sky-sheet-head">
+              <p className="sky-ok">
+                <svg className="sky-tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M5 12.5 9.5 17 19 7.5" pathLength="100" />
+                </svg>
+                Reward booked
+              </p>
+              <h2 id={`${base}-sheet-h`} tabIndex={-1}>
+                You’re going to {sheetFlight.city}
+              </h2>
+            </div>
+            <div className="sky-box sky-bp">
+              <Route
+                from={sheetFlight.from}
+                fromCity="Toronto"
+                to={sheetFlight.to}
+                toCity={sheetFlight.city}
+              />
+              <dl className="sky-bp-meta sky-bp-meta-2">
                 <div>
                   <dt>Date</dt>
                   <dd>{sheetFlight.date}</dd>
@@ -676,7 +685,7 @@ export default function AirlineDemo() {
             onClick={() => go(t.id)}
             onKeyDown={(e) => onTabKey(e, i)}
           >
-            <Icon name={t.icon} />
+            <Icon name={t.icon} size={22} />
             {t.label}
           </button>
         ))}
