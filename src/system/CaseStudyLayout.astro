@@ -184,7 +184,7 @@ const contents = [
             <p class="cs-gal-intro">{d.gallery.intro}</p>
             <ul
               class:list={['cs-gal', { 'cs-gal-game': isGame, 'cs-gal-waiting': pending }]}
-              aria-labelledby="gallery-h"
+              aria-label={d.gallery.title}
               tabindex="0"
             >
               {gallery.map((g) => (
@@ -607,8 +607,9 @@ const contents = [
     font-size: var(--text-lg);
     line-height: var(--leading-normal);
   }
+  /* The rules run the content column, as Stack's, Notes' and the pager's do; the text keeps the
+     reading measure inside them (WO-033). */
   .cs-features {
-    max-width: var(--measure);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -616,6 +617,7 @@ const contents = [
   }
   .cs-features li {
     padding-block: var(--space-3);
+    padding-inline-end: max(0px, 100% - var(--measure));
     border-bottom: var(--ln-hairline);
   }
   .cs-planned {
@@ -832,14 +834,17 @@ const contents = [
     }
   }
 
-  /* The gallery renders only as it nears the viewport, and on phones it is a swipeable row
-     (one screen and the edge of the next): together that keeps its lazy screenshots from
-     competing with the hero for the first paint (LCP budget). Its heading is skipped with it,
-     and drops out of the accessibility tree, so the section is named by aria-label (WO-029). */
+  /* The gallery's screens render only as they near the viewport, and on phones it is a
+     swipeable row (one screen and the edge of the next): together that keeps its lazy
+     screenshots from competing with the hero for the first paint (LCP budget). Each screen is
+     skipped, not the section (WO-033): a skipped subtree leaves the accessibility tree, and the
+     heading and the list keep their place in it, named, wherever the page is scrolled. */
   .cs-gallery {
     min-width: 0;
+  }
+  .cs-gal figure {
     content-visibility: auto;
-    contain-intrinsic-size: auto 900px;
+    contain-intrinsic-size: auto 16rem;
   }
   @media (max-width: 759px) {
     .cs-gal.cs-gal {

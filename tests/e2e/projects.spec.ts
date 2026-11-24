@@ -192,10 +192,58 @@ test('rule and pager align', async ({ page, isMobile }) => {
     expect(Math.abs(r.left - r.card.left)).toBeLessThanOrEqual(1);
     expect(Math.abs(r.right - r.card.right)).toBeLessThanOrEqual(1);
     expect(r.right).toBeLessThan(375);
+
+    // WO-033: each card's own rule is straight to both ends, not the bottom edge of a rounded
+    // box (which curls up at the corners).
+    const cards = await page.locator('#rail > .pc').evaluateAll((els) =>
+      els.map((el) => {
+        const cs = getComputedStyle(el);
+        const rule = getComputedStyle(el, '::before');
+        return {
+          edge: cs.borderBottomWidth === '0px' || cs.borderBottomLeftRadius === '0px',
+          rule: rule.borderBottomWidth,
+          radius: [rule.borderBottomLeftRadius, rule.borderBottomRightRadius],
+          width: Math.abs(parseFloat(rule.width) - el.getBoundingClientRect().width),
+        };
+      }),
+    );
+    expect(cards.length).toBeGreaterThan(0);
+    for (const c of cards) {
+      expect(c.edge, 'no rounded bottom border').toBe(true);
+      expect(c.rule).toBe('1px');
+      expect(c.radius).toEqual(['0px', '0px']);
+      expect(c.width, 'the rule spans the card').toBeLessThanOrEqual(1);
+    }
     return;
   }
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/projects/billable/');
+  // WO-033: the "What it does" rules end where Stack's do, at the content column's edge.
+  const ends = await page.evaluate(() => {
+    const right = (s: string) => document.querySelector(s)!.getBoundingClientRect().right;
+    return {
+      features: right('.cs-features li'),
+      stack: right('.cs-stack tbody td:last-child'),
+      main: right('.cs-main'),
+    };
+  });
+  expect(Math.abs(ends.features - ends.stack), 'features end with Stack').toBeLessThanOrEqual(1);
+  expect(Math.abs(ends.features - ends.main)).toBeLessThanOrEqual(1);
+  // The text inside keeps the reading measure.
+  const measure = await page
+    .locator('.cs-features li')
+    .first()
+    .evaluate((li) => {
+      const range = document.createRange();
+      range.selectNodeContents(li);
+      const probe = document.createElement('span');
+      probe.style.cssText = 'position: absolute; width: 68ch';
+      li.append(probe);
+      const m = probe.getBoundingClientRect().width;
+      probe.remove();
+      return { text: range.getBoundingClientRect().width, m };
+    });
+  expect(measure.text).toBeLessThanOrEqual(measure.m + 1);
   const pg = page.locator('.cs-pager .cs-pg-next');
   const e = await pg.evaluate((a) => {
     const text = (el: Element) => {

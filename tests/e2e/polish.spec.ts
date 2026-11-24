@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// WO-027: small alignments and polish. One section-header pattern for Work and Projects, flush
-// footer rows, a pager rule that spans the content column, and a real way out of the 404.
+// WO-027: small alignments and polish. Flush footer rows, a pager rule that spans the content
+// column, and a real way out of the 404. WO-033: the section headers vary in layout.
 
 const left = (page: Page, sel: string) =>
   page
@@ -9,28 +9,49 @@ const left = (page: Page, sel: string) =>
     .first()
     .evaluate((el) => el.getBoundingClientRect().left);
 
-test('section headers share one pattern', async ({ page, isMobile }) => {
-  test.skip(!!isMobile, 'phones stack the title over the lead');
-  await page.setViewportSize({ width: 1440, height: 900 });
+// WO-033: three identical headers in a row read as a template. Work keeps its two columns;
+// Projects and Music stack the lead under the title. Every title stays the same size.
+test('section headers vary', async ({ page, isMobile }) => {
   await page.goto('/');
-  const work = { title: await left(page, '#work-h'), lead: await left(page, '#work .sh-lead') };
-  const proj = {
-    title: await left(page, '#projects-h'),
-    lead: await left(page, '#projects .sh-lead'),
-  };
-  // Two columns: the lead starts to the right of the title column.
-  const titleRight = await page
-    .locator('#projects-h')
-    .evaluate((el) => el.getBoundingClientRect().right);
-  expect(proj.lead).toBeGreaterThan(titleRight);
-  expect(Math.abs(proj.title - work.title)).toBeLessThanOrEqual(2);
-  expect(Math.abs(proj.lead - work.lead)).toBeLessThanOrEqual(2);
-  // The rail arrows sit with the lead, on its row, not over the title column.
-  const btns = await page.locator('#projects .rail-btns').boundingBox();
-  const lead = await page.locator('#projects .sh-lead').boundingBox();
-  expect(btns!.x).toBeGreaterThan(lead!.x);
-  expect(btns!.y).toBeLessThan(lead!.y + lead!.height);
-  expect(btns!.y + btns!.height).toBeGreaterThan(lead!.y);
+  const head = (title: string, lead: string) =>
+    page.evaluate(
+      ([t, l]) => {
+        const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+        const h = box(t);
+        const p = box(l);
+        return {
+          size: getComputedStyle(document.querySelector(t)!).fontSize,
+          title: { left: h.left, right: h.right, bottom: h.bottom },
+          lead: { left: p.left, top: p.top },
+        };
+      },
+      [title, lead] as const,
+    );
+  const work = await head('#work-h', '#work .sh-lead');
+  const projects = await head('#projects-h', '#projects .sh-lead');
+  const music = await head('#music-h', '#music .mu-story-lead');
+
+  for (const [name, h] of [
+    ['Projects', projects],
+    ['Music', music],
+  ] as const) {
+    expect(h.lead.top, `${name}: the lead sits under the title`).toBeGreaterThanOrEqual(
+      h.title.bottom - 1,
+    );
+    expect(Math.abs(h.lead.left - h.title.left), `${name}: one column`).toBeLessThanOrEqual(1);
+    expect(h.size, `${name}: the same title size as Work`).toBe(work.size);
+  }
+  if (isMobile) return;
+
+  // Laptops: Work's lead sits beside its title, on the same line.
+  expect(work.lead.left, 'Work: the lead beside the title').toBeGreaterThan(work.title.right);
+  expect(work.lead.top).toBeLessThan(work.title.bottom);
+  // The rail arrows sit at the right of the Projects header, level with it.
+  const btns = (await page.locator('#projects .rail-btns').boundingBox())!;
+  const header = (await page.locator('#projects .sh').boundingBox())!;
+  expect(btns.x + btns.width).toBeGreaterThan(header.x + header.width - 2);
+  expect(btns.y).toBeGreaterThanOrEqual(header.y);
+  expect(btns.y + btns.height).toBeLessThanOrEqual(header.y + header.height + 1);
 });
 
 test('alignments', async ({ page, isMobile }) => {
@@ -85,6 +106,11 @@ test('case-study gallery is named', async ({ page, context, isMobile }) => {
       regions.filter((n) => !n.trim()),
       `${slug}: unnamed regions`,
     ).toEqual([]);
+    // WO-033: so does the screens list inside it (a focusable scroller, named like its region).
+    const lists = nodes
+      .filter((n) => !n.ignored && n.role?.value === 'list')
+      .map((n) => String(n.name?.value ?? ''));
+    expect(lists, `${slug}: the gallery list`).toContain(title);
     await cdp.send('Accessibility.disable');
   }
 });

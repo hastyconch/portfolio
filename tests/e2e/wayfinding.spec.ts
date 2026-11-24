@@ -233,9 +233,16 @@ test('phone crumb', async ({ page, isMobile }) => {
 });
 
 // WO-027: the header's in-page links replace the history entry, so Back leaves the page.
-test('nav does not pile up history', async ({ page, isMobile }) => {
+// WO-033: one history model for every in-page link to a section, the hero's included.
+test("in-page links don't pile up history", async ({ page, isMobile }) => {
   await page.goto('/');
   const before = await page.evaluate(() => history.length);
+  for (const id of ['resume', 'work']) {
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.locator(`#hero a[href="#${id}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`#${id}$`));
+    await expect(page.locator(`#${id}`)).toBeInViewport();
+  }
   for (const id of ['work', 'projects', 'music', 'resume', 'contact']) {
     if (isMobile) {
       await page.locator('.np-menu summary').click();
@@ -411,6 +418,51 @@ test('focus survives end of list', async ({ page, isMobile }) => {
   await expect(item(page)).toBeHidden();
 });
 
+// WO-033: nor over a page that scrolls under it.
+test('phone menu closes on scroll', async ({ page, context, isMobile }) => {
+  test.skip(!isMobile, 'the menu is for phones');
+  await page.goto('/');
+  const menu = page.locator('.np-menu');
+  const toggle = menu.locator('summary');
+  const open = () => menu.evaluate((d: HTMLDetailsElement) => d.open);
+  // Back to the top, and at rest (the menu measures a scroll from where the page settles).
+  const top = async () => {
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(300);
+  };
+
+  // A page scroll of 200px closes it.
+  await toggle.tap();
+  await page.waitForTimeout(100);
+  expect(await open(), 'opening it does not close it').toBe(true);
+  await page.evaluate(() => scrollBy({ top: 200, behavior: 'instant' }));
+  await expect.poll(open).toBe(false);
+
+  // So does a swipe on the page, the way a finger scrolls it.
+  await top();
+  await toggle.tap();
+  expect(await open()).toBe(true);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Input.synthesizeScrollGesture', {
+    x: 187,
+    y: 700,
+    yDistance: -400,
+    speed: 800,
+    gestureSourceType: 'touch',
+  });
+  await expect.poll(open).toBe(false);
+
+  // Focus inside the menu goes back to its toggle.
+  await top();
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await expect(menu.locator('.np-menu-list a').first()).toBeFocused();
+  await page.evaluate(() => scrollBy({ top: 200, behavior: 'instant' }));
+  await expect.poll(open).toBe(false);
+  await expect(toggle).toBeFocused();
+});
+
 // WO-023: the phone menu never stays open over the page.
 test('phone menu closes on focus out', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'the menu is for phones');
@@ -503,6 +555,19 @@ test('crumb keeps its name at 320', async ({ page, isMobile }) => {
   expect((await name.boundingBox())!.width, 'the project name').toBeGreaterThanOrEqual(40);
   const bar = await page.locator('.np-bar').boundingBox();
   expect(bar!.height).toBeLessThanOrEqual(61);
+  // WO-033: and under WCAG 1.4.12 text spacing, on both narrow-crumb case studies.
+  for (const slug of ['travel-planner', 'billable']) {
+    await page.goto(`/projects/${slug}/`);
+    await page.addStyleTag({
+      content:
+        '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important } p { margin-bottom: 2em !important }',
+    });
+    await expect(name).toBeVisible();
+    expect((await name.boundingBox())!.width, `${slug}: the name, spaced`).toBeGreaterThanOrEqual(
+      40,
+    );
+    expect((await page.locator('.np-bar').boundingBox())!.height).toBeLessThanOrEqual(61);
+  }
   // From 360px up, the count is back.
   await page.setViewportSize({ width: 360, height: 640 });
   await expect(crumbs(page).locator('.np-count')).toBeVisible();

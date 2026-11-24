@@ -225,7 +225,13 @@ export default function BillableMini() {
           )}
         </p>
 
-        <div className="bm-stage" ref={stageRef}>
+        {/* Busy while the game loads (WO-033). A tap before hydration sets it from the page
+            (projects/billable.astro); the loading state takes it over and clears it. */}
+        <div
+          className="bm-stage"
+          ref={stageRef}
+          aria-busy={status === 'loading' ? true : undefined}
+        >
           {(status === 'poster' || status === 'loading' || status === 'error') && (
             <img
               className="bm-poster"
@@ -368,7 +374,9 @@ export default function BillableMini() {
         </div>
       </div>
 
-      <p className="bm-sr" role="status">
+      {/* The one live region for the game, "Loading the game…" included. A tap before hydration
+          writes that line here from the page, so the text may differ from the server's. */}
+      <p className="bm-sr" role="status" suppressHydrationWarning>
         {announce}
       </p>
     </div>
