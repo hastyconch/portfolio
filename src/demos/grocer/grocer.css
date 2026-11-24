@@ -1,22 +1,20 @@
-/* Invented "Pantry Lane" brand: deep teal, beet and a sunny reward yellow. Deliberately not any
-   real grocer's palette. The app keeps its own light UI on a light or dark page. Scales come
-   from ../kit.css. */
+/* Invented "Pantry Lane" brand: a retail ledger on a calm base. Near-black ink on a cool neutral,
+   deep teal only in the header and the primary action, and one shelf-tag yellow that marks what
+   is loaded, earned or ready. Deliberately not any real grocer's palette. The app keeps its own
+   light UI on a light or dark page. Scales come from ../kit.css. */
 .gro-app {
   color-scheme: light;
-  --gro-ink: #17201d;
-  --gro-ink-2: #4a5853;
+  --gro-ink: #151a18;
+  --gro-ink-2: #545c58;
   --gro-teal: #134e4a;
   --gro-teal-2: #0c3533;
-  --gro-teal-soft: #e0eeea;
-  --gro-beet: #9d174d;
-  --gro-beet-2: #7c1140;
-  --gro-beet-soft: #fbe7ef;
-  --gro-sun: #f5c451;
-  --gro-sun-soft: #fdf3d3;
-  --gro-sun-ink: #4a3500;
+  --gro-on-teal: #d5e6e2;
+  --gro-hi: #ffd23f;
+  --gro-hi-2: #f5c21a;
   --gro-bg: #f3f6f4;
   --gro-card: #fff;
-  --gro-line: #dbe4e0;
+  --gro-tile: #eaefec;
+  --gro-line: #dbe2de;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -40,7 +38,7 @@
 .gro-app *::after {
   box-sizing: border-box;
 }
-.gro-app :is(p, h3, ul, ol) {
+.gro-app :is(p, ul, ol, dl, dd) {
   margin: 0;
 }
 .gro-app :is(ul, ol) {
@@ -51,67 +49,71 @@
   display: block;
   flex: none;
 }
-.gro-sub {
+
+/* Text roles: a caption, a small label and a section title. */
+.gro-cap {
   font-size: var(--dk-fs-sm);
+  font-weight: 400;
   color: var(--gro-ink-2);
+  font-variant-numeric: tabular-nums;
 }
 .gro-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--dk-1);
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  letter-spacing: var(--dk-track-label);
-  text-transform: uppercase;
+  font-size: var(--dk-fs-sm);
+  font-weight: 500;
   color: var(--gro-ink-2);
 }
-.gro-h {
-  font-size: var(--dk-fs-xl);
-  font-weight: 700;
-  line-height: var(--dk-lh-snug);
-}
-.gro-row {
+.gro-sec-h {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--dk-2);
 }
-.gro-card {
-  padding: var(--dk-3) var(--dk-4);
+.gro-sec-h > p:first-child {
+  font-size: var(--dk-fs-lg);
+  font-weight: 600;
+  line-height: var(--dk-lh-snug);
+}
+/* The one highlight: a shelf tag behind what is loaded, earned or ready. */
+.gro-mark {
+  padding: 0 var(--dk-1);
+  border-radius: var(--dk-r1);
+  font-weight: 700;
+  color: var(--gro-ink);
+  background: var(--gro-hi);
+  box-decoration-break: clone;
+}
+
+/* Grouped list surface: a hairline, no shadow. */
+.gro-group {
   border: 1px solid var(--gro-line);
-  border-radius: var(--dk-r4);
+  border-radius: var(--dk-r3);
   background: var(--gro-card);
+}
+.gro-group > li + li {
+  border-top: 1px solid var(--gro-line);
 }
 
 /* App bar: continues the phone's teal status strip. */
 .gro-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--dk-2);
-  padding: var(--dk-2) var(--dk-4);
+  padding: var(--dk-2) var(--dk-4) var(--dk-3);
   color: #fff;
   background: var(--gro-teal);
 }
-.gro-logo {
-  width: 28px;
-  height: 28px;
-}
 .gro-brand {
-  flex: 1;
   font-size: var(--dk-fs-xl);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: var(--dk-track-tight);
 }
-.gro-chip {
+.gro-store {
   display: inline-flex;
   align-items: center;
   gap: var(--dk-1);
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  color: var(--gro-sun-ink);
-  background: var(--gro-sun);
+  font-size: var(--dk-fs-sm);
+  color: var(--gro-on-teal);
 }
 
 .gro-panel {
@@ -120,389 +122,343 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
-
-/* Home */
+.gro-page,
 .gro-home {
   display: grid;
-  gap: var(--dk-4);
-  padding: var(--dk-1) var(--dk-4) var(--dk-4);
-  background: linear-gradient(var(--gro-teal) 0 5.5rem, transparent 5.5rem);
+  align-content: start;
+  gap: var(--dk-5);
+  padding: var(--dk-4);
 }
-.gro-hello {
-  font-weight: 600;
-  color: #fff;
+.gro-picks,
+.gro-next,
+.gro-shop {
+  display: grid;
+  gap: var(--dk-2);
 }
+
+/* Home: the balance is the one hero number; the bar says what it is for. */
 .gro-balance {
   display: grid;
-  grid-template-columns: 5.5rem 1fr;
-  align-items: center;
-  gap: var(--dk-3) var(--dk-4);
-  border: 0;
-  box-shadow: var(--dk-shadow-2);
-}
-.gro-ring {
-  position: relative;
-  width: 5.5rem;
-  height: 5.5rem;
-}
-.gro-ring > svg {
-  width: 100%;
-  height: 100%;
-  rotate: -90deg;
-  fill: none;
-  stroke-width: 10;
-}
-.gro-ring-track {
-  stroke: var(--gro-beet-soft);
-}
-.gro-ring-fill {
-  stroke: var(--gro-beet);
-  stroke-linecap: round;
-  stroke-dasharray: calc(var(--p) * 100) 100;
-}
-.gro-ring-in {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: var(--dk-fs-xl);
-  font-weight: 800;
-  color: var(--gro-beet);
-  font-variant-numeric: tabular-nums;
-}
-.gro-balance-text {
-  display: grid;
-  min-width: 0;
+  gap: var(--dk-1);
 }
 .gro-points {
-  font-size: var(--dk-fs-3xl);
-  font-weight: 800;
+  font-size: var(--dk-fs-4xl);
+  font-weight: 700;
   line-height: var(--dk-lh-tight);
   letter-spacing: var(--dk-track-tight);
   font-variant-numeric: tabular-nums;
 }
-.gro-next {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: var(--dk-2);
-  padding: var(--dk-2) var(--dk-3);
-  border-radius: var(--dk-r2);
-  font-size: var(--dk-fs-sm);
-  color: var(--gro-teal-2);
-  background: var(--gro-teal-soft);
+.gro-points-u {
+  font-size: var(--dk-fs-lg);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--gro-ink-2);
 }
-.gro-next.is-ready {
-  color: var(--gro-sun-ink);
-  background: var(--gro-sun-soft);
+.gro-goal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--dk-2);
+  margin-top: var(--dk-2);
+  font-size: var(--dk-fs-md);
+}
+.gro-goal strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gro-bar {
+  height: 0.5rem;
+  border-radius: var(--dk-rf);
+  background: var(--gro-line);
+  overflow: hidden;
+}
+.gro-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--gro-ink);
+  transform-origin: left;
+  scale: var(--p) 1;
+  transition: scale var(--dk-slow) var(--dk-ease);
 }
 
 .gro-last {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--dk-2);
+  padding: 0 var(--dk-3);
+  font-size: var(--dk-fs-md);
 }
-.gro-earned {
+.gro-last strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gro-ledger {
   display: grid;
   gap: var(--dk-1);
   font-size: var(--dk-fs-md);
+  font-variant-numeric: tabular-nums;
 }
-.gro-earned li {
+.gro-ledger li {
   display: flex;
   justify-content: space-between;
   gap: var(--dk-3);
 }
-.gro-earned li span:last-child {
-  font-weight: 700;
-  color: var(--gro-teal);
-  font-variant-numeric: tabular-nums;
+.gro-ledger li span:last-child {
+  font-weight: 600;
 }
 
-/* Offer cards: a snap carousel on Home, a two-column grid on Offers. */
-.gro-picks {
-  display: grid;
+/* Rows read as a ledger: full bleed, edge to edge with hairlines. Only the shopping checklist
+   is an inset group. */
+.gro-bleed {
+  margin-inline: calc(var(--dk-4) * -1) !important;
+  border-block: 1px solid var(--gro-line);
+  background: var(--gro-card);
+}
+.gro-bleed > li + li {
+  border-top: 1px solid var(--gro-line);
+}
+
+.gro-peek li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: var(--dk-2);
+  padding: var(--dk-2) var(--dk-4);
+  font-size: var(--dk-fs-md);
 }
-.gro-carousel {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 9.5rem;
-  gap: var(--dk-3);
-  margin: 0 calc(-1 * var(--dk-4)) !important;
-  padding: var(--dk-1) var(--dk-4) var(--dk-2) !important;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--dk-4);
-  scrollbar-width: none;
-}
+
+/* Offers: the bonus is the biggest thing in the row and sits in its own column, like a price
+   list. */
 .gro-offer {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  align-content: start;
-  gap: var(--dk-1);
-  padding: var(--dk-2) var(--dk-2) var(--dk-3);
-  border: 1px solid var(--gro-line);
-  border-radius: var(--dk-r4);
-  background: var(--gro-card);
-  scroll-snap-align: start;
-  transition:
-    border-color var(--dk-quick) var(--dk-ease),
-    box-shadow var(--dk-quick) var(--dk-ease);
+  grid-template-columns: 3.5rem 1fr auto;
+  align-items: center;
+  gap: var(--dk-3);
+  padding: var(--dk-3) var(--dk-4);
 }
-.gro-offer.is-on {
-  border-color: var(--gro-beet);
-  box-shadow: inset 0 0 0 1px var(--gro-beet);
-}
-.gro-offer-art {
-  position: relative;
+.gro-bonus {
   display: grid;
-  place-items: center;
-  height: 5rem;
-  margin-bottom: var(--dk-1);
-  border-radius: var(--dk-r2);
-  background: var(--art, var(--gro-teal-soft));
+  justify-items: end;
+  font-size: var(--dk-fs-2xl);
+  font-weight: 700;
+  line-height: var(--dk-lh-tight);
+  letter-spacing: var(--dk-track-tight);
+  font-variant-numeric: tabular-nums;
 }
-.gro-art-cereal {
-  --art: #fdf0d9;
-}
-.gro-art-yogurt {
-  --art: #e3efec;
-}
-.gro-art-berries {
-  --art: #f2e8f6;
-}
-.gro-art-coffee {
-  --art: #f1e7dc;
-}
-.gro-prod {
-  width: 4rem;
-  height: 4rem;
-}
-.gro-pts {
-  position: absolute;
-  top: var(--dk-1);
-  right: var(--dk-1);
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
+.gro-bonus-u {
   font-size: var(--dk-fs-xs);
-  font-weight: 800;
-  color: #fff;
-  background: var(--gro-beet);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: var(--dk-lh-normal);
+  color: var(--gro-ink-2);
+}
+.gro-offer-main {
+  display: grid;
+  min-width: 0;
 }
 .gro-offer-t {
-  padding: 0 var(--dk-1);
   font-size: var(--dk-fs-md);
   line-height: var(--dk-lh-snug);
 }
-.gro-offer .gro-sub {
-  padding: 0 var(--dk-1);
-  font-size: var(--dk-fs-xs);
-}
-.gro-offer.is-done .gro-offer-art {
-  filter: grayscale(0.7);
-}
-.gro-summary {
-  padding: var(--dk-2) var(--dk-3);
-  border-radius: var(--dk-r2);
-  font-size: var(--dk-fs-md);
-  background: var(--gro-teal-soft);
-}
-
-.gro-offers {
-  display: grid;
-  gap: var(--dk-3);
-  padding: var(--dk-3) var(--dk-4) var(--dk-4);
-}
-.gro-offers-head {
-  display: grid;
-  gap: var(--dk-1);
-}
-.gro-intro {
-  font-size: var(--dk-fs-md);
+.gro-offer.is-done :is(.gro-bonus, .gro-offer-t) {
   color: var(--gro-ink-2);
 }
-.gro-potential {
-  font-size: var(--dk-fs-md);
-}
-.gro-potential strong {
-  color: var(--gro-beet);
-}
-.gro-tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--dk-3);
+.gro-earned-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  color: var(--gro-ink-2);
 }
 
-/* Buttons */
-.gro-cta,
-.gro-load,
-.gro-link {
-  font: inherit;
+.gro-tally {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--dk-3);
+}
+.gro-tally-n {
+  display: inline-block;
+  margin-top: 2px !important;
+  padding: 0 var(--dk-1);
+  border-radius: var(--dk-r1);
+  font-size: var(--dk-fs-3xl);
   font-weight: 700;
+  line-height: var(--dk-lh-snug);
+  letter-spacing: var(--dk-track-tight);
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dk-quick) var(--dk-ease);
+}
+.gro-tally-n.is-on {
+  background: var(--gro-hi);
+}
+.gro-tally-n.is-on .gro-points-u {
+  color: var(--gro-ink);
+}
+.gro-tally-side {
+  display: grid;
+  justify-items: end;
+}
+.gro-foot {
+  margin-top: calc(var(--dk-2) * -1) !important;
+}
+
+/* Buttons: Load (outline, then a filled tag with a check), text links, one primary. */
+.gro-load,
+.gro-link,
+.gro-cta {
+  font: inherit;
   cursor: pointer;
   transition:
     background-color var(--dk-quick) var(--dk-ease),
     color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
+/* Both labels share one grid cell, so the button keeps the width of the wider one. */
+.gro-load {
+  display: grid;
+  min-height: 2rem;
+  padding: 0 var(--dk-3);
+  border: 1.5px solid var(--gro-ink);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  color: var(--gro-ink);
+  background: var(--gro-card);
+}
+.gro-load > span[aria-hidden] {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dk-1);
+  transition:
+    opacity var(--dk-quick) var(--dk-ease),
+    translate var(--dk-quick) var(--dk-ease);
+}
+.gro-load-on,
+.gro-load[aria-pressed='true'] .gro-load-off {
+  opacity: 0;
+  translate: 0 calc(var(--dk-move) / 2);
+}
+.gro-load[aria-pressed='true'] .gro-load-on {
+  opacity: 1;
+  translate: none;
+}
+.gro-load:is(:hover, :focus-visible) {
+  background: var(--gro-tile);
+}
+.gro-load[aria-pressed='true'] {
+  background: var(--gro-hi);
+}
+.gro-load[aria-pressed='true']:is(:hover, :focus-visible) {
+  background: var(--gro-hi-2);
+}
+
+.gro-link {
+  justify-self: start;
+  min-height: 2.25rem;
+  padding: 0;
+  border: 0;
+  font-size: var(--dk-fs-md);
+  font-weight: 600;
+  color: var(--gro-ink);
+  background: transparent;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.gro-link:is(:hover, :focus-visible) {
+  color: var(--gro-teal);
+  text-decoration-thickness: 2px;
+}
+.gro-link[aria-disabled='true'] {
+  color: var(--gro-ink-2);
+  text-decoration: none;
+  cursor: default;
+}
+
 .gro-cta {
   min-height: 2.75rem;
   padding: 0 var(--dk-4);
   border: 0;
-  border-radius: var(--dk-r3);
+  border-radius: var(--dk-r2);
+  font-size: var(--dk-fs-lg);
+  font-weight: 600;
   color: #fff;
-  background: var(--gro-beet);
+  background: var(--gro-teal);
 }
 .gro-cta:is(:hover, :focus-visible) {
-  background: var(--gro-beet-2);
-}
-.gro-link {
-  min-height: 2.25rem;
-  padding: 0 var(--dk-1);
-  border: 0;
-  border-radius: var(--dk-r1);
-  font-size: var(--dk-fs-md);
-  color: var(--gro-beet);
-  background: transparent;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.gro-link:is(:hover, :focus-visible) {
-  color: var(--gro-beet-2);
-  text-decoration-thickness: 2px;
-}
-.gro-load {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--dk-1);
-  min-height: 2.25rem;
-  margin-top: var(--dk-1);
-  border: 2px solid var(--gro-beet);
-  border-radius: var(--dk-r2);
-  font-size: var(--dk-fs-md);
-  color: var(--gro-beet);
-  background: var(--gro-card);
-}
-.gro-load:is(:hover, :focus-visible) {
-  background: var(--gro-beet-soft);
-}
-.gro-load[aria-pressed='true'] {
-  color: #fff;
-  background: var(--gro-beet);
-}
-.gro-load[aria-pressed='true']:is(:hover, :focus-visible) {
-  background: var(--gro-beet-2);
+  background: var(--gro-teal-2);
 }
 .gro-cta:active,
 .gro-load:active,
-.gro-link:active {
+.gro-link:not([aria-disabled='true']):active {
   scale: var(--dk-press);
 }
-.gro-earned-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--dk-1);
-  min-height: 2.25rem;
-  margin-top: var(--dk-1);
-  border-radius: var(--dk-r2);
-  font-size: var(--dk-fs-md);
-  font-weight: 700;
-  color: var(--gro-teal);
-  background: var(--gro-teal-soft);
-}
 
-/* Lists */
-.gro-lists {
-  display: grid;
-  gap: var(--dk-3);
-  padding: var(--dk-3) var(--dk-4) var(--dk-4);
+/* Lists: a checklist by aisle, quantity on the right, any offer under the item. */
+.gro-listbox {
+  overflow: clip;
 }
-.gro-listcard {
-  display: grid;
-  gap: var(--dk-2);
+.gro-listbox:empty {
+  display: none;
 }
-.gro-basketbar {
-  height: 0.375rem;
-  border-radius: var(--dk-rf);
-  background: var(--gro-teal-soft);
-  overflow: hidden;
-}
-.gro-basketbar span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--gro-teal);
-  transition: width var(--dk-base) var(--dk-ease);
-}
-.gro-aisle {
-  --aisle: var(--gro-ink-2);
-  display: grid;
-  gap: var(--dk-1);
-}
-.gro-aisle-produce {
-  --aisle: #2f7d32;
-}
-.gro-aisle-dairy {
-  --aisle: #1d5fa8;
-}
-.gro-aisle-bakery {
-  --aisle: #94580a;
-}
-.gro-aisle-pantry {
-  --aisle: #7a4f2c;
+.gro-aisle + .gro-aisle {
+  border-top: 1px solid var(--gro-line);
 }
 .gro-aisle-h {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: var(--dk-2);
-  margin-top: var(--dk-1) !important;
+  padding: var(--dk-1) var(--dk-3);
+  border-bottom: 1px solid var(--gro-line);
   font-size: var(--dk-fs-xs);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: var(--dk-track-label);
   text-transform: uppercase;
-  color: var(--aisle);
+  color: var(--gro-ink-2);
+  background: var(--gro-bg);
 }
-.gro-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--aisle);
+.gro-aisle-h .gro-cap {
+  font-size: var(--dk-fs-xs);
+  letter-spacing: 0;
+  text-transform: none;
 }
-.gro-list li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px var(--dk-2);
-  padding: var(--dk-1) 0 var(--dk-1) var(--dk-3);
-  border-left: 3px solid var(--aisle);
-}
-.gro-list li + li {
+.gro-list > li + li {
   border-top: 1px solid var(--gro-line);
 }
 .gro-list label {
-  display: flex;
-  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--dk-3);
-  min-height: 2.25rem;
+  min-height: 3rem;
+  padding: var(--dk-2) var(--dk-3);
   cursor: pointer;
+  transition: background-color var(--dk-quick) var(--dk-ease);
+}
+.gro-list label:is(:hover, :has(:focus-visible)) {
+  background: var(--gro-bg);
 }
 .gro-list input {
-  flex: none;
   display: grid;
   place-items: center;
   width: 1.375rem;
   height: 1.375rem;
   margin: 0;
-  border: 2px solid var(--gro-ink-2);
+  border: 1.5px solid var(--gro-ink-2);
   border-radius: var(--dk-r1);
   appearance: none;
   background: var(--gro-card);
   cursor: pointer;
   transition:
     background-color var(--dk-quick) var(--dk-ease),
-    border-color var(--dk-quick) var(--dk-ease);
+    border-color var(--dk-quick) var(--dk-ease),
+    scale var(--dk-quick) var(--dk-ease);
 }
 .gro-list input::after {
   content: '';
@@ -510,72 +466,73 @@
   height: 0.6875rem;
   margin-top: -2px;
   border: solid #fff;
-  border-width: 0 2.5px 2.5px 0;
+  border-width: 0 2px 2px 0;
   rotate: 45deg;
   scale: 0;
   transition: scale var(--dk-quick) var(--dk-ease-pop);
 }
 .gro-list input:checked {
-  border-color: var(--gro-teal);
-  background: var(--gro-teal);
+  border-color: var(--gro-ink);
+  background: var(--gro-ink);
 }
 .gro-list input:checked::after {
   scale: 1;
 }
-.gro-list .is-done .gro-item {
+.gro-list input:active {
+  scale: var(--dk-press);
+}
+.gro-item {
+  display: grid;
+  min-width: 0;
+}
+.gro-list .is-done .gro-item-n {
   color: var(--gro-ink-2);
   text-decoration: line-through;
 }
-.gro-flag,
-.gro-onlist {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
+.gro-hint {
   font-size: var(--dk-fs-xs);
+  color: var(--gro-ink-2);
+}
+.gro-hint.is-on .gro-hint-pts {
+  padding: 0 var(--dk-1);
+  border-radius: var(--dk-r1);
   font-weight: 700;
+  color: var(--gro-ink);
+  background: var(--gro-hi);
+}
+.gro-qty {
+  font-size: var(--dk-fs-sm);
+  color: var(--gro-ink-2);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.gro-flag {
-  color: #713b0c;
-  background: #fdeccb;
+.gro-checkout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dk-3);
+  margin-top: var(--dk-2);
 }
-.gro-flag.is-loaded {
-  color: var(--gro-beet-2);
-  background: var(--gro-beet-soft);
+.gro-checkout .gro-cap {
+  min-width: 0;
 }
-.gro-onlist {
-  color: var(--gro-teal-2);
-  background: var(--gro-teal-soft);
-}
-.gro-hint {
-  margin-top: -2px !important;
+.gro-checkout .gro-cta {
+  flex: none;
+  white-space: nowrap;
 }
 .gro-empty {
-  padding: var(--dk-3);
-  border: 1px dashed var(--gro-line);
-  border-radius: var(--dk-r2);
+  display: grid;
+  gap: var(--dk-1);
   font-size: var(--dk-fs-md);
   color: var(--gro-ink-2);
-  text-align: center;
-}
-.gro-checkout {
-  display: grid;
-  gap: var(--dk-2);
-  margin-top: var(--dk-2);
-  padding-top: var(--dk-3);
-  border-top: 1px solid var(--gro-line);
-  text-align: center;
 }
 
-/* Receipt: a paper slip with torn edges. */
+/* Receipt: a paper slip with torn edges, the shop's ledger. */
 .gro-receipt {
   display: grid;
   gap: var(--dk-3);
   padding: var(--dk-5) var(--dk-4);
   background: var(--gro-card);
-  box-shadow: var(--dk-shadow-1);
   mask:
     linear-gradient(#000 0 0) 0 6px / 100% calc(100% - 12px) no-repeat,
     radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px) 0 0 / 12px 6px repeat-x,
@@ -586,106 +543,75 @@
   justify-items: center;
   padding-bottom: var(--dk-2);
   border-bottom: 1px dashed var(--gro-line);
-  text-align: center;
 }
-.gro-receipt .gro-earned {
-  font-variant-numeric: tabular-nums;
-}
-.gro-total {
-  margin-top: var(--dk-1);
+.gro-ledger-sum {
   padding-top: var(--dk-2);
   border-top: 1px dashed var(--gro-line);
-  font-weight: 700;
-}
-.gro-bal span:last-child {
-  color: var(--gro-ink) !important;
+  font-weight: 600;
 }
 .gro-unlock {
-  display: flex;
-  align-items: center;
-  gap: var(--dk-3);
+  display: grid;
   padding: var(--dk-3);
-  border-radius: var(--dk-r3);
+  border-radius: var(--dk-r2);
   font-size: var(--dk-fs-md);
-  color: var(--gro-sun-ink);
-  background: var(--gro-sun);
+  background: var(--gro-hi);
 }
 .gro-unlock strong {
-  display: block;
   font-size: var(--dk-fs-xl);
+  font-weight: 700;
 }
 
-/* Recipe */
+/* Recipe: type-led. Title, three facts, the ingredients, one action. */
 .gro-recipe {
-  margin: var(--dk-3) var(--dk-4) var(--dk-4);
-  padding: 0;
-  overflow: hidden;
-}
-.gro-recipe-art {
-  position: relative;
-  height: 8rem;
-}
-.gro-dish {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.gro-tag {
-  position: absolute;
-  top: var(--dk-2);
-  left: var(--dk-2);
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  color: var(--gro-teal-2);
-  background: rgb(255 255 255 / 0.92);
-}
-.gro-recipe-body {
-  display: grid;
-  gap: var(--dk-2);
-  padding: var(--dk-3) var(--dk-4) var(--dk-4);
+  gap: var(--dk-3);
 }
 .gro-recipe-t {
-  font-size: var(--dk-fs-xl);
-  line-height: var(--dk-lh-snug);
-}
-.gro-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--dk-1) var(--dk-3);
-  font-size: var(--dk-fs-sm);
-  color: var(--gro-ink-2);
-}
-.gro-meta li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--dk-1);
-}
-.gro-meta-pts {
+  margin-top: calc(var(--dk-2) * -1) !important;
+  font-size: var(--dk-fs-2xl);
   font-weight: 700;
-  color: var(--gro-beet);
+  line-height: var(--dk-lh-snug);
+  letter-spacing: var(--dk-track-tight);
+  text-wrap: balance;
 }
-.gro-ingredients {
-  margin-bottom: var(--dk-1) !important;
+.gro-facts {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: start;
+  gap: var(--dk-5);
+  padding: var(--dk-3) 0;
+  border-block: 1px solid var(--gro-line);
 }
-.gro-ingredients li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--dk-1) var(--dk-2);
-  padding: var(--dk-1) 0;
-  border-top: 1px solid var(--gro-line);
-  font-size: var(--dk-fs-md);
-}
-.gro-qty {
-  width: 3.25rem;
-  font-size: var(--dk-fs-sm);
+.gro-facts dt {
+  font-size: var(--dk-fs-xs);
   color: var(--gro-ink-2);
+}
+.gro-facts dd {
+  font-size: var(--dk-fs-xl);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.gro-ingredients li {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr auto;
+  align-items: center;
+  gap: var(--dk-2);
+  min-height: 2.75rem;
+  padding: var(--dk-2) var(--dk-4);
+  font-size: var(--dk-fs-md);
+}
+.gro-ingredients .gro-qty {
+  font-size: var(--dk-fs-sm);
+}
 .gro-ing {
-  flex: 1;
+  display: grid;
+}
+.gro-onlist {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  color: var(--gro-ink-2);
 }
 
 /* Tabs */
@@ -700,47 +626,49 @@
   justify-items: center;
   gap: 2px;
   min-height: 3.5rem;
-  padding: var(--dk-1) 0;
+  padding: var(--dk-2) 0 var(--dk-1);
   border: 0;
   font: inherit;
   font-size: var(--dk-fs-xs);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--gro-ink-2);
   background: transparent;
   cursor: pointer;
-  transition: color var(--dk-quick) var(--dk-ease);
+  transition:
+    color var(--dk-quick) var(--dk-ease),
+    background-color var(--dk-quick) var(--dk-ease);
 }
 .gro-tab-ico {
   position: relative;
-  padding: 3px var(--dk-4);
-  border-radius: var(--dk-rf);
-  transition: background-color var(--dk-base) var(--dk-ease);
 }
 .gro-badge {
   position: absolute;
-  top: -2px;
-  right: var(--dk-2);
+  top: -5px;
+  left: 14px;
   min-width: 1.125rem;
   padding: 0 var(--dk-1);
+  border: 2px solid var(--gro-card);
   border-radius: var(--dk-rf);
   font-size: var(--dk-fs-xs);
-  font-weight: 800;
-  line-height: var(--dk-lh-normal);
-  color: #fff;
-  background: var(--gro-beet);
+  font-weight: 700;
+  line-height: var(--dk-lh-snug);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--gro-ink);
+  background: var(--gro-hi);
 }
 .gro-tabs button:is(:hover, :focus-visible) {
-  color: var(--gro-teal);
+  color: var(--gro-ink);
 }
 .gro-tabs button:active {
-  color: var(--gro-teal-2);
+  background: var(--gro-bg);
 }
 .gro-tabs button[aria-selected='true'] {
-  font-weight: 800;
-  color: var(--gro-teal);
+  font-weight: 700;
+  color: var(--gro-ink);
 }
-.gro-tabs button[aria-selected='true'] .gro-tab-ico {
-  background: var(--gro-teal-soft);
+.gro-tabs button[aria-selected='true'] .gro-ico {
+  stroke-width: 2.25;
 }
 
 /* Focus: one ring, everywhere in the app. */
@@ -751,14 +679,6 @@
 /* The panel scrolls inside the app's clipped frame: its ring sits inside it, like Airline's. */
 .gro-panel:focus-visible {
   outline-offset: calc(var(--dk-focus) * -1);
-}
-/* On Home the panel's top 5.5rem is the teal band, which would hide a teal ring along the top and
-   the upper sides: while the panel has keyboard focus the band stands one ring width clear of
-   the ring, so the ring shows on all four sides against the page colour. */
-.gro-panel:focus-visible > .gro-home {
-  background-position: calc(var(--dk-focus) * 2) calc(var(--dk-focus) * 2);
-  background-size: calc(100% - var(--dk-focus) * 4) 100%;
-  background-repeat: no-repeat;
 }
 /* The tab bar sits on the screen's rounded bottom edge, which clips an outset ring (WO-031): the
    tabs' ring sits 2px inside them, and the outer two curve with the screen's corners (`--df-r`,
@@ -773,13 +693,10 @@
   border-bottom-right-radius: var(--df-r, 0px);
 }
 
-/* Motion: first-view ring fill, offer load pop, receipt arrival. Off under reduced motion. */
+/* Motion: first-view bar fill, receipt arrival. Off under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .gro-home.is-first .gro-ring-fill {
-    animation: gro-ring var(--dk-reveal) var(--dk-ease) both;
-  }
-  .gro-load[aria-pressed='true'] .gro-ico {
-    animation: gro-pop var(--dk-base) var(--dk-ease-pop) both;
+  .gro-home.is-first .gro-bar > span {
+    animation: gro-fill var(--dk-reveal) var(--dk-ease) both;
   }
   .gro-receipt {
     animation: gro-rise var(--dk-slow) var(--dk-ease) both;
@@ -788,15 +705,15 @@
     animation: gro-pop var(--dk-slow) var(--dk-ease-pop) var(--dk-base) both;
   }
 }
-@keyframes gro-ring {
+@keyframes gro-fill {
   from {
-    stroke-dasharray: 0 100;
+    scale: 0 1;
   }
 }
 @keyframes gro-pop {
   from {
     opacity: 0;
-    scale: 0.6;
+    scale: 0.96;
   }
 }
 @keyframes gro-rise {
