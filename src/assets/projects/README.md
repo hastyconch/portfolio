@@ -5,6 +5,7 @@ its content file in `src/content/projects/`.
 
 | Folder            | Source                                                                      | Frame   |
 | ----------------- | --------------------------------------------------------------------------- | ------- |
+| `potluck-picker/` | A copy running locally with AI off (`LOCAL_ONLY=1`), 390×844 at 2x          | phone   |
 | `billable/`       | The game running locally from a copy of the repo, 800×448 at 2x             | game    |
 | `box-scores/`     | The app running locally on public NBA data, 390×844 at 2x                   | phone   |
 | `felt-and-tiles/` | The app running locally (`wrangler` local D1), as a guest, 1280×800 at 1.5x | browser |
