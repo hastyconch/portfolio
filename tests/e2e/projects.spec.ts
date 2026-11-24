@@ -327,8 +327,10 @@ test('projects potluck picker case study', async ({ page }) => {
   }
   await expect(page.locator('#gallery figcaption')).toHaveCount(5);
 
-  // The live address is given; the repo is private, so nothing links to it.
-  await expect(page.locator('main')).toContainText('potluck-picker.pages.dev');
+  // The live app is a real link in the facts; the repo is private, so nothing links to it.
+  await expect(
+    page.locator('.cs-facts a', { hasText: 'potluck-picker.pages.dev' }),
+  ).toHaveAttribute('href', 'https://potluck-picker.pages.dev');
   for (const a of await page.locator('a[href]').all()) {
     const href = (await a.getAttribute('href'))!;
     expect(href).not.toMatch(/github\.com\/[^/]+\/potluck/i);

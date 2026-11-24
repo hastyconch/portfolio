@@ -65,6 +65,7 @@ const projects = defineCollection({
       category: z.enum(['app', 'game', 'tool']),
       year: z.string(),
       platforms: z.array(z.string()),
+      live: z.string().url().optional(), // the running app, when it has a public address
       problem: z.string(),
       features: z.array(z.string()),
       planned: z.array(z.string()).default([]), // honesty: roadmap items, labelled as planned

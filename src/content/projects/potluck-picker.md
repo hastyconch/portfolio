@@ -4,6 +4,7 @@ tagline: "One link for the guests, and everyone says what they're bringing."
 category: app
 year: '2026'
 platforms: [Web]
+live: https://potluck-picker.pages.dev
 problem: "My mom wanted one link she could send to a group chat, where everyone writes down what they're bringing to a potluck. Her guests are older, so it does one thing and keeps it simple. Guests need no account, the text and buttons are big, and it asks one question at a time. Everyone chooses their own dish, and the app sorts and counts them, so the list shows how many starters, mains, sides and desserts are coming."
 features:
   - 'The host sets up the party and gets a ready-to-send message: WhatsApp, another app, or copy.'
@@ -62,7 +63,7 @@ cover:
   alt: 'Potluck Picker on a phone: a Diwali potluck hosted by Meena, six guests bringing and two not yet, the dishes counted by kind (1 starter, 2 mains, 1 side, 1 dessert, 1 drink), then the starters.'
 gallery:
   title: 'Screens'
-  intro: 'Captured from a copy running on my laptop with AI switched off, so dishes show plain tiles. The guests are invented. The live app is at potluck-picker.pages.dev.'
+  intro: 'Captured from a copy running on my laptop with AI switched off, so dishes show plain tiles. The guests are invented.'
   items:
     - {
         image: ../../assets/projects/potluck-picker/01-board.webp,

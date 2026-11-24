@@ -121,6 +121,14 @@ const contents = [
               <dt>Platforms</dt>
               <dd>{d.platforms.join(' · ')}</dd>
             </div>
+            {d.live && (
+              <div>
+                <dt>Live</dt>
+                <dd>
+                  <a href={d.live}>{new URL(d.live).host}</a>
+                </dd>
+              </div>
+            )}
           </dl>
           {playable && (
             <p class="cs-playit">
