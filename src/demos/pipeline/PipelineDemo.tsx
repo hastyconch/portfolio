@@ -1,34 +1,67 @@
-// AI-assisted program management, as a step-through diagram (constitution art. 3 + 6):
+// AI-assisted program management, as a step-through pipeline (constitution art. 3 + 6):
 // invented project, people and tickets; every "AI output" here is a local fixture.
-import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react';
+// Direction B, "Instrument" (graphite in dark, its light equivalent on paper white): the rail is
+// the overview, each stage with its output count; the stage is the detail. Rows follow the data's
+// flow (transcript, extracted items, outputs), numbers are tabular, one electric-blue accent, and
+// red, amber and green appear only where a threshold exists (RAG, overdue).
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import '../kit.css';
 import './pipeline.css';
 
 type Rag = 'green' | 'amber' | 'red';
 
 const ragLabel: Record<Rag, string> = { green: 'Green', amber: 'Amber', red: 'Red' };
-const ragIcon: Record<Rag, string> = { green: '●', amber: '▲', red: '■' };
+// Each RAG level has its own shape too, so it never rests on colour alone.
+const ragShape: Record<Rag, ReactNode> = {
+  green: <circle cx="5" cy="5" r="4" />,
+  amber: <path d="M5 1 9.2 8.6H.8z" />,
+  red: <rect x="1.25" y="1.25" width="7.5" height="7.5" rx="1" />,
+};
 
 function RagChip({ rag }: { rag: Rag }) {
   return (
     <span className={`pl-rag pl-rag-${rag}`}>
-      <span aria-hidden="true">{ragIcon[rag]}</span> {ragLabel[rag]}
+      <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" focusable="false">
+        {ragShape[rag]}
+      </svg>
+      {ragLabel[rag]}
     </span>
   );
 }
 
-// People on the invented project, each with an avatar tint (white initials hold 4.5:1).
-const PEOPLE: Record<string, string> = {
-  Lorna: '#9a3412',
-  Jonah: '#1d4ed8',
-  Carmen: '#0f766e',
-  Theo: '#6d28d9',
+const ICONS = {
+  check: <path d="M5 12.5 9.5 17 19 7.5" />,
+  alert: (
+    <>
+      <path d="M12 4 21 19.5H3z" />
+      <path d="M12 10v4M12 17v.5" />
+    </>
+  ),
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
+  flag: <path d="M6 21V4m0 0h11l-2 4 2 4H6" />,
+  play: <path d="M8 5.5v13l10-6.5z" />,
+  pause: <path d="M9 5.5v13M15 5.5v13" />,
+  replay: <path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />,
+  quote: <path d="M5 7h14M5 12h14M5 17h8" />,
 };
-function Av({ who }: { who: string }) {
+
+function Icon({ name }: { name: keyof typeof ICONS }) {
   return (
-    <span className="dk-av" style={{ '--av': PEOPLE[who] } as CSSProperties} aria-hidden="true">
-      {who[0]}
-    </span>
+    <svg
+      className="pl-svg"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {ICONS[name]}
+    </svg>
   );
 }
 
@@ -64,8 +97,7 @@ const transcript = [
 const extracted = [
   {
     kind: 'Decisions',
-    tone: 'decision',
-    icon: '✓',
+    icon: 'check',
     items: [
       { text: 'Tenant dashboard ships without saved search.', src: 2 },
       { text: 'Release 3 scope is locked.', src: 4 },
@@ -73,36 +105,44 @@ const extracted = [
   },
   {
     kind: 'Risks',
-    tone: 'risk',
-    icon: '!',
+    icon: 'alert',
     items: [{ text: 'Flaky payments sandbox may delay integration testing.', src: 3 }],
   },
   {
     kind: 'Action items',
-    tone: 'action',
-    icon: '→',
+    icon: 'arrow',
     items: [
       { text: 'Theo: review the migration script (was due Friday).', src: 1, owner: 'Theo' },
       { text: 'Carmen: final tenant specs by Thursday.', src: 4, owner: 'Carmen' },
       { text: 'Jonah: raise a sandbox ticket with the payments team.', src: 3, owner: 'Jonah' },
     ],
   },
-];
+] as const;
 
-const workstreams: { name: string; owner: string; was: Rag; rag: Rag; note: string }[] = [
+// `src` is the transcript line (index) each output traces back to, as in the extraction step.
+const workstreams: {
+  name: string;
+  owner: string;
+  was: Rag;
+  rag: Rag;
+  note: string;
+  src: number;
+}[] = [
   {
     name: 'Tenant dashboard',
     owner: 'Carmen',
     was: 'green',
     rag: 'green',
     note: 'On track; scope trimmed by agreement.',
+    src: 2,
   },
   {
     name: 'Lease-data migration',
     owner: 'Theo',
     was: 'green',
     rag: 'amber',
-    note: 'Review 2 days overdue; nudge sent.',
+    note: 'Review 2 days overdue; nudge drafted.',
+    src: 1,
   },
   {
     name: 'Payments integration',
@@ -110,41 +150,64 @@ const workstreams: { name: string; owner: string; was: Rag; rag: Rag; note: stri
     was: 'amber',
     rag: 'red',
     note: 'Sandbox unstable; fallback plan agreed.',
+    src: 3,
   },
 ];
 
 const followUps = [
-  { who: 'Theo', task: 'Migration script review', due: '2 days overdue', overdue: true },
-  { who: 'Carmen', task: 'Final tenant specs', due: 'Due Thursday', overdue: false },
-  { who: 'Jonah', task: 'Sandbox ticket', due: 'Due today', overdue: false },
+  { who: 'Theo', task: 'Migration script review', due: '2 days overdue', overdue: true, src: 1 },
+  { who: 'Carmen', task: 'Final tenant specs', due: 'Due Thursday', overdue: false, src: 4 },
+  { who: 'Jonah', task: 'Sandbox ticket', due: 'Due today', overdue: false, src: 3 },
 ];
 
 const columns = ['To do', 'In progress', 'Done'] as const;
 type Column = (typeof columns)[number];
-const tickets: { id: string; title: string; who: string; from: Column | 'New'; to: Column }[] = [
-  { id: 'LAR-157', title: 'Payments sandbox ticket', who: 'Jonah', from: 'New', to: 'To do' },
+type Ticket = { id: string; title: string; who: string; from: Column | 'New'; to: Column };
+const tickets: (Ticket & { src: number })[] = [
+  {
+    id: 'LAR-157',
+    title: 'Payments sandbox ticket',
+    who: 'Jonah',
+    from: 'New',
+    to: 'To do',
+    src: 3,
+  },
   {
     id: 'LAR-142',
     title: 'Review migration script',
     who: 'Theo',
     from: 'To do',
     to: 'In progress',
+    src: 1,
   },
-  { id: 'LAR-131', title: 'Final tenant specs', who: 'Carmen', from: 'To do', to: 'In progress' },
+  {
+    id: 'LAR-131',
+    title: 'Final tenant specs',
+    who: 'Carmen',
+    from: 'To do',
+    to: 'In progress',
+    src: 4,
+  },
   {
     id: 'LAR-118',
     title: 'Drop saved search from R3',
     who: 'Lorna',
     from: 'In progress',
     to: 'Done',
+    src: 2,
   },
 ];
+
+/** A transcript line reference, in the same form everywhere. */
+function Cite({ src }: { src: number }) {
+  return <span className="pl-ref">line {src + 1}</span>;
+}
 
 /** `uid` groups one demo's citations, so opening one closes the others (one source at a time). */
 type View = { nudged: boolean; synced: boolean; uid: string };
 type Step = {
   short: string;
-  /** what the step produces, under its name in the rail */
+  /** what the step produces, under its name in the rail: the overview's readout */
   sub: string;
   title: string;
   say: string;
@@ -153,110 +216,124 @@ type Step = {
   body: ReactNode | ((v: View) => ReactNode);
 };
 
-const wave = [4, 9, 6, 12, 8, 14, 10, 5, 11, 7, 13, 6, 9, 4, 10, 12, 7, 5, 9, 11, 6, 8, 12, 5];
+const itemCount = extracted.reduce((n, g) => n + g.items.length, 0);
 
 const steps: Step[] = [
   {
     short: 'Transcript',
-    sub: 'Stand-up recording',
+    sub: '5 lines · 12 min',
     title: 'Meeting transcript in',
     action: 'Extract with AI',
     say: 'A stand-up transcript for Project Larch, Release 3, comes in.',
     body: (
-      <div className="pl-card pl-transcript">
-        <div className="pl-rec">
-          <span className="pl-rec-dot" aria-hidden="true" />
-          <p className="pl-meta">Stand-up · Tuesday 09:30 · Project Larch, Release 3</p>
-          <svg className="pl-wave" viewBox="0 0 96 16" aria-hidden="true" focusable="false">
-            {wave.map((h, i) => (
-              <rect key={i} x={i * 4} y={8 - h / 2} width="2" height={h} rx="1" />
-            ))}
-          </svg>
-          <span className="pl-meta">12 min · 4 speakers</span>
-        </div>
-        <ul className="pl-lines">
+      <div className="pl-panel pl-transcript">
+        <p className="pl-panel-head">
+          <span>Stand-up recording</span>
+          <span className="pl-meta">Tue 09:30 · 12 min · 4 speakers</span>
+        </p>
+        <ol className="pl-lines">
           {transcript.map((t, i) => (
             <li key={i}>
-              <Av who={t.who} />
-              <span className="pl-who">
-                {t.who} <span className="pl-role">({t.role})</span>
+              <span className="pl-ln">
+                <span className="dk-sr">Line </span>
+                {i + 1}
               </span>
               <span className="pl-at">{t.at}</span>
+              <span className="pl-who">
+                {t.who} <span className="pl-role">{t.role}</span>
+              </span>
               <span className="pl-line">{t.line}</span>
             </li>
           ))}
-        </ul>
+        </ol>
       </div>
     ),
   },
   {
     short: 'Extract',
-    sub: 'Decisions, risks, actions',
+    sub: `${itemCount} items, each cited`,
     title: 'AI extracts decisions, risks and actions',
     action: 'Draft exec update',
     say: 'The AI pulls out 2 decisions, 1 risk and 3 action items with owners. Open any item to see the transcript line it came from.',
     body: (v: View) => (
-      <>
-        <ul className="pl-chips" aria-label="Extracted">
-          <li className="pl-chip is-decision">2 decisions</li>
-          <li className="pl-chip is-risk">1 risk</li>
-          <li className="pl-chip is-action">3 action items</li>
-          <li className="pl-chip">3 owners named</li>
-          <li className="pl-chip">Every item cites its line</li>
-        </ul>
-        <div className="pl-grid3">
-          {extracted.map((g) => (
-            <div key={g.kind} className={`pl-card pl-xcol is-${g.tone}`}>
-              <p className="pl-group">
-                <span className="pl-badge" aria-hidden="true">
-                  {g.icon}
-                </span>
-                {g.kind}
-                <span className="pl-count-n">{g.items.length}</span>
-              </p>
-              <ul className="pl-list">
-                {g.items.map((it) => (
-                  <li key={it.text}>
-                    <details className="pl-cite" name={`${v.uid}-cite`}>
-                      <summary>{it.text}</summary>
-                      <p>
-                        <span className="pl-meta">
-                          Source · {transcript[it.src].who}, {transcript[it.src].at}:
-                        </span>{' '}
-                        <q>{transcript[it.src].line}</q>
-                      </p>
-                    </details>
-                    <span className="pl-src">
-                      {'owner' in it && it.owner && <Av who={it.owner} />}
-                      Line {it.src + 1}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </>
+      <div className="pl-panel pl-extract">
+        <p className="pl-panel-head">
+          <span>
+            {itemCount} items from {transcript.length} lines
+          </span>
+          <span className="pl-meta">Open an item to see the line it came from</span>
+        </p>
+        {extracted.map((g) => (
+          <div key={g.kind} className="pl-kind">
+            <p className="pl-kind-h">
+              <Icon name={g.icon} />
+              {g.kind}
+              <span className="pl-n">{g.items.length}</span>
+            </p>
+            <ul className="pl-items">
+              {g.items.map((it) => (
+                <li key={it.text}>
+                  <details className="pl-cite" name={`${v.uid}-cite`}>
+                    <summary>
+                      <svg
+                        className="pl-chev"
+                        viewBox="0 0 16 16"
+                        width="12"
+                        height="12"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path d="M6 3.5 10.5 8 6 12.5" />
+                      </svg>
+                      {it.text}
+                    </summary>
+                    <p className="pl-quote">
+                      <span className="pl-meta">
+                        Source · line {it.src + 1}, {transcript[it.src].who},{' '}
+                        {transcript[it.src].at}:
+                      </span>{' '}
+                      <q>{transcript[it.src].line}</q>
+                    </p>
+                  </details>
+                  <span className="pl-src">
+                    {'owner' in it && <span className="pl-src-owner">{it.owner}</span>}
+                    <Cite src={it.src} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     ),
   },
   {
     short: 'Status',
-    sub: 'Exec update, RAG',
+    sub: 'Overall amber',
     title: 'Exec status update drafted',
     action: 'Approve and send',
     say: 'An executive status update is drafted: overall amber, one red workstream with a fallback plan.',
     body: (
-      <div className="pl-card pl-status">
-        <div className="pl-overall">
-          <span className="pl-overall-t">
-            <span className="pl-meta">Release 3 · overall</span>
-            <RagChip rag="amber" />
-          </span>
-          <span className="pl-meta">To: program sponsors · ships 14 March</span>
-        </div>
+      <div className="pl-panel pl-status">
+        <dl className="pl-fields">
+          <div>
+            <dt>Overall</dt>
+            <dd>
+              <RagChip rag="amber" />
+            </dd>
+          </div>
+          <div>
+            <dt>To</dt>
+            <dd>Program sponsors</dd>
+          </div>
+          <div>
+            <dt>Release 3 ships</dt>
+            <dd>14 March</dd>
+          </div>
+        </dl>
         <p className="pl-summary">
-          On track for the 14 March release. Payments testing is at risk; a fallback plan is agreed
-          and the migration review has been chased.
+          The 14 March date holds. Payments testing is at risk, with a fallback plan agreed, and the
+          overdue migration review is being chased.
         </p>
         <table className="pl-table">
           <thead>
@@ -280,11 +357,10 @@ const steps: Step[] = [
                 <td>
                   <RagChip rag={w.rag} />
                 </td>
-                <td className="pl-ws-note">{w.note}</td>
-                <td className="pl-owner">
-                  <Av who={w.owner} />
-                  {w.owner}
+                <td className="pl-ws-note">
+                  {w.note} <Cite src={w.src} />
                 </td>
+                <td className="pl-owner">{w.owner}</td>
               </tr>
             ))}
           </tbody>
@@ -294,55 +370,60 @@ const steps: Step[] = [
   },
   {
     short: 'Nudge',
-    sub: 'Follow-ups chased',
+    sub: '1 of 3 overdue',
     title: 'Nudge engine flags a follow-up',
     action: 'Send nudge',
     say: 'The nudge engine flags Theo’s review as 2 days overdue and drafts a polite nudge for you to send.',
     body: (v: View) => (
       <div className="pl-grid2">
-        <div className="pl-card">
-          <p className="pl-group">Follow-ups</p>
+        <div className="pl-panel">
+          <p className="pl-panel-head">
+            <span>Follow-ups</span>
+            <span className="pl-meta">3 open</span>
+          </p>
           <ul className="pl-follow">
-            {followUps.map((f) => (
-              <li key={f.who} className={f.overdue ? 'is-flagged' : undefined}>
-                <Av who={f.who} />
-                <span className="pl-follow-t">
-                  <strong>{f.who}</strong> · {f.task}
-                </span>
-                <span className="pl-due">
-                  {f.overdue && <span aria-hidden="true">⚑ </span>}
-                  {f.due}
-                  {f.overdue && <span className="dk-sr"> (flagged)</span>}
-                </span>
-              </li>
-            ))}
+            {followUps.map((f) => {
+              const flagged = f.overdue && !v.nudged;
+              return (
+                <li key={f.who} className={flagged ? 'is-flagged' : undefined}>
+                  <span className="pl-follow-t">
+                    <strong>{f.who}</strong>
+                    <span>
+                      {f.task} · <Cite src={f.src} />
+                    </span>
+                  </span>
+                  <span className="pl-due">
+                    {flagged && <Icon name="flag" />}
+                    {f.overdue && v.nudged ? 'Nudged · replied' : f.due}
+                    {flagged && <span className="dk-sr"> (flagged)</span>}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
-        <div className="pl-card pl-chat">
-          <p className="pl-chat-head">
-            <Av who="Theo" />
-            <span>
-              <strong>Theo</strong>
-              <span className="pl-meta"> · direct message</span>
-            </span>
+        <div className="pl-panel pl-chat">
+          <p className="pl-panel-head">
+            <span>Direct message</span>
+            <span className="pl-meta">Lorna to Theo</span>
           </p>
           <div className="pl-thread">
-            <div className={`pl-bubble pl-out${v.nudged ? ' is-sent' : ''}`}>
+            <div className={`pl-msg pl-out${v.nudged ? ' is-sent' : ''}`}>
               <p className="pl-meta">
                 {v.nudged
                   ? 'Sent to Theo · AI-drafted, approved by the TPM'
                   : 'Draft to Theo · AI-written, waiting for TPM review'}
               </p>
               <p>
-                Hi Theo, hope your week is going well! Jonah’s migration script is ready for review
-                whenever you have a moment; it’s the last step before cut-over. Could you take a
-                look by Wednesday? Happy to pair on it if that helps. Thanks, Lorna
+                Hi Theo, the migration script review (LAR-142) is 2 days past Friday and it’s the
+                last step before cut-over. Could you review it by Wednesday? Happy to pair if that
+                helps. Thanks, Lorna
               </p>
             </div>
             {v.nudged && (
-              <div className="pl-bubble pl-in pl-reply">
+              <div className="pl-msg pl-in pl-reply">
                 <span className="pl-meta">Theo replied · 4 min later</span>
-                <p>On it. Reviewing this afternoon, sorry for the delay!</p>
+                <p>On it. Reviewing this afternoon.</p>
               </div>
             )}
           </div>
@@ -352,33 +433,34 @@ const steps: Step[] = [
   },
   {
     short: 'PM tool',
-    sub: 'Tickets in sync',
+    sub: '4 tickets synced',
     title: 'PM tool updated',
     say: 'Four tickets in the PM tool are updated to match the meeting. Release 3: delivered on time.',
     body: (v: View) => (
       <>
-        <div className="pl-board">
+        <div className="pl-panel pl-board">
           {columns.map((c) => {
             const here = tickets.filter((t) => (v.synced ? t.to === c : t.from === c));
             return (
               <div key={c} className="pl-col">
-                <p className="pl-group">
+                <p className="pl-col-h">
                   {c}
-                  <span className="pl-count-n">{here.length}</span>
+                  <span className="pl-n">{here.length}</span>
                 </p>
                 <ul className="pl-tickets">
                   {here.map((t) => (
                     <li key={t.id} className={`pl-ticket${v.synced ? ' is-moved' : ''}`}>
-                      <span className="pl-tid">{t.id}</span>
-                      <span className="pl-ticket-t">{t.title}</span>
-                      <span className="pl-ticket-foot">
-                        {v.synced && (
-                          <span className={`pl-moved${t.from === 'New' ? ' is-new' : ''}`}>
-                            {t.from === 'New' ? 'Created by AI' : `Moved from ${t.from}`}
-                          </span>
-                        )}
-                        <Av who={t.who} />
+                      <span className="pl-ticket-top">
+                        <span className="pl-tid">{t.id}</span>
+                        <span className="pl-meta">{t.who}</span>
                       </span>
+                      <span className="pl-ticket-t">{t.title}</span>
+                      {v.synced && (
+                        <span className={`pl-moved${t.from === 'New' ? ' is-new' : ''}`}>
+                          {t.from === 'New' ? 'Created by AI' : `Moved from ${t.from}`} ·{' '}
+                          <Cite src={t.src} />
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -388,14 +470,10 @@ const steps: Step[] = [
         </div>
         {v.synced && (
           <p className="pl-done">
-            <span className="pl-done-mark" aria-hidden="true">
-              ✓
-            </span>
-            <span>
-              <strong>Delivered on time</strong>
-              <span className="pl-done-sub">
-                Repeated after every stand-up until Release 3 shipped.
-              </span>
+            <Icon name="check" />
+            <strong>Delivered on time</strong>
+            <span className="pl-done-sub">
+              Repeated after every stand-up until Release 3 shipped.
             </span>
           </p>
         )}
@@ -494,13 +572,8 @@ export default function PipelineDemo() {
     >
       <div className="pl-inner">
         <div className="pl-project">
-          <span className="pl-project-mark" aria-hidden="true">
-            L
-          </span>
-          <span>
-            <strong>Project Larch</strong>
-            <span className="pl-meta">Release 3 · AI program assistant</span>
-          </span>
+          <strong>Project Larch</strong>
+          <span className="pl-meta">Release 3 · AI program assistant</span>
         </div>
 
         <ol className="pl-track" aria-label="Pipeline steps">
@@ -514,7 +587,7 @@ export default function PipelineDemo() {
                 onClick={() => go(i)}
               >
                 <span className="pl-num" aria-hidden="true">
-                  {i < step ? '✓' : i + 1}
+                  {i < step ? <Icon name="check" /> : i + 1}
                 </span>
                 <span className="pl-short">
                   <span className="dk-sr">Step {i + 1}: </span>
@@ -561,8 +634,8 @@ export default function PipelineDemo() {
             {/* The space sits inside the hidden arrow, so the name is exactly "Back". */}
             <span aria-hidden="true">← </span>Back
           </button>
-          <button type="button" className="pl-btn pl-play" onClick={togglePlay}>
-            <span aria-hidden="true">{playing ? '❚❚' : atEnd ? '↺' : '▶'}</span> {playLabel}
+          <button type="button" className="pl-btn pl-toggle" onClick={togglePlay}>
+            <Icon name={playing ? 'pause' : atEnd ? 'replay' : 'play'} /> {playLabel}
           </button>
           <button
             type="button"
@@ -570,7 +643,7 @@ export default function PipelineDemo() {
             aria-disabled={atEnd}
             onClick={() => !atEnd && act()}
           >
-            {actLabel} {!atEnd && <span aria-hidden="true">→</span>}
+            {actLabel}
           </button>
         </div>
 

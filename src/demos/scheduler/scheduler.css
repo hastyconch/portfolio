@@ -1,26 +1,26 @@
-/* Neutral clinical-software look with its own palette (AA in both colour schemes). It sits
-   inside the site's desktop window frame without borrowing the site's theme, and is laid out to
-   fit a laptop pane (about 1200 × 560) without scrolling. Scales come from ../kit.css. */
+/* Clinical clarity: cool neutral greys, hairlines instead of shadows, one teal accent, and red
+   only for a shift under its target. AA in both colour schemes. It sits inside the site's desktop
+   window frame without borrowing the site's theme, and fits a laptop pane (1160 × 540) without
+   scrolling. Scales come from ../kit.css. */
 .sch-app {
-  --sch-bg: #f4f6f8;
+  --sch-bg: #f6f7f9;
   --sch-surface: #ffffff;
-  --sch-sunk: #eef1f5;
-  --sch-ink: #17202b;
-  --sch-muted: #4b5563;
-  --sch-rule: #d3d9e1;
-  --sch-accent: #0b6480;
-  --sch-accent-soft: #e2f0f4;
+  --sch-sunk: #eef0f3;
+  --sch-ink: #14181f;
+  --sch-muted: #59616e;
+  --sch-rule: #e1e4e9;
+  --sch-rule-2: #c7ccd4;
+  --sch-accent: #0f766e;
+  --sch-accent-soft: #e5f1ef;
   --sch-on-accent: #ffffff;
-  --sch-focus: #17202b;
-  --sch-day-bg: #fcefcf;
-  --sch-day-ink: #573a00;
-  --sch-night-bg: #dce5f6;
-  --sch-night-ink: #1e3768;
+  --sch-focus: #14181f;
+  --sch-day-bg: #eef0f3;
+  --sch-day-ink: #14181f;
+  --sch-night-bg: #b9c1cc;
+  --sch-night-ink: #14181f;
   --sch-bad: #b42318;
-  --sch-bad-soft: #fdecea;
+  --sch-bad-soft: #fcefed;
   --sch-warn: #8a4b00;
-  --sch-ok: #166534;
-  --sch-hatch: rgb(23 32 43 / 0.1);
   container: sch / inline-size;
   position: relative;
   min-height: 100%;
@@ -38,25 +38,24 @@
 }
 @media (prefers-color-scheme: dark) {
   .sch-app {
-    --sch-bg: #11161c;
-    --sch-surface: #19212a;
-    --sch-sunk: #151c24;
-    --sch-ink: #e5e9ef;
-    --sch-muted: #a3adba;
-    --sch-rule: #36414f;
-    --sch-accent: #6cc4dd;
-    --sch-accent-soft: #163541;
-    --sch-on-accent: #08222b;
-    --sch-focus: #e5e9ef;
-    --sch-day-bg: #3a2e10;
-    --sch-day-ink: #ffe1a1;
-    --sch-night-bg: #1f2f4d;
-    --sch-night-ink: #d3e0ff;
-    --sch-bad: #ff9b8f;
-    --sch-bad-soft: #3a1c1a;
-    --sch-warn: #f3bd62;
-    --sch-ok: #7fd99a;
-    --sch-hatch: rgb(229 233 239 / 0.12);
+    --sch-bg: #0f1215;
+    --sch-surface: #161a1f;
+    --sch-sunk: #1d2228;
+    --sch-ink: #e7e9ec;
+    --sch-muted: #9ba3ae;
+    --sch-rule: #272d34;
+    --sch-rule-2: #3a424c;
+    --sch-accent: #4cc2b5;
+    --sch-accent-soft: #15302d;
+    --sch-on-accent: #062320;
+    --sch-focus: #e7e9ec;
+    --sch-day-bg: #1f252b;
+    --sch-day-ink: #e7e9ec;
+    --sch-night-bg: #485464;
+    --sch-night-ink: #ffffff;
+    --sch-bad: #ff8b7e;
+    --sch-bad-soft: #36201e;
+    --sch-warn: #f0b35b;
   }
 }
 .sch-app *,
@@ -91,25 +90,42 @@
   vertical-align: -0.125em;
 }
 
-/* Top bar: the unit, the week, three live figures and Reset. */
+/* Status dots: the shape half of every status. Under is a filled disc, met a ring, over a square,
+   and a warning a diamond, so the state reads without colour. */
+.sch-dot {
+  display: inline-block;
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: var(--dk-1);
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  vertical-align: 0.0625em;
+}
+.sch-dot.is-under {
+  border-color: var(--sch-bad);
+  background: var(--sch-bad);
+}
+.sch-dot.is-over {
+  border-radius: 1px;
+}
+.sch-dot.is-warn {
+  border-radius: 1px;
+  border-color: var(--sch-warn);
+  background: var(--sch-warn);
+  rotate: 45deg;
+  scale: 0.85;
+}
+
+/* Top bar: the unit and week, three live figures, Reset. */
 .sch-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--dk-2) var(--dk-4);
+  gap: var(--dk-2) var(--dk-5);
   padding: var(--dk-2) var(--dk-4);
   border-bottom: 1px solid var(--sch-rule);
   background: var(--sch-surface);
-}
-.sch-mark {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--dk-r2);
-  font-size: var(--dk-fs-xl);
-  color: var(--sch-on-accent);
-  background: var(--sch-accent);
 }
 .sch-heading {
   flex: 1;
@@ -117,7 +133,7 @@
 }
 .sch-title {
   font-size: var(--dk-fs-lg);
-  font-weight: 700;
+  font-weight: 600;
   line-height: var(--dk-lh-snug);
 }
 .sch-sub {
@@ -126,53 +142,46 @@
 }
 .sch-kpis {
   display: flex;
+  gap: var(--dk-5);
 }
 .sch-kpis div {
   display: grid;
-  padding: 0 var(--dk-4);
-  border-left: 1px solid var(--sch-rule);
 }
 .sch-kpis dt {
   font-size: var(--dk-fs-xs);
   color: var(--sch-muted);
 }
 .sch-kpis dd {
-  font-size: var(--dk-fs-xl);
-  font-weight: 700;
+  font-size: var(--dk-fs-lg);
+  font-weight: 600;
   line-height: var(--dk-lh-snug);
   font-variant-numeric: tabular-nums;
 }
-.sch-kpis .is-bad dd {
-  color: var(--sch-bad);
-}
-.sch-kpis .is-warn dd {
-  color: var(--sch-warn);
-}
-.sch-kpis .is-ok dd {
-  color: var(--sch-ok);
-}
 .sch-btn {
-  min-height: 2.25rem;
-  padding: 0 var(--dk-4);
-  border: 1px solid var(--sch-accent);
+  min-height: 2rem;
+  padding: 0 var(--dk-3);
+  border: 1px solid var(--sch-rule-2);
   border-radius: var(--dk-r2);
   font: inherit;
+  font-size: var(--dk-fs-sm);
   font-weight: 600;
-  color: var(--sch-accent);
-  background: transparent;
+  color: var(--sch-ink);
+  background: var(--sch-surface);
   cursor: pointer;
   transition:
     background-color var(--dk-quick) var(--dk-ease),
+    border-color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
 .sch-btn:is(:hover, :focus-visible) {
-  background: var(--sch-accent-soft);
+  border-color: var(--sch-muted);
+  background: var(--sch-sunk);
 }
 .sch-btn:active {
   scale: var(--dk-press);
 }
 
-/* Layout: stacked when narrow; roster beside a candidate column when wide. */
+/* Layout: stacked when narrow; roster beside the open-shift column when wide. */
 .sch-body {
   display: grid;
   gap: var(--dk-3);
@@ -180,7 +189,7 @@
 }
 @container sch (min-width: 760px) {
   .sch-body {
-    grid-template-columns: minmax(0, 1fr) 19.5rem;
+    grid-template-columns: minmax(0, 1fr) 18.5rem;
     align-items: start;
     /* tighter top and bottom so the laptop pane keeps slack for heavier fonts (Linux CI) */
     padding-block: var(--dk-2);
@@ -192,7 +201,7 @@
   min-width: 0;
 }
 
-/* Roster grid */
+/* Roster grid: rows of hairlines, cells as flat blocks. */
 .sch-gridwrap {
   /* positioned so visually hidden header text is clipped with the grid, not the page */
   position: relative;
@@ -203,27 +212,37 @@
 }
 .sch-grid {
   width: 100%;
+  /* separate, so the sticky name column keeps its own row lines when the roster scrolls */
   border-collapse: separate;
-  border-spacing: 3px;
+  border-spacing: 0;
   font-variant-numeric: tabular-nums;
+}
+/* Equal day columns wherever the week fits without scrolling. */
+@container sch (min-width: 560px) {
+  .sch-grid {
+    table-layout: fixed;
+  }
+  .sch-corner {
+    width: 9.5rem;
+  }
 }
 .sch-grid th {
   font-size: var(--dk-fs-xs);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sch-muted);
 }
 .sch-grid thead th {
-  padding: var(--dk-1) 2px;
-  border-radius: var(--dk-r1);
+  height: 1.875rem;
+  padding: 0 2px;
+  border-bottom: 1px solid var(--sch-rule);
   text-align: center;
 }
 .sch-date {
   margin-left: var(--dk-1);
-  font-weight: 400;
 }
 .sch-grid thead th.is-open {
+  font-weight: 600;
   color: var(--sch-accent);
-  background: var(--sch-accent-soft);
   box-shadow: inset 0 -2px 0 var(--sch-accent);
 }
 .sch-corner,
@@ -231,230 +250,187 @@
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 9.5rem;
+  min-width: 9rem;
   background: var(--sch-surface);
-  /* cover the border-spacing gaps too, so cells scrolling underneath don't peek through */
-  box-shadow: 0 0 0 3px var(--sch-surface);
+  /* a hairline on the name column's edge, so cells scrolling under it end cleanly */
+  box-shadow: inset -1px 0 0 var(--sch-rule);
 }
 .sch-grid .sch-corner {
+  padding-left: var(--dk-3);
   text-align: left;
-  padding-left: var(--dk-2);
 }
 .sch-nurse {
-  padding: 0 var(--dk-2) 0 var(--dk-1);
+  padding: 0 var(--dk-2) 0 var(--dk-3);
   text-align: left;
   white-space: nowrap;
-}
-.sch-nurse > * {
-  vertical-align: middle;
-}
-.sch-nurse .dk-av {
-  width: 1.625rem;
-  height: 1.625rem;
-}
-.sch-who {
-  display: inline-grid;
-  margin-left: var(--dk-2);
   line-height: var(--dk-lh-snug);
 }
 .sch-name {
+  display: block;
   font-size: var(--dk-fs-md);
+  font-weight: 500;
   color: var(--sch-ink);
 }
 .sch-hours {
-  font-weight: 500;
-}
-.sch-meter {
-  display: inline-block;
-  width: 1.75rem;
-  height: 4px;
-  margin-right: var(--dk-1);
-  border-radius: var(--dk-rf);
-  vertical-align: middle;
-  background: linear-gradient(
-    90deg,
-    var(--sch-accent) calc(var(--h) * 100%),
-    var(--sch-rule) calc(var(--h) * 100%)
-  );
+  display: block;
 }
 .sch-hours.is-warn {
+  font-weight: 600;
   color: var(--sch-warn);
-  font-weight: 700;
-}
-.sch-hours.is-warn .sch-meter {
-  background: var(--sch-warn);
 }
 .sch-extra {
   font-weight: 400;
   color: var(--sch-muted);
 }
+/* With overtime flagged, the course note drops to its own line instead of crowding the grid. */
+.sch-hours.is-warn .sch-extra {
+  display: block;
+}
+.sch-grid tbody tr + tr > * {
+  border-top: 1px solid var(--sch-rule);
+}
 .sch-cell {
   position: relative;
   min-width: 2.75rem;
-  height: 2.125rem;
-  padding: 0 2px;
-  border-radius: var(--dk-r2);
+  height: 2.375rem;
+  padding: 3px 2px;
   text-align: center;
   vertical-align: middle;
   cursor: pointer;
+}
+.sch-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dk-1);
+  height: 100%;
+  min-height: 1.875rem;
+  border-radius: var(--dk-r1);
   transition: box-shadow var(--dk-quick) var(--dk-ease);
 }
-.sch-cell:is(:hover, :focus-visible) {
+.sch-cell:is(:hover, :focus-visible) .sch-pill {
   box-shadow: inset 0 0 0 2px var(--sch-accent);
 }
-.sch-cell:active {
+.sch-cell:active .sch-pill {
   box-shadow: inset 0 0 0 3px var(--sch-accent);
 }
 .sch-cell:focus-visible {
-  outline-offset: 1px;
-}
-.sch-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--dk-1);
-  font-weight: 700;
+  outline-offset: -1px;
 }
 .sch-glyph {
-  font-size: var(--dk-fs-md);
-  font-weight: 700;
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
 }
-.sch-cell.is-D {
+.sch-cell.is-D .sch-pill {
   color: var(--sch-day-ink);
   background: var(--sch-day-bg);
 }
-.sch-cell.is-N {
+.sch-cell.is-N .sch-pill {
   color: var(--sch-night-ink);
   background: var(--sch-night-bg);
 }
-.sch-cell.is-O {
+.sch-cell.is-O .sch-pill {
   color: var(--sch-muted);
 }
-.sch-cell.is-O:is(:hover, :focus-visible) {
-  box-shadow: inset 0 0 0 2px var(--sch-accent);
-}
-.sch-cell.is-O.in-open {
+.sch-cell.is-O.is-cand .sch-pill {
   background: var(--sch-accent-soft);
 }
-.sch-cell.is-leave {
-  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--sch-hatch) 5px 7px);
+.sch-cell.is-leave.is-O .sch-pill {
+  box-shadow: inset 0 0 0 1px var(--sch-rule-2);
 }
-.sch-cell.is-bad {
-  box-shadow: inset 0 0 0 2px var(--sch-bad);
+.sch-cell.is-leave.is-O:is(:hover, :focus-visible) .sch-pill {
+  box-shadow: inset 0 0 0 2px var(--sch-accent);
 }
 .sch-tag {
   font-size: var(--dk-fs-xs);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
-  color: var(--sch-muted);
+}
+.sch-cell.is-bad .sch-pill {
+  box-shadow: inset 0 0 0 2px var(--sch-bad);
 }
 .sch-flag {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  display: grid;
-  place-items: center;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
+  top: 2px;
+  right: 3px;
   font-size: var(--dk-fs-xs);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
-  color: var(--sch-surface);
-  background: var(--sch-bad);
+  color: var(--sch-bad);
+}
+.sch-cell.is-N .sch-flag {
+  color: var(--sch-night-ink);
 }
 
-/* Cover rows: count, colleagues off-screen, and a dot per RN against the target. */
-.sch-cover .sch-nurse {
-  background: var(--sch-surface);
+/* Coverage: the count against the target, then the state in words with its shape. */
+.sch-coverage tr:first-child > * {
+  border-top: 1px solid var(--sch-rule-2);
 }
-.sch-cover-ico {
-  display: inline-grid;
-  place-items: center;
-  width: 1.625rem;
-  height: 1.625rem;
-  border-radius: 50%;
-  color: var(--sch-muted);
+.sch-coverage .sch-nurse {
   background: var(--sch-sunk);
 }
 .sch-count {
-  height: 2.375rem;
+  height: 2.75rem;
   cursor: default;
-  color: var(--sch-ink);
   background: var(--sch-sunk);
 }
-.sch-count:is(:hover, :focus-visible) {
-  box-shadow: none;
+.sch-count .sch-pill {
+  flex-direction: column;
+  gap: 0;
+  line-height: var(--dk-lh-snug);
 }
 .sch-count .sch-glyph {
-  font-size: var(--dk-fs-sm);
-}
-.sch-dots {
-  display: flex;
-  justify-content: center;
-  gap: 3px;
-  margin-top: 3px;
-}
-.sch-count:not(.is-bad, .is-open) .sch-dots {
-  display: none;
-}
-.sch-count:not(.is-bad, .is-open) .sch-glyph {
-  font-weight: 600;
+  font-weight: 400;
   color: var(--sch-muted);
 }
-.sch-dots span {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--sch-rule);
+.sch-count:is(.is-under, .is-over) .sch-glyph {
+  font-weight: 600;
+  color: var(--sch-ink);
 }
-.sch-dots .is-on {
-  background: var(--sch-ok);
+.sch-state {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--dk-fs-xs);
+  white-space: nowrap;
+  color: var(--sch-muted);
 }
-.sch-count.is-bad {
-  box-shadow: inset 0 0 0 2px var(--sch-bad);
-}
-.sch-count.is-open {
-  background: var(--sch-bad-soft);
+.sch-count:is(:hover, :focus-visible) .sch-pill,
+.sch-count:active .sch-pill {
   box-shadow: none;
-  outline: 2px dashed var(--sch-bad);
-  outline-offset: -2px;
 }
-.sch-count.is-open:focus-visible {
-  outline: var(--dk-focus) solid var(--sch-focus);
-  outline-offset: 1px;
-}
-.sch-count.is-open .sch-tag {
+.sch-count.is-under .sch-state {
+  font-weight: 600;
   color: var(--sch-bad);
 }
-.sch-count.is-open .sch-dots span:not(.is-on) {
-  background: var(--sch-bad);
+.sch-count.is-open .sch-pill {
+  background: var(--sch-bad-soft);
+  box-shadow: inset 0 0 0 1px var(--sch-bad);
+}
+.sch-count.is-open:focus-visible {
+  outline-offset: -1px;
 }
 
-/* Narrow columns: a slimmer name column, the course note on its own line, cover counts kept on
+/* Narrow columns: a slimmer name column, the course note on its own line, cover cells kept on
    one line (the roster scrolls sideways), and the figures spread across the top bar. */
 @container sch (max-width: 559px) {
   .sch-corner,
   .sch-nurse {
+    width: 7.5rem;
     min-width: 7.5rem;
+    max-width: 7.5rem;
+    white-space: normal;
   }
   .sch-extra {
     display: block;
     white-space: normal;
   }
   .sch-count {
-    min-width: 5.5rem;
-    white-space: nowrap;
+    min-width: 5rem;
   }
   .sch-kpis {
+    justify-content: space-between;
     width: 100%;
-  }
-  .sch-kpis div {
-    flex: 1;
-    padding: 0 var(--dk-3);
-  }
-  .sch-kpis div:first-child {
-    padding-left: 0;
-    border-left: 0;
   }
 }
 
@@ -466,32 +442,38 @@
 .sch-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--dk-1) var(--dk-2);
+  gap: var(--dk-1) var(--dk-4);
+  font-size: var(--dk-fs-xs);
+  color: var(--sch-muted);
 }
 .sch-legend li {
   display: inline-flex;
   align-items: center;
   gap: var(--dk-1);
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-r1);
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
 }
-.sch-legend .is-D {
+.sch-key {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1rem;
+  border-radius: var(--dk-r1);
+  font-weight: 600;
+  line-height: 1;
+}
+.sch-key.is-D {
   color: var(--sch-day-ink);
   background: var(--sch-day-bg);
 }
-.sch-legend .is-N {
+.sch-key.is-N {
   color: var(--sch-night-ink);
   background: var(--sch-night-bg);
 }
-.sch-legend .is-O {
-  color: var(--sch-muted);
-  box-shadow: inset 0 0 0 1px var(--sch-rule);
+.sch-key.is-O {
+  box-shadow: inset 0 0 0 1px var(--sch-rule-2);
 }
-.sch-legend .is-bad {
+.sch-key.is-bad {
   color: var(--sch-bad);
-  box-shadow: inset 0 0 0 1px var(--sch-bad);
+  box-shadow: inset 0 0 0 1.5px var(--sch-bad);
 }
 .sch-help {
   font-size: var(--dk-fs-xs);
@@ -501,79 +483,68 @@
 /* Scroll cue on narrow screens: a hint, and a fade on whichever edge has more columns. */
 .sch-scrollhint {
   font-size: var(--dk-fs-xs);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sch-muted);
 }
 .sch-gridwrap[data-more='end'] {
   mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
-/* The start fade begins after the sticky name column, so names and avatars stay solid. */
+/* The start fade begins after the sticky name column, so names stay solid. */
 .sch-gridwrap[data-more='start'] {
-  mask-image: linear-gradient(
-    to right,
-    #000 7.75rem,
-    transparent 7.75rem,
-    #000 calc(7.75rem + 28px)
-  );
+  mask-image: linear-gradient(to right, #000 7.5rem, transparent 7.5rem, #000 calc(7.5rem + 28px));
 }
 .sch-gridwrap[data-more='both'] {
   mask-image: linear-gradient(
     to right,
-    #000 7.75rem,
-    transparent 7.75rem,
-    #000 calc(7.75rem + 28px),
+    #000 7.5rem,
+    transparent 7.5rem,
+    #000 calc(7.5rem + 28px),
     #000 calc(100% - 28px),
     transparent
   );
 }
 
-/* Rule check: one strip under the roster. The rule list floats above it when opened. */
+/* Rule check: one line under the roster, on a hairline. The rule list floats above it. */
 .sch-rulebar {
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   gap: var(--dk-1) var(--dk-3);
-  padding: var(--dk-2) var(--dk-3);
-  border: 1px solid var(--sch-rule);
-  border-radius: var(--dk-r3);
-  background: var(--sch-surface);
+  padding: var(--dk-2) var(--dk-1) 0;
+  border-top: 1px solid var(--sch-rule);
+  font-size: var(--dk-fs-sm);
 }
 .sch-rulebar h4 {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--dk-1);
-  font-size: var(--dk-fs-md);
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
 }
 .sch-status {
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  font-size: var(--dk-fs-sm);
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
 }
 .sch-status.is-block {
   color: var(--sch-bad);
-  background: var(--sch-bad-soft);
 }
 .sch-status.is-warn {
   color: var(--sch-warn);
-  background: var(--sch-day-bg);
 }
 .sch-status.is-ok {
-  color: var(--sch-ok);
-  background: var(--sch-sunk);
+  color: var(--sch-accent);
 }
 .sch-issues {
   display: flex;
   flex-wrap: wrap;
   gap: var(--dk-1) var(--dk-3);
-  font-size: var(--dk-fs-sm);
 }
 .sch-sev {
-  font-size: var(--dk-fs-xs);
-  font-weight: 800;
-  letter-spacing: var(--dk-track-label);
-  text-transform: uppercase;
+  font-weight: 600;
+}
+.sch-sev::after {
+  content: ' ·';
+  font-weight: 400;
+  color: var(--sch-muted);
 }
 .is-block > .sch-sev {
   color: var(--sch-bad);
@@ -588,14 +559,17 @@
   min-height: 1.75rem;
   padding: var(--dk-1) var(--dk-2);
   border-radius: var(--dk-r1);
-  font-size: var(--dk-fs-sm);
-  font-weight: 600;
+  font-weight: 500;
   line-height: var(--dk-lh-normal);
   color: var(--sch-accent);
   cursor: pointer;
+  transition: background-color var(--dk-quick) var(--dk-ease);
 }
 .sch-rules summary:is(:hover, :focus-visible) {
   background: var(--sch-accent-soft);
+}
+.sch-rules summary:active {
+  background: var(--sch-sunk);
 }
 .sch-rules ul {
   position: absolute;
@@ -606,20 +580,19 @@
   gap: var(--dk-1);
   width: min(26rem, 100%);
   padding: var(--dk-3) var(--dk-3) var(--dk-3) var(--dk-6);
-  border: 1px solid var(--sch-rule);
+  border: 1px solid var(--sch-rule-2);
   border-radius: var(--dk-r3);
   list-style: disc;
-  font-size: var(--dk-fs-sm);
   color: var(--sch-muted);
   background: var(--sch-surface);
   box-shadow: var(--dk-shadow-2);
 }
 
-/* Open shift and its ranked candidates */
+/* Open shift and who can pick it up: a list on hairlines, one primary action. */
 .sch-task {
   display: grid;
   gap: var(--dk-2);
-  padding: var(--dk-3);
+  padding: var(--dk-3) var(--dk-4);
   border: 1px solid var(--sch-rule);
   border-radius: var(--dk-r3);
   background: var(--sch-surface);
@@ -630,14 +603,22 @@
 }
 .sch-task h4 {
   font-size: var(--dk-fs-lg);
+  font-weight: 600;
   line-height: var(--dk-lh-snug);
 }
 .sch-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dk-1);
   font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  letter-spacing: var(--dk-track-label);
-  text-transform: uppercase;
+  font-weight: 600;
   color: var(--sch-bad);
+}
+.sch-kicker .sch-dot {
+  margin-right: 0;
+}
+.sch-kicker.is-ok {
+  color: var(--sch-accent);
 }
 .sch-note {
   font-size: var(--dk-fs-sm);
@@ -648,19 +629,14 @@
 }
 .sch-cand {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   grid-template-areas:
-    'av head btn'
-    'av why why';
+    'head btn'
+    'why why';
   align-items: center;
   gap: 2px var(--dk-2);
   padding: var(--dk-2) 0;
   border-top: 1px solid var(--sch-rule);
-}
-.sch-cand .dk-av {
-  grid-area: av;
-  align-self: start;
-  margin-top: 2px;
 }
 .sch-cand-head {
   grid-area: head;
@@ -668,6 +644,9 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 var(--dk-2);
+}
+.sch-cand-head strong {
+  font-weight: 600;
 }
 .sch-cand-hours,
 .sch-also {
@@ -684,10 +663,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--dk-1);
-  font-weight: 600;
+  font-weight: 500;
 }
 .sch-lead.is-ok {
-  color: var(--sch-ok);
+  color: var(--sch-accent);
 }
 .sch-lead.is-warn {
   color: var(--sch-warn);
@@ -697,28 +676,34 @@
 }
 .sch-assign {
   grid-area: btn;
-  min-height: 2rem;
-  padding: 0 var(--dk-3);
-  font-size: var(--dk-fs-sm);
+  min-width: 6.5rem;
+  border-color: var(--sch-accent);
+  color: var(--sch-accent);
+}
+.sch-assign:is(:hover, :focus-visible) {
+  border-color: var(--sch-accent);
+  background: var(--sch-accent-soft);
+}
+.sch-assign.is-primary {
   color: var(--sch-on-accent);
   background: var(--sch-accent);
 }
-.sch-assign:is(:hover, :focus-visible) {
-  color: var(--sch-on-accent);
-  background: var(--sch-ink);
+.sch-assign.is-primary:is(:hover, :focus-visible) {
   border-color: var(--sch-ink);
+  color: var(--sch-surface);
+  background: var(--sch-ink);
 }
 .sch-assign[aria-disabled='true'] {
-  color: var(--sch-muted);
   border-color: var(--sch-rule);
-  border-style: dashed;
+  font-weight: 500;
+  color: var(--sch-muted);
   background: transparent;
   cursor: not-allowed;
 }
 .sch-assign[aria-disabled='true']:is(:hover, :focus-visible) {
+  border-color: var(--sch-rule-2);
   color: var(--sch-muted);
   background: transparent;
-  border-color: var(--sch-muted);
 }
 .sch-assign[aria-disabled='true']:active {
   scale: 1;
@@ -728,30 +713,13 @@
   justify-items: start;
   gap: var(--dk-2);
 }
-.sch-allset .sch-kicker {
-  color: var(--sch-ok);
-}
 .sch-allset p:last-child {
   font-size: var(--dk-fs-sm);
   color: var(--sch-muted);
 }
-.sch-allset-mark {
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  font-size: var(--dk-fs-2xl);
-  color: var(--sch-ok);
-  background: var(--sch-sunk);
-}
 
-/* Motion: candidates slide in when a gap opens (no fade, so text contrast never dips); the
-   all-clear mark arrives once. */
+/* Motion: candidates slide in when a gap opens (no fade, so text contrast never dips). */
 @media (prefers-reduced-motion: no-preference) {
-  .sch-allset-mark {
-    animation: sch-pop var(--dk-slow) var(--dk-ease-pop) both;
-  }
   .sch-cands li {
     animation: sch-in var(--dk-base) var(--dk-ease) both;
   }
@@ -763,12 +731,6 @@
   }
   .sch-cands li:nth-child(n + 4) {
     animation-delay: calc(var(--dk-stagger) * 3);
-  }
-}
-@keyframes sch-pop {
-  from {
-    opacity: 0;
-    scale: 0.6;
   }
 }
 @keyframes sch-in {
