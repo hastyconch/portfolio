@@ -542,6 +542,28 @@ test('work paging releases at the ends', async ({ page, isMobile }) => {
   await expect.poll(() => paneTop(page, 0), { timeout: 2000 }).toBe(nav);
 });
 
+test('work paging lets inner scrollers go first', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'a mouse wheel on a laptop');
+  const nav = await atPane(page, 0);
+  // The airline app's screen scrolls on its own: the wheel over it scrolls it, not the page.
+  const panel = page.locator('#work .wk').first().locator('.sky-panel');
+  await expect(panel).toBeVisible();
+  const room = await panel.evaluate((p) => p.scrollHeight - p.clientHeight);
+  test.skip(room < 2, 'the screen fits at this size');
+  const box = (await panel.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const y0 = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 100);
+  await expect.poll(() => panel.evaluate((p) => p.scrollTop)).toBeGreaterThan(0);
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.scrollY), 'the page stays').toBe(y0);
+  // At the screen's end, the next gesture pages on.
+  await panel.evaluate((p) => (p.scrollTop = p.scrollHeight));
+  await page.waitForTimeout(300);
+  await page.mouse.wheel(0, 100);
+  await expect.poll(() => paneTop(page, 1), { timeout: 2000 }).toBe(nav);
+});
+
 test('work paging respects motion and touch', async ({ page, browser, baseURL, isMobile }) => {
   test.skip(!!isMobile, 'one pass covers each case');
   // Reduced motion: a notch still moves one pane, at once.

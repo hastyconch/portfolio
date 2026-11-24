@@ -76,7 +76,8 @@ function target(down: boolean): number | null {
 
 // Whether something under the pointer, inside the Work list, can still scroll this way itself.
 function inner(el: EventTarget | null, down: boolean): boolean {
-  for (let n = el instanceof Element ? el : null; n && n.id !== 'work'; n = n.parentElement) {
+  if (!(el instanceof Element) || !el.closest('#work')) return false;
+  for (let n: Element | null = el; n && n.id !== 'work'; n = n.parentElement) {
     if (n.scrollHeight <= n.clientHeight + 1) continue;
     const oy = getComputedStyle(n).overflowY;
     if (oy !== 'auto' && oy !== 'scroll') continue;
