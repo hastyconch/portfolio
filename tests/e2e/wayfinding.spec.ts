@@ -126,7 +126,7 @@ test('project switcher', async ({ page, isMobile }) => {
   await expect(marked).toHaveText('Projects');
   if (!isMobile) {
     await expect(page.getByRole('link', { name: 'Next project: Felt & Tiles' })).toBeVisible();
-    await expect(crumbs(page).locator('.np-count')).toHaveText(`1 / ${projects}`);
+    await expect(crumbs(page).locator('.np-count')).toHaveText(`2 / ${projects}`);
   }
 
   const trigger = crumbs(page).getByRole('button', { name: 'Billable., switch project' });
@@ -208,7 +208,7 @@ test('crumb trigger names its action', async ({ page, isMobile }) => {
   await expect(jump).toBeHidden();
 });
 
-// WO-027: on a phone the case-study crumb reads "Projects / Felt & Tiles 2 / 8": no stray "/"
+// WO-027: on a phone the case-study crumb reads "Projects / Felt & Tiles 3 / 9": no stray "/"
 // after the folded name, and a count that says the item is one of several.
 test('phone crumb', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'the folded crumb is for phones');
@@ -221,7 +221,7 @@ test('phone crumb', async ({ page, isMobile }) => {
       .filter((el) => el.checkVisibility())
       .map((el) => el.textContent!.trim()),
   );
-  expect(shown).toEqual(['Projects', '/', 'Felt & Tiles', `2 / ${projects}`]);
+  expect(shown).toEqual(['Projects', '/', 'Felt & Tiles', `3 / ${projects}`]);
   await expect(crumbs(page).locator('.np-count')).toBeVisible();
   await expect(crumbs(page).locator('.np-arrow').first()).toBeHidden();
   const bar = await page.locator('.np-bar').boundingBox();
