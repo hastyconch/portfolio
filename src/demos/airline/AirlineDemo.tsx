@@ -349,7 +349,7 @@ export default function AirlineDemo() {
       >
         {tab === 'home' && (
           <div className={`sky-screen sky-home${counted ? '' : ' is-first'}`}>
-            <p className="sky-hello">Good evening, {member.first}</p>
+            <p className="sky-hello">Hi, {member.first}</p>
 
             <div
               role="group"
@@ -371,7 +371,7 @@ export default function AirlineDemo() {
                 </div>
                 <dl className="sky-card-fields">
                   <div>
-                    <dt>Member</dt>
+                    <dt>Name</dt>
                     <dd>{member.name}</dd>
                   </div>
                   <div>
@@ -392,7 +392,6 @@ export default function AirlineDemo() {
             <ul className="sky-acts" aria-label="Quick actions">
               <li>
                 <button type="button" className="sky-act" onClick={() => go('redeem')}>
-                  <Icon name="plane" size={18} />
                   <span>
                     Book<span className="dk-sr"> reward</span>
                   </span>
@@ -400,7 +399,6 @@ export default function AirlineDemo() {
               </li>
               <li>
                 <button type="button" className="sky-act" onClick={() => go('status')}>
-                  <Icon name="star" size={18} />
                   <span>
                     <span className="dk-sr">Tier </span>Perks
                   </span>

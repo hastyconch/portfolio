@@ -16,7 +16,6 @@
   --sky-rail: #e6e3ea;
   --sky-gold: #e6c36f;
   --sky-gold-ink: #75560f;
-  --sky-gold-bg: #f7efd9;
   --sky-ok: #136c40;
   --sky-on-dark-2: #c8c1d6;
   position: relative;
@@ -47,6 +46,13 @@
 .sky-app :where(p, h2, h3, ul, ol, dl, dd) {
   margin: 0;
 }
+/* On home the site styles every heading (display face, weight 700, title tracking) through
+   body.ln h1 to h4, which outranks a single class. The app's headings take its own type back;
+   their sizes and weights are set below at the same doubled weight. */
+.sky-app.sky-app :where(h2, h3) {
+  font-family: inherit;
+  letter-spacing: 0;
+}
 .sky-app :where(ul, ol) {
   padding: 0;
   list-style: none;
@@ -64,6 +70,11 @@
   font-size: var(--dk-fs-sm);
   font-weight: 600;
   color: var(--sky-ink-2);
+}
+.sky-app h3.sky-k {
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  line-height: var(--dk-lh-normal);
 }
 .sky-unit {
   font-size: var(--dk-fs-md);
@@ -454,14 +465,11 @@
   letter-spacing: var(--dk-track-tight);
 }
 .sky-tier-tag {
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-r1);
   font-size: var(--dk-fs-xs);
   font-weight: 600;
   letter-spacing: var(--dk-track-label);
   text-transform: uppercase;
   color: var(--sky-gold-ink);
-  background: var(--sky-gold-bg);
 }
 
 /* Status: one straight track from 0 to Platinum in three segments, one per tier. Each segment's
@@ -489,7 +497,7 @@
   font-weight: 400;
   color: var(--sky-ink-2);
 }
-.sky-readout {
+.sky-app .sky-readout {
   margin-top: var(--dk-3);
   font-size: var(--dk-fs-sm);
   color: var(--sky-ink-2);
@@ -569,7 +577,7 @@
 }
 
 /* Redeem: led by the balance, then destinations as a type-led grouped list. */
-.sky-lead-t {
+.sky-app .sky-lead-t {
   margin-top: var(--dk-4);
   font-size: var(--dk-fs-xl);
   font-weight: 600;
@@ -610,7 +618,12 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.sky-dest-pts .sky-unit {
+.sky-dest-pts .sky-app h3.sky-k {
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  line-height: var(--dk-lh-normal);
+}
+.sky-unit {
   font-size: var(--dk-fs-sm);
 }
 .sky-dest-meta {
@@ -628,12 +641,14 @@
 .sky-dest-cash {
   grid-area: cash;
   align-self: center;
+  margin-top: var(--dk-1);
   font-size: var(--dk-fs-sm);
   color: var(--sky-ink-2);
 }
 .sky-book,
 .sky-booked {
   grid-area: act;
+  align-self: center;
   justify-self: end;
   margin-top: var(--dk-1);
 }
@@ -744,7 +759,7 @@
   display: grid;
   gap: var(--dk-1);
 }
-.sky-sheet h2 {
+.sky-app .sky-sheet h2 {
   font-size: var(--dk-fs-2xl);
   font-weight: 600;
   line-height: var(--dk-lh-snug);
