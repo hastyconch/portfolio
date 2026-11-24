@@ -160,41 +160,45 @@ test('skill badges are text, not controls', async ({ page }) => {
   ).toHaveCount(4);
 });
 
-// WO-025: skill tags are quiet (a neutral hairline, no accent edge), so the phone "Try the demo"
-// button is the one thing that reads as a control. Its name is "Try the demo: {name}" and its one
-// line is the description. WO-028: the tags are plain (no fill, weight 500 at most) and the
-// button is filled with the accent, its label centred.
+// WO-025: skill tags are quiet, so the phone "Try the demo" button is the one thing that reads as
+// a control. Its name is "Try the demo: {name}" and its one line is the description. WO-028: the
+// button is filled with the accent, its label centred. WO-032: the tags are plain text in the
+// second ink, with no border, radius or fill, separated by middots that screen readers skip.
 test('work demo button and tags', async ({ page, isMobile }) => {
   await page.goto('/');
-  const accent = await page.evaluate(() => {
-    const probe = document.createElement('span');
-    probe.style.color = 'var(--ln-accent)';
-    document.querySelector('#work')!.append(probe);
-    const c = getComputedStyle(probe).color;
-    probe.remove();
-    return c;
-  });
-  const borders = await page.locator('#work .wk-badges li').evaluateAll((lis) =>
-    lis.flatMap((li) => {
-      const s = getComputedStyle(li);
-      return ['Top', 'Right', 'Bottom', 'Left'].map((side) => ({
-        width: s.getPropertyValue(`border-${side.toLowerCase()}-width`),
-        color: s.getPropertyValue(`border-${side.toLowerCase()}-color`),
-      }));
-    }),
-  );
-  expect(borders.length).toBeGreaterThan(0);
-  for (const b of borders) {
-    expect(b.color, 'tag border is not the accent').not.toBe(accent);
-    expect(b.width, 'tag border is a hairline').toBe('1px');
-  }
+  const token = (name: string) =>
+    page.evaluate((name) => {
+      const probe = document.createElement('span');
+      probe.style.color = `var(${name})`;
+      document.querySelector('#work')!.append(probe);
+      const c = getComputedStyle(probe).color;
+      probe.remove();
+      return c;
+    }, name);
+  const accent = await token('--ln-accent');
+  const ink2 = await token('--ln-ink-2');
   const tags = await page.locator('#work .wk-badges li').evaluateAll((lis) =>
     lis.map((li) => {
       const s = getComputedStyle(li);
-      return { bg: s.backgroundColor, weight: Number(s.fontWeight), cursor: s.cursor };
+      return {
+        border: ['top', 'right', 'bottom', 'left'].map((side) =>
+          parseFloat(s.getPropertyValue(`border-${side}-width`)),
+        ),
+        radius: s.borderRadius,
+        bg: s.backgroundColor,
+        weight: Number(s.fontWeight),
+        cursor: s.cursor,
+        color: s.color,
+        dot: getComputedStyle(li, '::before').content,
+      };
     }),
   );
+  expect(tags.length).toBeGreaterThan(0);
   for (const t of tags) {
+    expect(t.border, 'tag has no border').toEqual([0, 0, 0, 0]);
+    expect(t.radius, 'tag has no radius').toBe('0px');
+    expect(t.color, 'tag is in the second ink').toBe(ink2);
+    expect(t.dot, 'a middot that screen readers skip').toBe('"·" / ""');
     expect(t.bg, 'tag has no fill').toBe('rgba(0, 0, 0, 0)');
     expect(t.weight, 'tag weight').toBeLessThanOrEqual(500);
     expect(t.cursor, 'tag does not look tappable').not.toBe('pointer');
@@ -227,8 +231,8 @@ test('work demo button and tags', async ({ page, isMobile }) => {
   }
 });
 
-// WO-025: the demos add no region landmarks. Their inner groupings are named groups, and the
-// phone wrapper is a group only once revealed; on wider screens it has no role or name at all.
+// WO-025: the demos add no region landmarks. Their inner groupings are named groups. WO-032: the
+// phone wrapper is no longer a group once revealed (that was a second group around the demo's).
 test('work demos add no landmarks', async ({ page, isMobile }) => {
   await page.goto('/');
   const stray = () =>
@@ -240,8 +244,6 @@ test('work demos add no landmarks', async ({ page, isMobile }) => {
     );
   if (isMobile) {
     for (const b of await page.locator('#work [data-wk-try]').all()) await b.click();
-  } else {
-    await expect(page.locator('#work .wk-demo:is([role], [aria-label])')).toHaveCount(0);
   }
   for (const demo of await page.locator('#work .wk-live .wk-demo').all()) {
     await demo.scrollIntoViewIfNeeded();
@@ -250,11 +252,15 @@ test('work demos add no landmarks', async ({ page, isMobile }) => {
   expect(await stray()).toBe(0);
   await expect(page.locator('#work .wk-demo').getByRole('region')).toHaveCount(0);
   await expect(page.locator('#work .wk-demo[role="region"]')).toHaveCount(0);
-  if (isMobile) await expect(page.locator('#work .wk-demo[role="group"]')).toHaveCount(4);
+  // WO-032: one group per demo, the demo's own. The wrapper has no role or name, opened or not.
+  await expect(page.locator('#work .wk-demo:is([role], [aria-label])')).toHaveCount(0);
+  for (const demo of await page.locator('#work .wk-live .wk-demo').all()) {
+    await expect(demo.getByRole('group', { name: /^Demo: / })).toHaveCount(1);
+  }
 });
 
 // WO-024, WO-028: on phones every demo waits behind "Try the demo" and loads nothing until it is
-// pressed. Pressing one reveals the demo, hydrates it and focuses it.
+// pressed. Pressing one reveals the demo, hydrates it and focuses it (WO-032: the demo's own group).
 const LATER_DEMOS = /(AirlineDemo|GrocerDemo|SchedulerDemo|PipelineDemo)[^/]*\.js/;
 
 test('work phone demos expand on demand', async ({ page, isMobile }) => {
@@ -296,19 +302,19 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   await page.waitForLoadState('networkidle');
   expect(chunks, 'collapsed demo code requested before Try the demo').toEqual([]);
 
-  // Press the first one: the demo shows, takes focus, and its code loads and hydrates. The page
-  // doesn't jump past the engagement (WO-025): its title stays on screen, clear of the header.
+  // Press the first one: the demo shows, its own group takes focus, and its code loads and
+  // hydrates. The page doesn't jump past the engagement (WO-025): its title stays on screen,
+  // clear of the header.
   const id = await buttons.first().getAttribute('aria-controls');
   const first = page.locator(`[aria-controls="${id}"]`);
-  const region = page.locator(`#${id}`);
-  const article = page.locator('#work article').filter({ has: region });
+  const demo = page.locator(`#${id}`);
+  const region = demo.getByRole('group', { name: 'Demo: airline loyalty app (mock data)' });
+  const article = page.locator('#work article').filter({ has: demo });
   await first.scrollIntoViewIfNeeded();
   const loaded = page.waitForRequest((r) => LATER_DEMOS.test(r.url()));
   await first.click();
-  await expect(region).toBeVisible();
+  await expect(demo).toBeVisible();
   await expect(region).toBeFocused();
-  await expect(region).toHaveAttribute('role', 'group');
-  await expect(region).toHaveAccessibleName('Airline loyalty app demo');
   const nav = await navHeight(page);
   const title = article.locator('.wk-title');
   await expect(title).toBeInViewport();
@@ -321,11 +327,72 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   expect(top, 'title on screen').toBeLessThan(812 - 40);
   await expect(region).toBeFocused();
   await loaded;
-  await expect(region.locator('astro-island')).not.toHaveAttribute('ssr');
-  await expect(first).toBeHidden();
+  await expect(demo.locator('astro-island')).not.toHaveAttribute('ssr');
+  await expect(first).toHaveAccessibleName('Hide demo: Airline loyalty app');
   // The other three stay collapsed.
   expect(chunks).toHaveLength(1);
   await expect(page.getByRole('button', { name: /^Try the demo/ })).toHaveCount(3);
+});
+
+// WO-032: a phone demo keeps its one-line task as a caption above it, and the button is a toggle:
+// "Hide demo" while open, with aria-expanded. Hiding keeps the demo mounted, focuses the toggle
+// and keeps the title on screen. Back from a case study opens it again; the others stay closed
+// and load nothing. A fresh visit starts closed.
+test('work phone demos open, close and come back', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  const chunks: string[] = [];
+  page.on('request', (r) => {
+    const m = LATER_DEMOS.exec(r.url());
+    if (m) chunks.push(m[1]);
+  });
+  await page.goto('/');
+  const toggle = page.locator('#work [data-wk-try]').first();
+  const id = (await toggle.getAttribute('aria-controls'))!;
+  const demo = page.locator(`#${id}`);
+  const article = page.locator('#work article').filter({ has: demo });
+  const caption = page.locator(`#${await toggle.getAttribute('aria-describedby')}`);
+  const title = article.locator('.wk-title');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+  await toggle.scrollIntoViewIfNeeded();
+  await toggle.click();
+  await expect(demo).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle).toHaveText('Hide demo');
+  await expect(toggle).toHaveAccessibleName(/^Hide demo/);
+  await expect(toggle).toHaveAccessibleDescription('Track tier progress, book a reward.');
+  await expect(caption).toBeVisible();
+  const [cap, box] = [(await caption.boundingBox())!, (await demo.boundingBox())!];
+  expect(cap.y + cap.height, 'the caption sits above the demo').toBeLessThanOrEqual(box.y);
+  await expect(demo.locator('astro-island')).not.toHaveAttribute('ssr');
+
+  await page.waitForTimeout(800); // the smooth scroll to the head settles
+  await toggle.click();
+  await expect(demo).toBeHidden();
+  await expect(toggle).toBeFocused();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(toggle).toHaveAccessibleName('Try the demo: Airline loyalty app');
+  await expect(title).toBeInViewport();
+  // Hidden, not unmounted: the hydrated demo is still there.
+  await expect(demo.locator('astro-island')).not.toHaveAttribute('ssr');
+  await expect(demo.locator('.sky-app')).toHaveCount(1);
+
+  // Open it again, go to a case study and come back.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await page.goto('/projects/billable/');
+  await page.goBack();
+  const back = page.locator(`[aria-controls="${id}"]`);
+  await expect(page.locator(`#${id}`)).toBeVisible();
+  await expect(back).toHaveAttribute('aria-expanded', 'true');
+  await expect(back).toHaveText('Hide demo');
+  await expect(page.locator('#work [data-wk-try][aria-expanded="true"]')).toHaveCount(1);
+  await expect(page.locator(`#${id} astro-island`)).not.toHaveAttribute('ssr');
+  await page.waitForLoadState('networkidle');
+  expect([...new Set(chunks)], 'only the open demo loads').toEqual(['AirlineDemo']);
+
+  await page.goto('/');
+  await expect(page.locator('#work [data-wk-try][aria-expanded="true"]')).toHaveCount(0);
 });
 
 test('work demos all show inline on laptops and without scripting', async ({

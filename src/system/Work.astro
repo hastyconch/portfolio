@@ -16,6 +16,11 @@
 // WO-028: on phones every demo waits behind its button, the first one too, so Work is a run of
 // stories and Projects comes sooner. The button is filled with the accent and centred ("Try the
 // demo: {name} ▸"); the skill tags beside it are plain text in a hairline, with no fill.
+// WO-032: Work starts a step sooner after the hero, and the first pane's engagement starts at its
+// top, so the work shows on common laptops. On phones the button is a toggle ("Hide demo" while
+// open, aria-expanded) and its one line stays as the demo's caption; a hidden demo stays mounted;
+// open demos come back after Back (sessionStorage). The demo's own group is the only group. The
+// skill tags are plain text separated by middots.
 import type { Work } from '../lib/content';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
@@ -83,7 +88,9 @@ const others = work.filter((w) => w.data.demo === 'none');
                     type="button"
                     class="wk-try-b"
                     data-wk-try
+                    data-wk-name={tryIt.name}
                     aria-controls={`${hid}-demo`}
+                    aria-expanded="false"
                     aria-label={`Try the demo: ${tryIt.name}`}
                     aria-describedby={`${hid}-try-d`}
                   >
@@ -94,11 +101,7 @@ const others = work.filter((w) => w.data.demo === 'none');
                   </p>
                 </div>
               )}
-              <div
-                class="wk-demo"
-                id={tryIt ? `${hid}-demo` : undefined}
-                data-wk-label={tryIt ? `${tryIt.name} demo` : undefined}
-              >
+              <div class="wk-demo" id={tryIt ? `${hid}-demo` : undefined}>
                 {d.demo === 'airline' && (
                   <DemoFrame frame={d.demoFrame} caption={caption} tint={['#3d2c5e', '#f6f3fb']}>
                     <AirlineDemo client:visible />
@@ -206,25 +209,88 @@ const others = work.filter((w) => w.data.demo === 'none');
 </section>
 
 <script>
-  // Reveal a collapsed demo (phones): it becomes visible, so client:visible hydrates it now. It
-  // becomes a named group and takes focus without scrolling; then the page brings the
-  // engagement's head (meta, title, kicker) flush under the header, so the title stays on screen
-  // and the demo follows it.
-  for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-wk-try]')) {
+  // The phone "Try the demo" toggle (WO-032). Opening shows the demo, so client:visible hydrates
+  // it as it comes into view, and moves focus to the demo's own group (the only group: the
+  // wrapper has no role or name) without scrolling; then the page brings the engagement's head
+  // flush under the header, so the title stays on screen and the demo follows it. The button
+  // becomes "Hide demo" and the one-line task stays as the caption above the demo. Hiding only
+  // hides the demo (it stays mounted), returns focus to the toggle and keeps the title on screen.
+  // Which demos are open is kept in sessionStorage for this page: Back from a case study (or a
+  // reload) opens them again, before the browser restores the scroll position.
+  const KEY = 'wk-open';
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-wk-try]')];
+  const parts = (btn: HTMLButtonElement) => ({
+    article: btn.closest('article'),
+    demo: document.getElementById(btn.getAttribute('aria-controls') ?? ''),
+  });
+  const label = new Map(buttons.map((b) => [b, b.innerHTML]));
+
+  const save = () => {
+    try {
+      const open = buttons
+        .filter((b) => b.getAttribute('aria-expanded') === 'true')
+        .map((b) => b.getAttribute('aria-controls'));
+      sessionStorage.setItem(KEY, JSON.stringify(open));
+    } catch {
+      // storage unavailable: the toggles still work, they just aren't remembered
+    }
+  };
+
+  const set = (btn: HTMLButtonElement, open: boolean) => {
+    const { article } = parts(btn);
+    const name = btn.dataset.wkName ?? '';
+    article?.toggleAttribute('data-open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    if (open) {
+      btn.setAttribute('aria-label', `Hide demo: ${name}`);
+      btn.textContent = 'Hide demo';
+    } else {
+      btn.setAttribute('aria-label', `Try the demo: ${name}`);
+      btn.innerHTML = label.get(btn) ?? '';
+    }
+  };
+
+  const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (const btn of buttons) {
     btn.addEventListener('click', () => {
-      const article = btn.closest('article');
-      const demo = document.getElementById(btn.getAttribute('aria-controls') ?? '');
+      const { article, demo } = parts(btn);
       if (!article || !demo) return;
-      article.setAttribute('data-open', '');
-      demo.setAttribute('role', 'group');
-      demo.setAttribute('aria-label', demo.dataset.wkLabel ?? '');
-      demo.tabIndex = -1;
-      demo.focus({ preventScroll: true });
-      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      article
-        .querySelector('.wk-head')
-        ?.scrollIntoView({ block: 'start', behavior: still ? 'instant' : 'smooth' });
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      set(btn, open);
+      save();
+      const head = article.querySelector<HTMLElement>('.wk-head');
+      if (open) {
+        const group = demo.querySelector<HTMLElement>('.df-screen [role="group"]') ?? demo;
+        group.tabIndex = -1;
+        group.focus({ preventScroll: true });
+        head?.scrollIntoView({ block: 'start', behavior: still() ? 'instant' : 'smooth' });
+      } else {
+        btn.focus({ preventScroll: true });
+        const title = article.querySelector('.wk-title')?.getBoundingClientRect();
+        const nav = parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--ln-header'),
+        );
+        if (title && (title.top < nav || title.bottom > innerHeight)) {
+          head?.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }
+      }
     });
+  }
+
+  // Restore on Back or reload; a fresh visit starts with every demo closed.
+  try {
+    const nav = performance.getEntriesByType('navigation')[0] as
+      PerformanceNavigationTiming | undefined;
+    if (nav && (nav.type === 'back_forward' || nav.type === 'reload')) {
+      const open = new Set(JSON.parse(sessionStorage.getItem(KEY) ?? '[]') as string[]);
+      for (const btn of buttons)
+        if (open.has(btn.getAttribute('aria-controls') ?? '')) set(btn, true);
+    } else {
+      sessionStorage.removeItem(KEY);
+    }
+  } catch {
+    // storage unavailable or unreadable: start closed
   }
 </script>
 
@@ -244,7 +310,7 @@ const others = work.filter((w) => w.data.demo === 'none');
   .wk article {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'head' 'demo' 'details' 'skills';
+    grid-template-areas: 'head' 'try' 'demo' 'details' 'skills';
     padding-block: var(--space-7);
   }
   .wk-demo,
@@ -347,7 +413,7 @@ const others = work.filter((w) => w.data.demo === 'none');
      (contrast rises in both schemes); press shifts it further and scales. */
   .wk-try {
     display: none;
-    grid-area: demo;
+    grid-area: try;
     gap: var(--space-2);
     margin-top: var(--space-5);
   }
@@ -356,7 +422,7 @@ const others = work.filter((w) => w.data.demo === 'none');
     width: 100%;
     min-height: 48px;
     padding: var(--space-3) var(--space-4);
-    border: 0;
+    border: 1px solid transparent;
     border-radius: var(--radius-2);
     background: var(--ln-accent);
     color: var(--ln-accent-ink);
@@ -378,6 +444,19 @@ const others = work.filter((w) => w.data.demo === 'none');
     background: color-mix(in oklch, var(--ln-accent) 75%, var(--ln-ink));
     scale: var(--press-scale);
   }
+  /* Open, it is "Hide demo": outlined in the ink, so the demo under it is the thing to look at. */
+  .wk-try-b[aria-expanded='true'] {
+    border-color: var(--ln-ink-2);
+    background: transparent;
+    color: var(--ln-ink);
+  }
+  .wk-try-b[aria-expanded='true']:hover,
+  .wk-try-b[aria-expanded='true']:focus-visible {
+    background: color-mix(in oklch, var(--ln-ink) 6%, transparent);
+  }
+  .wk-try-b[aria-expanded='true']:active {
+    background: color-mix(in oklch, var(--ln-ink) 12%, transparent);
+  }
   body.ln .wk-try-d {
     margin: 0;
     font-size: var(--text-sm);
@@ -392,7 +471,7 @@ const others = work.filter((w) => w.data.demo === 'none');
     }
   }
   @media (max-width: 759.98px) and (scripting: enabled) {
-    .wk-collapse:not([data-open]) .wk-try {
+    .wk-collapse .wk-try {
       display: grid;
     }
     .wk-collapse:not([data-open]) .wk-demo {
@@ -400,8 +479,8 @@ const others = work.filter((w) => w.data.demo === 'none');
     }
   }
 
-  /* Skills: tags, a row on phones and a stack in the side column on wider screens. Plain (WO-028):
-     a neutral hairline, no fill and the regular UI weight, so they read as labels and the one
+  /* Skills: tags, a row under the story on phones and in the side column on wider screens. Plain
+     (WO-028, WO-032): text with no fill, edge or corner, so they read as labels and the one
      filled control, "Try the demo", is the thing to tap. Not interactive, so no states. */
   .wk-skills {
     grid-area: skills;
@@ -410,29 +489,46 @@ const others = work.filter((w) => w.data.demo === 'none');
   body.ln .wk-skills-h {
     margin: 0 0 var(--space-3);
   }
+  /* WO-032: plain text in the second ink, separated by middots. Each tag carries its own dot
+     in front; the list is pulled left by one dot and clipped there, so the dot that would start
+     a line is cut off and only the dots between tags show. The dot is decoration (empty alt). */
   .wk-badges {
+    --wk-dot: 1.25em;
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
-    gap: var(--space-2);
-    margin: 0;
+    row-gap: var(--space-1);
+    margin: 0 0 0 calc(var(--wk-dot) * -1);
     padding: 0;
     list-style: none;
+    clip-path: inset(0 0 0 var(--wk-dot));
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
   }
   .wk-badges li {
-    padding: var(--space-1) var(--space-2);
-    border: var(--ln-hairline);
-    border-radius: var(--radius-1);
-    font-size: var(--text-xs);
     font-weight: 500;
-    line-height: var(--leading-snug);
-    color: var(--ln-ink);
+    color: var(--ln-ink-2);
+  }
+  .wk-badges li::before {
+    content: '·';
+    content: '·' / '';
+    display: inline-block;
+    width: var(--wk-dot);
+    text-align: center;
+    color: var(--ln-ink-3);
   }
 
   /* More client work: a compact list. Its last rule ends the section: no bottom padding on top of
      the next section's own (WO-025), so the gap before Projects is one section rhythm. */
   .work {
     padding-bottom: 0;
+  }
+  /* Right after the hero, on laptops and tablets, Work starts a step sooner than the shared
+     section rhythm (WO-032): the hero's own bottom padding already parts them, and the work's
+     title then shows in the first screen of common laptops. Other sections keep the rhythm. */
+  @media (min-width: 760px) {
+    :global(#hero) + .work {
+      padding-top: var(--space-7);
+    }
   }
   .wk-more {
     padding-top: var(--space-7);
@@ -525,9 +621,6 @@ const others = work.filter((w) => w.data.demo === 'none');
       align-self: start;
       margin-top: var(--space-1);
     }
-    .wk-badges {
-      flex-direction: column;
-    }
     .wk-more {
       display: grid;
       grid-template-columns: 11rem minmax(0, 1fr);
@@ -596,6 +689,11 @@ const others = work.filter((w) => w.data.demo === 'none');
       display: grid;
       align-content: center;
       min-height: var(--wk-pane);
+    }
+    /* The first pane follows the section header, so its engagement starts at the pane's top
+       instead of floating below a band of air; its size is unchanged (WO-032). */
+    .wk:first-child {
+      align-content: start;
     }
     .wk article {
       padding-block: var(--wk-pad);
