@@ -162,14 +162,10 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
       --cv-tint-rule: color-mix(in oklab, var(--ln-accent) 30%, var(--ln-bg));
     }
   }
-  /* Landing (WO-034's one rule): on laptops and tablets the title's top lands 48px under the
-     header, as Work's does (y = 108 at 1440 x 900). Phones keep the shared section padding, as
-     Work does. Integrator: when WO-034's section-top token lands in liner.css, use it here. */
-  @media (min-width: 760px) {
-    .resume {
-      padding-top: var(--space-7);
-    }
-  }
+  /* Landing: the section opts into WO-034's one rule (.ln-sec, title first, no top padding of its
+     own), so a jump lands the title --rhythm-top under the header, as every section does. The
+     title to the panel is SideHead's --rhythm-head; --cv-block is the larger break between the
+     blocks under it. */
 
   /* The header panel: summary and actions, then the key facts. */
   .cv-panel {
