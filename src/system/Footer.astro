@@ -56,7 +56,8 @@ const real = (href: string) => external(href) || href.startsWith('mailto:');
 
 <style>
   .ft {
-    padding-block: var(--space-8) var(--space-6);
+    /* The same boundary as between sections (WO-034): Résumé's end and this top. */
+    padding-block: var(--rhythm-top) var(--space-6);
     border-top: var(--ln-hairline);
   }
   .ft-grid {
@@ -139,7 +140,7 @@ const real = (href: string) => external(href) || href.startsWith('mailto:');
     align-items: flex-end;
     justify-content: space-between;
     gap: var(--space-5);
-    margin-top: var(--space-8);
+    margin-top: var(--rhythm-end);
     padding-top: var(--space-4);
     border-top: var(--ln-hairline);
     font-size: var(--text-xs);

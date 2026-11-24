@@ -1,24 +1,23 @@
-/* Invented "Skyward Rewards" brand: plum, coral and a gold-foil tier card. Deliberately not any
-   real airline's palette. The app keeps its own light UI on a light or dark page. Scales come from
-   ../kit.css. */
+/* Invented "Skyward Rewards" brand, WO-035's "Wallet pass" direction: a warm neutral base, one
+   brand colour (plum, which also continues the phone's status strip), gold only for the tier and
+   green only for a confirmed state. Surfaces are white with a hairline, never a shadow as well.
+   Deliberately not any real airline's palette. The app keeps its own light UI on a light or dark
+   page. Every scale comes from ../kit.css. */
 .sky-app {
   color-scheme: light;
-  --sky-ink: #1d1530;
-  --sky-ink-2: #574f6b;
+  --sky-ink: #17131f;
+  --sky-ink-2: #5d5866;
   --sky-plum: #3d2c5e;
-  --sky-plum-2: #2a1e45;
-  --sky-plum-soft: #efe8f8;
-  --sky-coral: #c2410c;
-  --sky-coral-2: #9f3409;
-  --sky-bg: #f6f3fb;
+  --sky-plum-2: #2b1f44;
+  --sky-tint: #efecf3;
+  --sky-bg: #f5f4f1;
   --sky-card: #fff;
-  --sky-line: #e3dbee;
+  --sky-line: #e2dfe6;
+  --sky-rail: #e6e3ea;
+  --sky-gold: #e6c36f;
+  --sky-gold-ink: #75560f;
   --sky-ok: #136c40;
-  --sky-ok-bg: #e2f4e9;
-  --sky-gold-1: #f6e2a6;
-  --sky-gold-2: #ddb257;
-  --sky-gold-3: #b9862f;
-  --sky-gold-ink: #36230a;
+  --sky-on-dark-2: #c8c1d6;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -36,16 +35,25 @@
   color: var(--sky-ink);
   background: var(--sky-bg);
   text-align: left;
+  font-variant-numeric: tabular-nums;
 }
 .sky-app *,
 .sky-app *::before,
 .sky-app *::after {
   box-sizing: border-box;
 }
-.sky-app :is(p, h2, ul, ol, dl, dd) {
+/* :where() keeps the resets at one class's weight, so each component's own margins win. */
+.sky-app :where(p, h2, h3, ul, ol, dl, dd) {
   margin: 0;
 }
-.sky-app :is(ul, ol) {
+/* On home the site styles every heading (display face, weight 700, title tracking) through
+   body.ln h1 to h4, which outranks a single class. The app's headings take its own type back;
+   their sizes and weights are set below at the same doubled weight. */
+.sky-app.sky-app :where(h2, h3) {
+  font-family: inherit;
+  letter-spacing: 0;
+}
+.sky-app :where(ul, ol) {
   padding: 0;
   list-style: none;
 }
@@ -57,12 +65,29 @@
   font-size: var(--dk-fs-sm);
   color: var(--sky-ink-2);
 }
+/* Small labels: sentence case at 13px, the way a native app labels a group. */
 .sky-k {
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  letter-spacing: var(--dk-track-label);
-  text-transform: uppercase;
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
   color: var(--sky-ink-2);
+}
+.sky-app h3.sky-k {
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  line-height: var(--dk-lh-normal);
+}
+.sky-unit {
+  font-size: var(--dk-fs-md);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--sky-ink-2);
+}
+/* One surface recipe: white, a hairline, the container radius. */
+.sky-box {
+  padding: var(--dk-3) var(--dk-4);
+  border: 1px solid var(--sky-line);
+  border-radius: var(--dk-r3);
+  background: var(--sky-card);
 }
 
 /* App bar: continues the phone's plum status strip. */
@@ -70,29 +95,24 @@
   display: flex;
   align-items: center;
   gap: var(--dk-2);
-  padding: var(--dk-2) var(--dk-4);
+  min-height: 2.75rem;
+  padding: var(--dk-1) var(--dk-4) var(--dk-2);
   color: #fff;
   background: var(--sky-plum);
 }
-.sky-logo {
-  width: 26px;
-  height: 26px;
+.sky-mark {
+  width: 20px;
+  height: 20px;
+  color: var(--sky-gold);
 }
 .sky-brand {
+  flex: 1;
   font-size: var(--dk-fs-xl);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: var(--dk-track-tight);
 }
-.sky-brand-sub {
-  flex: 1;
-  font-size: var(--dk-fs-sm);
-  color: #d9cfee;
-}
 .sky-me {
-  --av: var(--sky-coral);
-  width: 2rem;
-  height: 2rem;
-  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.3);
+  --av: rgb(255 255 255 / 0.16);
 }
 
 .sky-panel {
@@ -101,123 +121,95 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
-
-/* Home */
-.sky-home {
+.sky-screen {
   display: grid;
-  /* one column the panel's width, so the cards shrink with a narrow phone (WO-024) */
+  /* one column the panel's width, so everything shrinks with a narrow phone (WO-024) */
   grid-template-columns: minmax(0, 1fr);
   gap: var(--dk-3);
-  padding: var(--dk-1) var(--dk-4) var(--dk-4);
-  background: linear-gradient(var(--sky-plum) 0 7.5rem, transparent 7.5rem);
-}
-.sky-hello {
-  font-weight: 600;
-  color: #fff;
+  padding: var(--dk-4) var(--dk-4) var(--dk-5);
 }
 
-/* Member card: gold foil for the Gold tier. The barcode face swaps in place. */
-.sky-mcard {
+/* Home */
+.sky-hello {
+  font-size: var(--dk-fs-2xl);
+  font-weight: 600;
+  line-height: var(--dk-lh-snug);
+  letter-spacing: var(--dk-track-tight);
+}
+
+/* Member card: a flat pass in the brand colour. Wordmark top left, tier top right, the balance as
+   the main field, name, number and year as secondary fields. The barcode face swaps in place. */
+.sky-card {
   display: grid;
-  min-height: 10.5rem;
-  border-radius: var(--dk-r4);
-  color: var(--sky-gold-ink);
-  background: linear-gradient(
-    128deg,
-    var(--sky-gold-1) 0%,
-    var(--sky-gold-2) 52%,
-    var(--sky-gold-3) 100%
-  );
-  box-shadow: var(--dk-shadow-2);
+  border-radius: var(--dk-r3);
+  color: #fff;
+  background: var(--sky-plum-2);
   overflow: hidden;
 }
-.sky-mcard-face {
-  position: relative;
+.sky-card-face {
   grid-area: 1 / 1;
   display: grid;
-  padding: var(--dk-4);
+  gap: var(--dk-3);
+  padding: var(--dk-3) var(--dk-4) var(--dk-4);
   transition:
     opacity var(--dk-base) var(--dk-ease),
     translate var(--dk-base) var(--dk-ease),
     visibility 0s;
 }
-.sky-mcard-front {
-  grid-template-rows: auto 1fr auto;
-}
-.sky-mcard-row {
-  position: relative;
-  z-index: 1;
+.sky-card-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--dk-2);
 }
-.sky-mcard-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--dk-1);
-  font-size: var(--dk-fs-xs);
-  font-weight: 800;
-  letter-spacing: var(--dk-track-label);
-  text-transform: uppercase;
-}
-.sky-mcard-since,
-.sky-mcard-num {
+.sky-card-tier {
   font-size: var(--dk-fs-xs);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.sky-mcard-pts {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  align-content: center;
-}
-.sky-mcard-k {
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-}
-.sky-mcard-n {
-  font-size: var(--dk-fs-4xl);
-  overflow-wrap: anywhere;
-  font-weight: 800;
-  line-height: var(--dk-lh-tight);
-  letter-spacing: var(--dk-track-tight);
-  font-variant-numeric: tabular-nums;
-}
-.sky-mcard-name {
-  font-size: var(--dk-fs-sm);
-  font-weight: 700;
   letter-spacing: var(--dk-track-label);
   text-transform: uppercase;
+  color: var(--sky-gold);
 }
-.sky-mcard-art {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 60%;
-  height: 100%;
-  fill: none;
-  stroke: rgb(54 35 10 / 0.16);
-  stroke-width: 1.25;
+.sky-card-main {
+  display: grid;
 }
-.sky-mcard-pass {
+.sky-card-k,
+.sky-card-fields dt {
+  font-size: var(--dk-fs-xs);
+  color: var(--sky-on-dark-2);
+}
+.sky-card-n {
+  font-size: var(--dk-fs-4xl);
+  font-weight: 600;
+  line-height: var(--dk-lh-tight);
+  letter-spacing: var(--dk-track-tight);
+}
+.sky-card-fields {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--dk-3);
+}
+.sky-app .sky-card-fields dd {
+  font-size: var(--dk-fs-md);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sky-card-back {
   align-content: center;
   justify-items: center;
-  gap: var(--dk-2);
+  gap: var(--dk-1);
   text-align: center;
 }
 .sky-barcode {
   width: 100%;
-  height: 3.25rem;
+  height: 4rem;
+  margin-bottom: var(--dk-1);
   padding: var(--dk-2) var(--dk-3);
   border-radius: var(--dk-r2);
   fill: var(--sky-ink);
-  background: #fffaf0;
+  background: #fff;
 }
-.sky-mcard[data-side='front'] .sky-mcard-pass,
-.sky-mcard[data-side='pass'] .sky-mcard-front {
+.sky-card[data-side='front'] .sky-card-back,
+.sky-card[data-side='pass'] .sky-card-front {
   opacity: 0;
   translate: 0 var(--dk-move);
   visibility: hidden;
@@ -227,78 +219,33 @@
     visibility 0s var(--dk-quick);
 }
 
-/* Progress to the next tier */
-.sky-meter,
-.sky-trip,
-.sky-hero {
-  padding: var(--dk-3) var(--dk-4);
+/* Quick actions: one segmented bar of three short labels with a line icon, a single row at every
+   pane size. The cells share one surface and are divided by hairlines. */
+.sky-acts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border: 1px solid var(--sky-line);
-  border-radius: var(--dk-r3);
+  border-radius: var(--dk-r2);
   background: var(--sky-card);
 }
-.sky-meter-head {
+.sky-acts li + li {
+  border-left: 1px solid var(--sky-line);
+}
+.sky-act {
   display: flex;
-  flex-wrap: wrap;
-  white-space: nowrap;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   gap: var(--dk-2);
-}
-.sky-bar {
-  position: relative;
-  height: 0.625rem;
-  margin: var(--dk-3) 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  background: var(--sky-plum-soft);
-}
-.sky-bar-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: calc(var(--p) * 100%);
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--sky-gold-2), var(--sky-coral));
-  transform-origin: left;
-}
-.sky-bar-dot {
-  position: absolute;
-  top: 50%;
-  left: calc(var(--p) * 100%);
-  width: 1.125rem;
-  height: 1.125rem;
-  border: 3px solid var(--sky-coral);
-  border-radius: 50%;
-  background: var(--sky-card);
-  translate: -50% -50%;
-}
-.sky-meter-ends {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--dk-fs-xs);
-  font-variant-numeric: tabular-nums;
-}
-.sky-meter-ends span:nth-child(2) {
-  font-weight: 700;
-  color: var(--sky-ink);
-}
-
-/* Quick actions */
-.sky-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--dk-2);
-}
-.sky-action {
-  display: grid;
-  justify-items: center;
-  gap: var(--dk-1);
   width: 100%;
-  min-height: 4.5rem;
-  padding: var(--dk-2) var(--dk-1);
-  border: 1px solid var(--sky-line);
-  border-radius: var(--dk-r3);
+  min-height: 2.5rem;
+  padding: 0 var(--dk-2);
+  border: 0;
+  border-radius: 0;
   font: inherit;
-  font-size: var(--dk-fs-sm);
+  font-size: var(--dk-fs-md);
   font-weight: 600;
+  line-height: var(--dk-lh-snug);
+  white-space: nowrap;
   color: var(--sky-ink);
   background: var(--sky-card);
   cursor: pointer;
@@ -308,400 +255,473 @@
     color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
-.sky-action-ico {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
+.sky-act .sky-ico {
   color: var(--sky-plum);
-  background: var(--sky-plum-soft);
 }
-.sky-action:is(:hover, :focus-visible) {
-  border-color: var(--sky-plum);
+.sky-acts li:first-child .sky-act {
+  border-radius: calc(var(--dk-r2) - 1px) 0 0 calc(var(--dk-r2) - 1px);
 }
-.sky-action:active {
+.sky-acts li:last-child .sky-act {
+  border-radius: 0 calc(var(--dk-r2) - 1px) calc(var(--dk-r2) - 1px) 0;
+}
+.sky-act:is(:hover, :focus-visible) {
+  background: var(--sky-tint);
+}
+.sky-act:active {
   scale: var(--dk-press);
 }
-.sky-action[aria-pressed='true'] {
+.sky-act[aria-pressed='true'] {
   color: #fff;
-  border-color: var(--sky-plum);
   background: var(--sky-plum);
 }
-.sky-action[aria-pressed='true'] .sky-action-ico {
-  color: var(--sky-plum-2);
-  background: var(--sky-gold-1);
+.sky-act[aria-pressed='true'] .sky-ico {
+  color: currentColor;
 }
 
-/* Next trip */
-.sky-trip {
+/* Progress to the next tier: plain type and a bar on the page colour, no surface of its own. */
+.sky-meter {
+  display: grid;
+  gap: var(--dk-2);
+  padding: var(--dk-2) 0;
+}
+.sky-meter-head {
+  display: grid;
+}
+.sky-bar,
+.sky-seg-bar {
+  position: relative;
+  height: 6px;
+  border-radius: var(--dk-r1);
+  background: var(--sky-rail);
+  overflow: hidden;
+}
+.sky-bar-fill,
+.sky-seg-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--p) * 100%);
+  background: var(--sky-plum);
+  transform-origin: left;
+}
+.sky-meter-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--dk-2);
+  font-size: var(--dk-fs-xs);
+  white-space: nowrap;
+  color: var(--sky-ink-2);
+}
+
+/* Next trip, and the pass on the booking sheet: a boarding pass. Airports large, the route line
+   between them, a perforation, then the fields in one row. */
+.sky-bp {
   display: grid;
   gap: var(--dk-2);
 }
-.sky-trip-head {
+.sky-bp-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
 }
 .sky-ok {
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  color: var(--sky-ok);
-  background: var(--sky-ok-bg);
-}
-.sky-trip-route {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: inline-flex;
   align-items: center;
-  gap: var(--dk-2);
+  gap: var(--dk-1);
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  color: var(--sky-ok);
+}
+.sky-bp .sky-ok::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sky-bp-route {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--dk-3);
 }
 .sky-iata {
   display: grid;
-  font-size: var(--dk-fs-2xl);
-  font-weight: 800;
-  line-height: var(--dk-lh-snug);
+  font-size: var(--dk-fs-3xl);
+  font-weight: 600;
+  line-height: var(--dk-lh-tight);
   letter-spacing: var(--dk-track-tight);
 }
-.sky-iata .sky-sub {
-  font-size: var(--dk-fs-xs);
-  font-weight: 500;
+.sky-iata-city {
+  margin-top: var(--dk-1);
+  font-size: var(--dk-fs-sm);
+  font-weight: 400;
   letter-spacing: 0;
+  color: var(--sky-ink-2);
 }
 .sky-iata-end {
   text-align: right;
 }
-.sky-arc {
-  width: 100%;
-  height: 2rem;
-  fill: var(--sky-plum);
-  stroke: var(--sky-plum);
+.sky-bp-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dk-1);
+  margin-bottom: var(--dk-5);
+  color: var(--sky-plum);
 }
-.sky-arc path {
-  fill: none;
-  stroke-width: 1.5;
-  stroke-dasharray: 3 4;
-}
-.sky-trip-meta,
-.sky-pass-meta {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--dk-2);
-  padding-top: var(--dk-2);
+.sky-bp-line::before,
+.sky-bp-line::after {
+  content: '';
+  flex: 1;
   border-top: 1px solid var(--sky-line);
 }
-.sky-app dt {
-  font-size: var(--dk-fs-xs);
-  color: var(--sky-ink-2);
+.sky-bp-line .sky-ico {
+  rotate: 90deg;
 }
-.sky-app dd {
-  font-size: var(--dk-fs-md);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Status */
-.sky-status {
-  display: grid;
-  gap: var(--dk-4);
-  padding: var(--dk-4);
-}
-.sky-hero {
-  display: grid;
-  grid-template-columns: 6.25rem 1fr;
-  align-items: center;
-  gap: var(--dk-4);
-}
-.sky-ring {
+.sky-bp-meta {
   position: relative;
-  width: 6.25rem;
-  height: 6.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--dk-3);
+  margin: var(--dk-1) calc(-1 * var(--dk-4)) 0;
+  padding: var(--dk-3) var(--dk-4) 0;
+  border-top: 1px dashed var(--sky-line);
 }
-.sky-ring svg {
-  width: 100%;
-  height: 100%;
-  rotate: -90deg;
-  fill: none;
-  stroke-width: 9;
-}
-.sky-ring-track {
-  stroke: var(--sky-plum-soft);
-}
-.sky-ring-fill {
-  stroke: var(--sky-coral);
-  stroke-linecap: round;
-  stroke-dasharray: calc(var(--p) * 100) 100;
-}
-.sky-ring-n {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  font-size: var(--dk-fs-2xl);
-  font-weight: 800;
-  line-height: var(--dk-lh-tight);
-  font-variant-numeric: tabular-nums;
-}
-.sky-ring-n span {
-  font-size: var(--dk-fs-xs);
-  font-weight: 600;
-  color: var(--sky-ink-2);
-}
-.sky-hero-text {
-  display: grid;
-  justify-items: start;
-  gap: var(--dk-1);
-}
-.sky-hero-n {
-  font-size: var(--dk-fs-xl);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-.sky-medal {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--dk-1);
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  font-size: var(--dk-fs-xs);
-  font-weight: 800;
-  letter-spacing: var(--dk-track-label);
-  text-transform: uppercase;
-}
-.sky-medal-silver {
-  color: #23272f;
-  background: linear-gradient(135deg, #f1f3f6, #c3c9d3);
-}
-.sky-medal-gold {
-  color: var(--sky-gold-ink);
-  background: linear-gradient(135deg, var(--sky-gold-1), var(--sky-gold-2));
-}
-.sky-medal-platinum {
-  color: #1d2230;
-  background: linear-gradient(135deg, #e9edf4, #9fa9bb);
-}
-
-/* Tier ladder: nodes joined by a rail; the current rung is a raised card. */
-.sky-ladder {
-  display: grid;
-  gap: var(--dk-2);
-}
-.sky-rung {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.75rem 1fr;
-  gap: var(--dk-2) var(--dk-3);
-  padding: var(--dk-3);
-  border: 1px solid transparent;
-  border-radius: var(--dk-r3);
-}
-.sky-rung + .sky-rung::before {
+/* The perforation's notches: a circle in the page colour over each edge of the pass, with a
+   hairline on its inner half only (turned 45deg, two border sides make one half). */
+.sky-bp-meta::before,
+.sky-bp-meta::after {
   content: '';
   position: absolute;
-  top: calc(-1 * var(--dk-2) - var(--dk-3));
-  left: calc(var(--dk-3) + 0.8125rem);
-  width: 2px;
-  height: calc(var(--dk-2) + var(--dk-3) * 2);
-  background: var(--sky-gold-2);
-}
-.sky-rung.is-next::before {
-  background: repeating-linear-gradient(var(--sky-ink-2) 0 3px, transparent 3px 6px);
-}
-.sky-rung.is-current {
-  border-color: var(--sky-line);
-  background: var(--sky-card);
-  box-shadow: var(--dk-shadow-1);
-}
-.sky-node {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--sky-line);
   border-radius: 50%;
+  background: var(--sky-bg);
+  rotate: 45deg;
 }
-.is-next .sky-node {
-  color: var(--sky-ink-2);
-  background: var(--sky-card);
-  box-shadow: inset 0 0 0 1.5px var(--sky-ink-2);
+.sky-bp-meta::before {
+  left: -8px;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
 }
-.sky-rung-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--dk-2);
-  min-width: 0;
+.sky-bp-meta::after {
+  right: -8px;
+  border-top-color: transparent;
+  border-right-color: transparent;
 }
-.sky-rung-head strong {
-  font-size: var(--dk-fs-xl);
-}
-.sky-state {
-  margin-left: auto;
+.sky-app .sky-bp-meta dt {
   font-size: var(--dk-fs-xs);
-  font-weight: 700;
-}
-.sky-state-current {
-  color: var(--sky-coral);
-}
-.sky-state-done {
-  color: var(--sky-ok);
-}
-.sky-state-next {
   color: var(--sky-ink-2);
 }
-.sky-perks {
-  grid-column: 2;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--dk-2);
-}
-.sky-perk {
-  display: grid;
-  justify-items: start;
-  align-content: start;
-  gap: var(--dk-1);
-  font-size: var(--dk-fs-xs);
+.sky-app .sky-bp-meta dd {
+  font-size: var(--dk-fs-md);
   font-weight: 600;
-  line-height: var(--dk-lh-snug);
+  white-space: nowrap;
 }
-.sky-perk-ico {
+.sky-bp-also {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--dk-2);
+  margin: var(--dk-1) calc(-1 * var(--dk-4)) 0;
+  padding: var(--dk-2) var(--dk-4) 0;
+  border-top: 1px solid var(--sky-line);
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+}
+.sky-bp-also .sky-k {
+  display: block;
+  font-size: var(--dk-fs-xs);
+  font-weight: 400;
+}
+.sky-bp-meta-2 {
   display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--dk-r2);
-  color: var(--sky-plum);
-  background: var(--sky-plum-soft);
+  grid-template-columns: 1fr auto;
+  gap: var(--dk-2) var(--dk-3);
 }
-.is-current .sky-perk-ico {
-  color: var(--sky-gold-ink);
-  background: var(--sky-gold-1);
-}
-.is-next .sky-perk-ico {
-  color: var(--sky-ink-2);
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--sky-line);
+.sky-bp-meta-2 > :nth-child(even) {
+  text-align: right;
 }
 
-/* Redeem */
-.sky-redeem {
+/* Status and Redeem lead with one number. */
+.sky-lead {
   display: grid;
-  gap: var(--dk-3);
-  padding: var(--dk-3) var(--dk-4) var(--dk-4);
+  gap: var(--dk-1);
 }
-.sky-redeem-head {
+.sky-lead-k {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--dk-2);
-}
-.sky-balance-chip {
-  white-space: nowrap;
-  padding: var(--dk-1) var(--dk-3);
-  border-radius: var(--dk-rf);
   font-size: var(--dk-fs-sm);
-  color: #fff;
-  background: var(--sky-plum);
-  font-variant-numeric: tabular-nums;
+  color: var(--sky-ink-2);
 }
-.sky-flights {
+.sky-hero {
+  font-size: var(--dk-fs-4xl);
+  font-weight: 600;
+  line-height: var(--dk-lh-tight);
+  letter-spacing: var(--dk-track-tight);
+}
+.sky-tier-tag {
+  font-size: var(--dk-fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--dk-track-label);
+  text-transform: uppercase;
+  color: var(--sky-gold-ink);
+}
+
+/* Status: one straight track from 0 to Platinum in three segments, one per tier. Each segment's
+   label sits under its own end, inside its own column, so nothing leaves the track's box. */
+.sky-track {
   display: grid;
-  gap: var(--dk-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: var(--dk-3);
 }
-.sky-flight {
+.sky-seg {
+  display: grid;
+  gap: var(--dk-2);
+  min-width: 0;
+}
+.sky-seg-label {
   overflow: hidden;
+  font-size: var(--dk-fs-xs);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sky-seg-at {
+  font-weight: 400;
+  color: var(--sky-ink-2);
+}
+.sky-app .sky-readout {
+  margin-top: var(--dk-3);
+  font-size: var(--dk-fs-sm);
+  color: var(--sky-ink-2);
+}
+.sky-readout strong {
+  font-weight: 600;
+  color: var(--sky-ink);
+}
+
+/* The tiers: one grouped list, tiers divided by hairlines. Yours carries a plum rule inside its
+   left edge and plum heading text; the next is dimmed; perks are rows. */
+.sky-tiers {
+  margin-top: var(--dk-2);
+  border: 1px solid var(--sky-line);
+  border-radius: var(--dk-r3);
+  background: var(--sky-card);
+  overflow: hidden;
+}
+.sky-tier + .sky-tier {
+  border-top: 1px solid var(--sky-line);
+}
+.sky-tier.is-current {
+  box-shadow: inset 3px 0 0 var(--sky-plum);
+}
+.is-current .sky-tier-head strong {
+  color: var(--sky-plum);
+}
+.sky-tier-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--dk-2);
+  padding: var(--dk-3) var(--dk-4) var(--dk-2);
+}
+.sky-tier-head strong {
+  font-size: var(--dk-fs-xl);
+  font-weight: 600;
+}
+.sky-tier-at {
+  font-size: var(--dk-fs-sm);
+  color: var(--sky-ink-2);
+}
+.sky-state {
+  margin-left: auto;
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--sky-ink-2);
+}
+.is-current .sky-state {
+  color: var(--sky-plum);
+}
+.sky-state .sky-ico {
+  display: inline-block;
+  margin-right: var(--dk-1);
+  vertical-align: -3px;
+}
+.sky-perk {
+  display: flex;
+  align-items: center;
+  gap: var(--dk-3);
+  min-height: 2.5rem;
+  margin-left: var(--dk-4);
+  padding: var(--dk-2) var(--dk-4) var(--dk-2) 0;
+  border-top: 1px solid var(--sky-line);
+  font-size: var(--dk-fs-md);
+  line-height: var(--dk-lh-snug);
+}
+.sky-perk .sky-ico {
+  color: var(--sky-plum);
+}
+.is-next .sky-tier-head strong,
+.is-next .sky-perk {
+  color: var(--sky-ink-2);
+}
+.is-next .sky-perk .sky-ico {
+  color: var(--sky-ink-2);
+}
+
+/* Redeem: led by the balance, then destinations as a type-led grouped list. */
+.sky-app .sky-lead-t {
+  margin-top: var(--dk-4);
+  font-size: var(--dk-fs-xl);
+  font-weight: 600;
+}
+.sky-group {
+  display: grid;
+  gap: var(--dk-2);
+  margin-top: var(--dk-2);
+}
+.sky-dests {
   border: 1px solid var(--sky-line);
   border-radius: var(--dk-r3);
   background: var(--sky-card);
 }
-.sky-flight.is-booked {
-  border-color: var(--sky-ok);
-  box-shadow: inset 0 0 0 1px var(--sky-ok);
-}
-.sky-flight-art {
-  position: relative;
-  height: 5.5rem;
-}
-.sky-scene {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.sky-date {
-  position: absolute;
-  top: var(--dk-2);
-  left: var(--dk-2);
-  padding: 0 var(--dk-2);
-  border-radius: var(--dk-rf);
-  font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  background: rgb(255 255 255 / 0.92);
-}
-.sky-flight-body {
+.sky-dest {
   display: grid;
-  gap: var(--dk-1);
-  padding: var(--dk-2) var(--dk-3) var(--dk-3);
-}
-.sky-flight-top,
-.sky-price,
-.sky-flight-foot {
-  display: flex;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'city pts'
+    'meta tax'
+    'cash act';
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--dk-2);
+  gap: 0 var(--dk-3);
+  padding: var(--dk-3) var(--dk-4);
+}
+.sky-dest + .sky-dest {
+  border-top: 1px solid var(--sky-line);
 }
 .sky-city {
+  grid-area: city;
   font-size: var(--dk-fs-xl);
+  font-weight: 600;
 }
-.sky-route,
-.sky-price-cash {
+.sky-dest-pts {
+  grid-area: pts;
+  justify-self: end;
+  font-size: var(--dk-fs-xl);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sky-dest-pts .sky-app h3.sky-k {
+  font-size: var(--dk-fs-sm);
+  font-weight: 600;
+  line-height: var(--dk-lh-normal);
+}
+.sky-unit {
+  font-size: var(--dk-fs-sm);
+}
+.sky-dest-meta {
+  grid-area: meta;
   font-size: var(--dk-fs-sm);
   color: var(--sky-ink-2);
-  font-variant-numeric: tabular-nums;
 }
-.sky-price-pts {
-  font-size: var(--dk-fs-md);
-  font-variant-numeric: tabular-nums;
-}
-.sky-flight-foot {
-  align-items: center;
-  margin-top: var(--dk-1);
-}
-.sky-save {
+.sky-dest-tax {
+  grid-area: tax;
+  justify-self: end;
   font-size: var(--dk-fs-xs);
-  font-weight: 700;
-  color: var(--sky-ok);
+  color: var(--sky-ink-2);
+  white-space: nowrap;
+}
+.sky-dest-cash {
+  grid-area: cash;
+  align-self: center;
+  margin-top: var(--dk-1);
+  font-size: var(--dk-fs-sm);
+  color: var(--sky-ink-2);
 }
 .sky-book,
+.sky-booked {
+  grid-area: act;
+  align-self: center;
+  justify-self: end;
+  margin-top: var(--dk-1);
+}
 .sky-cta,
 .sky-ghost {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0 var(--dk-4);
+  border: 1px solid var(--sky-plum);
+  border-radius: var(--dk-r2);
+  font: inherit;
+  font-size: var(--dk-fs-md);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dk-quick) var(--dk-ease),
+    border-color var(--dk-quick) var(--dk-ease),
+    color var(--dk-quick) var(--dk-ease),
+    scale var(--dk-quick) var(--dk-ease);
+}
+.sky-ghost {
+  color: var(--sky-plum);
+  background: var(--sky-card);
+}
+.sky-ghost:is(:hover, :focus-visible) {
+  background: var(--sky-tint);
+}
+.sky-cta {
+  color: #fff;
+  background: var(--sky-plum);
+}
+.sky-cta:is(:hover, :focus-visible) {
+  border-color: var(--sky-plum-2);
+  background: var(--sky-plum-2);
+}
+.sky-cta:active,
+.sky-ghost:active {
+  scale: var(--dk-press);
+}
+/* Each row's action is quiet text with a chevron, not a third outlined button in a row. */
+.sky-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 2rem;
+  margin-right: calc(-1 * var(--dk-2));
+  padding: 0 var(--dk-1) 0 var(--dk-2);
   border: 0;
   border-radius: var(--dk-r2);
   font: inherit;
-  font-weight: 700;
-  color: #fff;
-  background: var(--sky-coral);
+  font-size: var(--dk-fs-md);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--sky-plum);
+  background: transparent;
   cursor: pointer;
   transition:
     background-color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
-.sky-book:is(:hover, :focus-visible),
-.sky-cta:is(:hover, :focus-visible) {
-  background: var(--sky-coral-2);
+.sky-book:is(:hover, :focus-visible) {
+  background: var(--sky-tint);
 }
-.sky-book:active,
-.sky-cta:active,
-.sky-ghost:active {
+.sky-book:active {
   scale: var(--dk-press);
 }
 .sky-book:disabled {
+  margin-right: 0;
+  padding: 0;
   font-size: var(--dk-fs-sm);
+  font-weight: 500;
   color: var(--sky-ink-2);
-  background: var(--sky-plum-soft);
+  background: transparent;
   cursor: not-allowed;
   scale: 1;
 }
@@ -709,103 +729,65 @@
   display: inline-flex;
   align-items: center;
   gap: var(--dk-1);
-  min-height: 2.5rem;
-  padding: 0 var(--dk-3);
-  border-radius: var(--dk-r2);
-  font-weight: 700;
+  min-height: 2rem;
+  border-radius: var(--dk-r1);
+  font-size: var(--dk-fs-md);
+  font-weight: 600;
   color: var(--sky-ok);
-  background: var(--sky-ok-bg);
 }
 
-/* Booking confirmation: a sheet with a boarding pass. */
+/* Booking confirmation: a sheet with the boarding pass. */
 .sky-scrim {
   position: absolute;
   inset: 0;
   z-index: 5;
   display: flex;
   align-items: flex-end;
-  background: rgb(29 21 48 / 0.5);
+  background: rgb(23 19 31 / 0.48);
 }
 .sky-sheet {
   display: grid;
-  justify-items: center;
-  gap: var(--dk-3);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--dk-4);
   width: 100%;
   padding: var(--dk-5) var(--dk-4) var(--dk-4);
   border-radius: var(--dk-r4) var(--dk-r4) 0 0;
-  background: var(--sky-card);
+  background: var(--sky-bg);
   box-shadow: var(--dk-shadow-3);
 }
-.sky-sheet h2 {
+.sky-sheet-head {
+  display: grid;
+  gap: var(--dk-1);
+}
+.sky-app .sky-sheet h2 {
   font-size: var(--dk-fs-2xl);
+  font-weight: 600;
   line-height: var(--dk-lh-snug);
-  text-align: center;
+  letter-spacing: var(--dk-track-tight);
   text-wrap: balance;
 }
 .sky-tick {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 18px;
+  height: 18px;
   fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.sky-tick circle {
-  fill: var(--sky-ok-bg);
-  stroke: var(--sky-ok);
-  stroke-width: 2.5;
+.sky-sheet .sky-bp {
+  background: var(--sky-card);
 }
-.sky-tick path {
-  stroke: var(--sky-ok);
-  stroke-width: 4;
-}
-.sky-pass {
-  width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--sky-line);
-  border-radius: var(--dk-r3);
-  background: var(--sky-bg);
-}
-.sky-pass-top {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: var(--dk-3) var(--dk-4);
-  color: #fff;
-  background: var(--sky-plum);
-}
-.sky-pass-top .sky-iata span:not(.dk-sr) {
-  font-size: var(--dk-fs-xs);
-  font-weight: 500;
-  letter-spacing: 0;
-  color: #e3daf3;
-}
-.sky-pass-plane {
-  color: var(--sky-gold-1);
-}
-.sky-pass-meta {
-  grid-template-columns: 1fr 1fr;
-  padding: var(--dk-3) var(--dk-4);
-  border-top: 2px dashed var(--sky-line);
-  background:
-    radial-gradient(circle at 0 0, var(--sky-card) 0.5rem, transparent 0.55rem),
-    radial-gradient(circle at 100% 0, var(--sky-card) 0.5rem, transparent 0.55rem);
+.sky-sheet .sky-bp-meta {
+  margin-top: var(--dk-1);
 }
 .sky-sheet-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--dk-2);
-  width: 100%;
-}
-.sky-ghost {
-  color: var(--sky-plum);
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--sky-plum);
-}
-.sky-ghost:is(:hover, :focus-visible) {
-  background: var(--sky-plum-soft);
 }
 
-/* Tab bar */
+/* Tab bar: quiet. The selected tab is the brand colour, heavier, with a bar above it. */
 .sky-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -813,25 +795,34 @@
   background: var(--sky-card);
 }
 .sky-tabs button {
+  position: relative;
   display: grid;
   justify-items: center;
+  align-content: center;
   gap: 2px;
   min-height: 3.5rem;
-  padding: var(--dk-1) 0;
+  padding: var(--dk-1) 0 var(--dk-2);
   border: 0;
   font: inherit;
   font-size: var(--dk-fs-xs);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sky-ink-2);
   background: transparent;
   cursor: pointer;
   transition: color var(--dk-quick) var(--dk-ease);
 }
-.sky-tabs .sky-ico {
-  box-sizing: content-box;
-  padding: 3px var(--dk-4);
-  border-radius: var(--dk-rf);
-  transition: background-color var(--dk-base) var(--dk-ease);
+.sky-tabs button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1.5rem;
+  height: 2px;
+  border-radius: 0 0 var(--dk-r1) var(--dk-r1);
+  background: var(--sky-plum);
+  translate: -50% 0;
+  scale: 0 1;
+  transition: scale var(--dk-base) var(--dk-ease);
 }
 .sky-tabs button:is(:hover, :focus-visible) {
   color: var(--sky-plum);
@@ -839,15 +830,12 @@
 .sky-tabs button:active {
   color: var(--sky-plum-2);
 }
-.sky-tabs button:active .sky-ico {
-  background: var(--sky-line);
-}
 .sky-tabs button[aria-selected='true'] {
-  font-weight: 800;
+  font-weight: 600;
   color: var(--sky-plum);
 }
-.sky-tabs button[aria-selected='true'] .sky-ico {
-  background: var(--sky-plum-soft);
+.sky-tabs button[aria-selected='true']::before {
+  scale: 1;
 }
 
 /* Focus: one ring, everywhere in the app. */
@@ -856,15 +844,7 @@
   outline-offset: 2px;
 }
 .sky-panel:focus-visible {
-  outline-offset: -3px;
-}
-/* On Home the panel's top 7.5rem is the plum band, which hides a plum ring along the top and the
-   upper sides (WO-031). While the panel has keyboard focus the band stands one ring width clear
-   of the ring, so the ring shows on all four sides against the page colour. */
-.sky-panel:focus-visible > .sky-home {
-  background-position: calc(var(--dk-focus) * 2) calc(var(--dk-focus) * 2);
-  background-size: calc(100% - var(--dk-focus) * 4) 100%;
-  background-repeat: no-repeat;
+  outline-offset: calc(var(--dk-focus) * -1);
 }
 /* The tab bar sits on the screen's rounded bottom edge, which clips an outset ring (WO-031): the
    tabs' ring sits 2px inside them, and the outer two curve with the screen's corners (`--df-r`,
@@ -886,23 +866,24 @@
    reduced motion (the tokens zero the distances, and these keyframes only run with
    no-preference). */
 @media (prefers-reduced-motion: no-preference) {
-  .sky-home.is-first .sky-bar-fill {
+  .sky-home.is-first .sky-bar-fill,
+  .sky-seg-fill {
     animation: sky-grow var(--dk-reveal) var(--dk-ease) both;
   }
-  .sky-home.is-first .sky-bar-dot {
-    animation: sky-slide var(--dk-reveal) var(--dk-ease) both;
+  .sky-seg:nth-child(2) .sky-seg-fill {
+    animation-delay: calc(var(--dk-stagger) * 3);
   }
-  .sky-ring-fill {
-    animation: sky-ring var(--dk-reveal) var(--dk-ease) both;
+  .sky-seg:nth-child(3) .sky-seg-fill {
+    animation-delay: calc(var(--dk-stagger) * 6);
   }
-  .sky-perk {
+  .sky-tier {
     animation: sky-rise var(--dk-base) var(--dk-ease) both;
   }
-  .sky-rung:nth-child(2) .sky-perk {
-    animation-delay: calc(var(--dk-stagger) * 2);
+  .sky-tier:nth-child(2) {
+    animation-delay: var(--dk-stagger);
   }
-  .sky-rung:nth-child(3) .sky-perk {
-    animation-delay: calc(var(--dk-stagger) * 4);
+  .sky-tier:nth-child(3) {
+    animation-delay: calc(var(--dk-stagger) * 2);
   }
   .sky-scrim {
     animation: sky-fade var(--dk-base) var(--dk-ease) both;
@@ -910,31 +891,14 @@
   .sky-sheet {
     animation: sky-up var(--dk-slow) var(--dk-ease) both;
   }
-  .sky-tick circle {
-    stroke-dasharray: 100;
-    animation: sky-draw var(--dk-slow) var(--dk-ease) var(--dk-base) both;
-  }
   .sky-tick path {
     stroke-dasharray: 100;
-    animation: sky-draw var(--dk-base) var(--dk-ease) var(--dk-slow) both;
-  }
-  .sky-pass {
-    animation: sky-rise var(--dk-slow) var(--dk-ease-pop) var(--dk-base) both;
+    animation: sky-draw var(--dk-slow) var(--dk-ease) var(--dk-base) both;
   }
 }
 @keyframes sky-grow {
   from {
     scale: 0 1;
-  }
-}
-@keyframes sky-slide {
-  from {
-    left: 0;
-  }
-}
-@keyframes sky-ring {
-  from {
-    stroke-dasharray: 0 100;
   }
 }
 @keyframes sky-rise {

@@ -60,7 +60,7 @@ gallery:
       }
 demo: tcg
 accent: '#1d4ed8'
-order: 4
+order: 5
 featured: false
 status: ready
 ---

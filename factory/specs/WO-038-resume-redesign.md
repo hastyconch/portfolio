@@ -38,6 +38,7 @@ You have room to redesign. Look at well-designed résumés and CV pages for dire
   - capability groups as tinted panels with their own label colour.
 
   Use the site's colour tokens, or add a few named résumé tokens in this file that derive from them, with contrast ≥ 4.5:1 for text and ≥ 3:1 for UI, in light and dark.
+
 - **Hierarchy.** Make clear steps from the section title to the employer and role to the bullets. The current role reads first. Bullets get a real marker and comfortable leading at `--measure`.
 - **Rhythm.** Use the shared spacing tokens. The gaps from title to content, between entries, and between groups are consistent, with no dead columns. On ≥ 1000px, balance the side column so it doesn't end halfway down a long empty run: for example, a sticky side column, or Capabilities and Education moved into a header strip.
 - **Landing.** WO-034 makes every section land its title at the same place, with a shared rule in liner.css. The target at 1440 × 900 is the title's top at y = 108 after the header's "Résumé" link, the same as Work. Meet it from this file: your section's top padding or `scroll-margin-top`. If WO-034's token is visible in your base, use it; otherwise use the number and leave a comment for the integrator.

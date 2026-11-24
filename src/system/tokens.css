@@ -40,7 +40,15 @@
   --space-7: 3rem;
   --space-8: 4rem;
   --space-9: 6rem;
-  --space-section: clamp(4rem, 3rem + 5vw, 8rem);
+  /* Rhythm (WO-034): the page's vertical spacing by role, built on the steps above. Every home
+     section, case study, song page and the 404 uses these; the parts inside a block keep the
+     plain steps. */
+  --rhythm-top: var(--space-7); /* 48  top padding: a jump lands the title here */
+  --rhythm-end: var(--space-8); /* 64  bottom padding; between a page's sections */
+  --rhythm-title: var(--space-3); /* 12  a section title to its lead */
+  --rhythm-head: var(--space-6); /* 32  a section's header (title and lead) to its content */
+  --rhythm-stack: var(--space-5); /* 24  item to item in a list of blocks */
+  --rhythm-column: clamp(2.5rem, 4vw, 4rem); /* 40 to 64  the aside column's gap (Work, headers) */
 
   /* Radius: inner, element, container, full (tags and chips only). */
   --radius-1: 4px;

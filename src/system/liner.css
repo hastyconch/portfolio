@@ -61,6 +61,10 @@ html {
      the whole padding, so focusing or clicking it never scrolls the page (Nav.astro). */
   --ln-scroll-pad: calc(var(--ln-header) + var(--space-3));
   --ln-flush: calc(var(--space-3) * -1);
+  /* A block whose title is its first line, with no top padding of its own (a case study's or a
+     song page's sections), takes this margin so a jump lands its title --rhythm-top under the
+     header, like a home section's title (WO-034). */
+  --ln-land: calc(var(--ln-flush) + var(--rhythm-top));
   scroll-padding-top: var(--ln-scroll-pad);
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -68,9 +72,10 @@ html {
     scroll-behavior: smooth;
   }
 }
-/* No page-level scroll snap (WO-023). Proximity snapping on viewport-tall panes trapped the wheel:
-   a few notches from a pane's top snapped back to where they started. The header's stepper moves
-   pane to pane instead. Horizontal rails keep their own x snap. */
+/* No CSS scroll snap on the page (WO-023). Proximity snapping on viewport-tall panes trapped the
+   wheel: a few notches from a pane's top snapped back to where they started. The Work panes lock
+   in with a small wheel script instead (work-paging.ts, WO-034), and the header's stepper moves
+   pane to pane. Horizontal rails keep their own x snap. */
 
 /* Page changes carry you (WO-019): cross-document view transitions, CSS only, as progressive
    enhancement. The header is named in Nav.astro so it holds still. Between case studies the page
@@ -228,14 +233,16 @@ body.ln .label {
   opacity: 0.7;
 }
 
-/* Section scaffold. Sections set their own rhythm on top of this. A jump to a section lands its
-   top flush under the header (the one rule for every section band; see --ln-flush above). */
+/* Section scaffold: the one landing (WO-034). A jump to a section lands its top flush under the
+   header (--ln-flush above), and every section's top padding is the same token, so every title
+   lands --rhythm-top under the header (48px: y = 108 with the 60px header), at every width.
+   A section opts in with the class `ln-sec` and its title first in its content; it never sets
+   its own top padding (a band's 1px top rule is inside the 2px tolerance). The bottom padding
+   is the same token for all, so each boundary reads as one rhythm (--rhythm-end + --rhythm-top);
+   a section may take back its last block's own padding from it. */
 .ln-sec {
-  padding-block: var(--space-section);
+  padding-block: var(--rhythm-top) var(--rhythm-end);
   scroll-margin-top: var(--ln-flush);
-}
-.ln-sec + .ln-sec:not(.ln-dark) {
-  border-top: var(--ln-hairline);
 }
 
 /* Vinyl disc: the record theme, used on the hero cover and in Music only (decorative). */

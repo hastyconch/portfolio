@@ -49,6 +49,26 @@ test('airline demo: tabs, booking sheet and focus by keyboard', async ({ page, i
 
   await page.keyboard.press('ArrowRight');
   await expect(tab('Redeem')).toHaveAttribute('aria-selected', 'true');
+  // WO-035: Redeem leads with the balance, then a type-led list: the points price right-aligned
+  // in each row, the taxes under it and the cash fare as a comparison.
+  const panel = demo.getByRole('tabpanel');
+  await expect(panel.locator('.sky-hero')).toHaveText('48,250 pts');
+  const lisbon = panel.locator('.sky-dest').filter({ hasText: 'Lisbon' });
+  await expect(lisbon).toContainText('35,000 pts');
+  await expect(lisbon).toContainText('+ $89 taxes');
+  await expect(lisbon).toContainText('or $612 cash');
+  const edges = await panel.locator('.sky-dest').evaluateAll((rows) =>
+    rows.map((row) => {
+      const right = (sel: string) => row.querySelector(sel)!.getBoundingClientRect().right;
+      const cs = getComputedStyle(row);
+      const inner = row.getBoundingClientRect().right - parseFloat(cs.paddingRight);
+      return [right('.sky-dest-pts'), right('.sky-dest-tax'), inner].map(Math.round);
+    }),
+  );
+  for (const [pts, tax, inner] of edges) {
+    expect(pts, 'points flush right').toBe(inner);
+    expect(tax, 'taxes flush right').toBe(inner);
+  }
   // Not enough points: the button says how many more are needed and can't be pressed.
   await expect(demo.getByRole('button', { name: /more points to book Tokyo/ })).toBeDisabled();
   expect(await axe(page)).toEqual([]);
@@ -266,4 +286,100 @@ test('demo-airline panel ring is inset', async ({ page }) => {
     screen: getComputedStyle(el.closest('.df-screen')!).borderBottomLeftRadius,
   }));
   expect(corner.tab, 'curves with the screen corner').toBe(corner.screen);
+});
+
+/** The demo on home (opened and hydrated) or on its own harness page. */
+async function open(page: Page, route: string) {
+  if (route === '/') return airlineOnHome(page);
+  await page.goto(route);
+  await page.waitForSelector('astro-island:not([ssr])');
+  return page.getByRole('group', { name: /airline loyalty app/i });
+}
+
+// WO-035: the quick actions on Home are one row of equal buttons whose labels never wrap, in every
+// pane the demo appears in: the Work section at three laptop sizes and a phone, and the harness.
+test('demo-airline actions stay on one line', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'the sizes are set here, one by one');
+  const panes: [string, number, number][] = [
+    ['/', 1440, 900],
+    ['/', 1366, 768],
+    ['/', 1280, 800],
+    ['/', 375, 812],
+    [ROUTE, 1440, 900],
+  ];
+  for (const [route, w, h] of panes) {
+    await page.setViewportSize({ width: w, height: h });
+    const demo = await open(page, route);
+    const acts = demo.getByRole('list', { name: 'Quick actions' }).getByRole('button');
+    await expect(acts).toHaveCount(3);
+    const m = await acts.evaluateAll((els) =>
+      els.map((b) => {
+        const label = b.querySelector(':scope > span')!;
+        return {
+          name: b.textContent,
+          h: Math.round(b.getBoundingClientRect().height),
+          lines: label.getClientRects().length,
+          clipped: b.scrollWidth > b.clientWidth,
+        };
+      }),
+    );
+    const where = `${route} at ${w}×${h}`;
+    expect(new Set(m.map((a) => a.h)).size, `${where}: equal heights ${JSON.stringify(m)}`).toBe(1);
+    for (const a of m) {
+      expect(a.lines, `${where}: "${a.name}" on one line`).toBe(1);
+      expect(a.clipped, `${where}: "${a.name}" fits its button`).toBe(false);
+    }
+  }
+});
+
+// WO-035: on Status nothing leaves its box: every element of the progress track and the tier list
+// sits inside its parent, no label is cut off, and no perk label runs past two lines.
+test('demo-airline status has no overflow', async ({ page, isMobile }) => {
+  const panes: [string, number, number][] = isMobile
+    ? [['/', 375, 812]]
+    : [
+        [ROUTE, 1440, 900],
+        ['/', 1366, 768],
+        ['/', 1280, 800],
+      ];
+  for (const [route, w, h] of panes) {
+    await page.setViewportSize({ width: w, height: h });
+    const demo = await open(page, route);
+    await demo.getByRole('tab', { name: 'Status' }).click();
+    const status = demo.locator('.sky-status');
+    await expect(status).toBeVisible();
+    // Let the demo's own entrance animations finish (the page around it may run others).
+    await status.evaluate((root) =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => root.contains((a.effect as KeyframeEffect | null)?.target ?? null))
+          .map((a) => a.finished),
+      ),
+    );
+    const bad = await status.evaluate((root) => {
+      const out: string[] = [];
+      const name = (e: Element) =>
+        `${e.tagName.toLowerCase()}.${[...e.classList].join('.')} "${e.textContent?.slice(0, 24)}"`;
+      for (const el of root.querySelectorAll('*')) {
+        if (el.closest('.dk-sr') || !el.parentElement) continue;
+        const r = el.getBoundingClientRect();
+        const p = el.parentElement.getBoundingClientRect();
+        if (!r.width && !r.height) continue;
+        if (r.left < p.left - 0.5 || r.right > p.right + 0.5)
+          out.push(`${name(el)} leaves its parent sideways`);
+        if (r.top < p.top - 0.5 || r.bottom > p.bottom + 0.5)
+          out.push(`${name(el)} leaves its parent vertically`);
+        if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== 'visible')
+          out.push(`${name(el)} is cut off`);
+      }
+      for (const label of root.querySelectorAll('.sky-perk > span')) {
+        const lh = parseFloat(getComputedStyle(label).lineHeight);
+        if (label.getBoundingClientRect().height > lh * 2 + 1)
+          out.push(`perk "${label.textContent}" runs past two lines`);
+      }
+      return out;
+    });
+    expect(bad, `${route} at ${w}×${h}`).toEqual([]);
+  }
 });

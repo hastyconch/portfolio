@@ -71,9 +71,9 @@ test('alignments', async ({ page, isMobile }) => {
       expect(Math.abs(x - title), 'label is flush with the title').toBeLessThanOrEqual(1);
   }
 
-  // Billable, the first project, has only a "Next project" link: its rule spans the content
-  // column, from the column's start to its end.
-  await page.goto('/projects/billable/');
+  // The first project (Potluck Picker since WO-039) has only a "Next project" link: its rule
+  // spans the content column, from the column's start to its end.
+  await page.goto('/projects/potluck-picker/');
   const main = (await page.locator('.cs-main').boundingBox())!;
   const pager = page.locator('.cs-pager .cs-pg');
   await expect(pager).toHaveCount(1);
