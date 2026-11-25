@@ -242,10 +242,20 @@ test('work demo button and tags', async ({ page, isMobile }) => {
   });
   expect(fill.bg, 'the button is filled with the accent').toBe(accent);
   expect(fill.align, 'the label is centred').toBe('center');
-  // The one line stays outside the button. WO-040: closed, the still says it; it shows as the
-  // demo's caption once the demo is open (below), and stays the button's description.
+  // The one line stays outside the button. WO-040: closed, it is the caption strip along the
+  // bottom of the still (taps go through to the still); open, it is the demo's caption (below).
   await expect(button.locator('.wk-try-d')).toHaveCount(0);
-  await expect(page.locator(`#${await button.getAttribute('aria-describedby')}`)).toBeHidden();
+  const line = page.locator(`#${await button.getAttribute('aria-describedby')}`);
+  await line.scrollIntoViewIfNeeded();
+  const [strip, still] = [
+    (await line.boundingBox())!,
+    (await page.locator('#work .wk-shot').first().boundingBox())!,
+  ];
+  expect(strip.y + strip.height, 'the line ends at the still').toBeLessThanOrEqual(
+    still.y + still.height,
+  );
+  expect(strip.y, 'inside the still').toBeGreaterThan(still.y);
+  expect(await line.evaluate((l) => getComputedStyle(l).pointerEvents)).toBe('none');
   for (const b of await page.locator('#work [data-wk-try]').all()) {
     await expect(b).toHaveAccessibleName(/^Try the demo: \S/);
     const box = (await b.boundingBox())!;

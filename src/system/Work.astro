@@ -35,12 +35,14 @@
 // 760px and up is unchanged: no still, no toggle, everything open.
 // Spacing: the section's padding is the shared rhythm (.ln-sec in liner.css).
 import type { ImageMetadata } from 'astro';
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import type { Work } from '../lib/content';
 import airlineShot from '../assets/work/airline.webp';
 import grocerShot from '../assets/work/grocer.webp';
 import pipelineShot from '../assets/work/pipeline.webp';
+import pipelineDark from '../assets/work/pipeline-dark.webp';
 import schedulerShot from '../assets/work/scheduler.webp';
+import schedulerDark from '../assets/work/scheduler-dark.webp';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
 import PipelineDemo from '../demos/pipeline/PipelineDemo.tsx';
@@ -68,9 +70,11 @@ const TRY: Record<string, { name: string; line: string }> = {
   scheduler: { name: 'Nurse scheduler', line: 'Fill an open shift within the rules.' },
   pipeline: { name: 'AI program pipeline', line: 'Transcript to exec update, step by step.' },
 };
-// WO-040: the phone still of each app's first screen, captured from the demo at 375 in the light
-// theme and cropped to 343 × 200 (see factory/decisions.md).
-const SHOT: Record<string, { src: ImageMetadata; alt: string }> = {
+// WO-040: the phone still of each app's first screen, captured from the demo in Work at 375 and
+// cropped to 343 × 200 (see factory/decisions.md). The scheduler and pipeline follow the page's
+// scheme, as they do when opened, so they have a dark still too; the airline and grocer apps
+// stay light in both.
+const SHOT: Record<string, { src: ImageMetadata; dark?: ImageMetadata; alt: string }> = {
   airline: {
     src: airlineShot,
     alt: 'The airline app home screen: a greeting and a plum member card with Gold status and 48,250 points.',
@@ -81,13 +85,27 @@ const SHOT: Record<string, { src: ImageMetadata; alt: string }> = {
   },
   scheduler: {
     src: schedulerShot,
-    alt: 'The scheduler roster: nurses down the side with their hours, days across, and day and night shifts in the cells.',
+    dark: schedulerDark,
+    alt: 'The scheduler roster at the weekend: nurses down the side, and a Saturday night shift under by one nurse.',
   },
   pipeline: {
     src: pipelineShot,
+    dark: pipelineDark,
     alt: 'The pipeline at step 1 of 5, Meeting transcript in: a stand-up recording with its speakers listed.',
   },
 };
+const SHOT_WIDTHS = [343, 686, 1029];
+const SHOT_SIZES = 'min(384px, calc(100vw - 2rem))';
+const darkSrcset = Object.fromEntries(
+  await Promise.all(
+    Object.entries(SHOT)
+      .filter(([, s]) => s.dark)
+      .map(async ([k, s]) => [
+        k,
+        (await getImage({ src: s.dark!, widths: SHOT_WIDTHS, quality: 70 })).srcSet.attribute,
+      ]),
+  ),
+) as Record<string, string>;
 const others = work.filter((w) => w.data.demo === 'none');
 ---
 
@@ -125,17 +143,25 @@ const others = work.filter((w) => w.data.demo === 'none');
               </div>
 
               {shot && (
-                <div class="wk-shot" data-wk-shot>
+                <picture class="wk-shot" data-wk-shot>
+                  {darkSrcset[d.demo] && (
+                    <source
+                      media="(prefers-color-scheme: dark)"
+                      srcset={darkSrcset[d.demo]}
+                      sizes={SHOT_SIZES}
+                      type="image/webp"
+                    />
+                  )}
                   <Image
                     src={shot.src}
                     alt={shot.alt}
-                    widths={[343, 686, 1029]}
-                    sizes="min(384px, calc(100vw - 2rem))"
+                    widths={SHOT_WIDTHS}
+                    sizes={SHOT_SIZES}
                     quality={70}
                     loading="lazy"
                     decoding="async"
                   />
-                </div>
+                </picture>
               )}
 
               {tryIt && (
@@ -634,7 +660,7 @@ const others = work.filter((w) => w.data.demo === 'none');
     .wk .wk-collapse {
       grid-template-areas:
         'meta' 'title' 'kicker' 'shot' 'try' 'summary' 'details'
-        'skills' 'demo';
+        'skills' 'line' 'demo';
       padding-block: var(--space-5);
     }
     .wk-collapse .wk-head {
@@ -699,11 +725,15 @@ const others = work.filter((w) => w.data.demo === 'none');
       display: none;
     }
 
+    /* The row and the one line become the article's own items: closed, the line is the still's
+       caption strip (what to try, and a cue that the still opens it); open, it sits above the
+       demo. Taps on the strip go through to the still. */
     .wk-collapse .wk-try {
-      display: grid;
-      margin-top: var(--space-3);
+      display: contents;
     }
     .wk-try-row {
+      grid-area: try;
+      margin-top: var(--space-3);
       display: flex;
       align-items: center;
       gap: var(--space-4);
@@ -721,9 +751,34 @@ const others = work.filter((w) => w.data.demo === 'none');
       background: none;
       font-family: inherit;
     }
-    /* The one line is the demo's caption once it is open; closed, the still says it. */
-    .wk-collapse:not([data-open]) .wk-try-d {
-      display: none;
+    body.ln .wk-collapse .wk-try-d {
+      grid-area: line;
+      margin-top: var(--space-4);
+    }
+    body.ln .wk-collapse:not([data-open]) .wk-try-d {
+      grid-area: shot;
+      align-self: end;
+      z-index: 1;
+      width: calc(100% - 2px);
+      max-width: calc(24rem - 2px);
+      margin: 0 1px 1px;
+      padding: var(--space-2) var(--space-3);
+      border-top: var(--ln-hairline);
+      border-radius: 0 0 calc(var(--radius-3) - 1px) calc(var(--radius-3) - 1px);
+      background: var(--ln-bg);
+      color: var(--ln-ink);
+      pointer-events: none;
+    }
+    /* On phones the disclosures are in the second ink; the accent marks hover and focus. One
+       accent action per row: "Try the demo". */
+    .work :is(.wk-disc summary, .wk-more-b) {
+      color: var(--ln-ink-2);
+    }
+    .work :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
+      color: var(--ln-accent);
+    }
+    .work :is(.wk-disc summary, .wk-more-b):active {
+      color: var(--ln-ink);
     }
     .wk-collapse:not([data-open]) .wk-demo {
       display: none;
@@ -731,9 +786,9 @@ const others = work.filter((w) => w.data.demo === 'none');
     .wk-collapse .wk-demo {
       margin-top: var(--space-4);
     }
-    /* "Try the demo" lands the demo's screen flush under the header. */
+    /* "Try the demo" lands the demo's screen just under the header, a hair clear of its rule. */
     .wk-collapse .wk-demo :global(.df-screen) {
-      scroll-margin-top: var(--ln-flush);
+      scroll-margin-top: calc(var(--ln-flush) + var(--space-1));
     }
     .wk-collapse .wk-hide {
       display: block;
