@@ -322,9 +322,9 @@ export default function SchedulerDemo() {
           {edges && (
             <p className="sch-scrollhint">
               {/* the arrows point to whichever side has more days (WO-042) */}
-              {edges !== 'end' && <span aria-hidden="true">← </span>}
-              The roster scrolls sideways for the whole week
-              {edges !== 'start' && <span aria-hidden="true"> →</span>}
+              {edges !== 'end' && <span aria-hidden="true">←&nbsp;</span>}
+              The roster scrolls sideways for the whole&nbsp;week
+              {edges !== 'start' && <span aria-hidden="true">&nbsp;→</span>}
             </p>
           )}
           <div className="sch-gridwrap" ref={gridWrap} data-more={edges || undefined}>

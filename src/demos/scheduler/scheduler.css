@@ -601,21 +601,21 @@
 .sch-gridwrap[data-more='end'] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--sch-fade-end)), transparent);
 }
-/* The start fade begins after the sticky name column, so names stay solid. */
+/* The start fade begins after the sticky name column and its hairline, so both stay solid. */
 .sch-gridwrap[data-more='start'] {
   mask-image: linear-gradient(
     to right,
-    #000 var(--sch-namecol),
-    transparent var(--sch-namecol),
-    #000 calc(var(--sch-namecol) + var(--sch-fade-start))
+    #000 calc(var(--sch-namecol) + 1px),
+    transparent calc(var(--sch-namecol) + 1px),
+    #000 calc(var(--sch-namecol) + 1px + var(--sch-fade-start))
   );
 }
 .sch-gridwrap[data-more='both'] {
   mask-image: linear-gradient(
     to right,
-    #000 var(--sch-namecol),
-    transparent var(--sch-namecol),
-    #000 calc(var(--sch-namecol) + var(--sch-fade-start)),
+    #000 calc(var(--sch-namecol) + 1px),
+    transparent calc(var(--sch-namecol) + 1px),
+    #000 calc(var(--sch-namecol) + 1px + var(--sch-fade-start)),
     #000 calc(100% - var(--sch-fade-end)),
     transparent
   );

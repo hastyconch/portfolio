@@ -473,7 +473,7 @@ const steps: Step[] = [
             <Icon name="check" />
             <strong>Delivered on time</strong>
             <span className="pl-done-sub">
-              Repeated after every stand-up until Release 3 shipped.
+              Repeated after every stand-up until Release&nbsp;3 shipped.
             </span>
           </p>
         )}
