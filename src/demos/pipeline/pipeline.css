@@ -72,6 +72,8 @@
 
 .pl-inner {
   display: grid;
+  /* one column that never grows past the container, whatever a label needs */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--dk-3);
   padding: var(--dk-3);
   border: 1px solid var(--pl-rule);
@@ -201,13 +203,19 @@
   display: grid;
   min-width: 0;
 }
+/* WO-042: at every width the steps share one cell (the ones not showing are laid out but
+   hidden), so the stage is as tall as the tallest step and the controls under it keep their place
+   from step to step. The step's main block fills the cell, so short steps don't end half-way. */
 .pl-step {
   grid-area: 1 / 1;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--dk-3);
   min-width: 0;
   visibility: hidden;
+}
+.pl-step > :is(.pl-panel, .pl-grid2) {
+  flex: 1;
 }
 .pl-step.is-on {
   visibility: visible;
@@ -339,6 +347,8 @@
   display: flex;
   align-items: baseline;
   gap: var(--dk-2);
+  /* a 24px target at least, with the list's spacing around it (WCAG 2.5.8) */
+  min-height: 1.5rem;
   margin-left: calc(-1 * var(--dk-2));
   padding: 2px var(--dk-2);
   border-radius: var(--dk-r1);
@@ -546,6 +556,8 @@
 /* 5 · PM tool: three columns of tickets on hairlines */
 .pl-board {
   display: grid;
+  /* the stretched panel's spare room pools under the board, not between its columns */
+  align-content: start;
   gap: 0 var(--dk-4);
   padding-bottom: var(--dk-3);
 }
@@ -614,7 +626,7 @@
 .pl-controls {
   display: grid;
   /* Back · Play · the TPM's action (widest label: "Draft exec update") */
-  grid-template-columns: 1fr 1fr 1.6fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr);
   gap: var(--dk-2);
 }
 .pl-btn {
@@ -638,23 +650,48 @@
     background-color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
-.pl-btn:is(:hover, :focus-visible) {
+.pl-btn:focus-visible {
   border-color: var(--pl-ink-3);
   background: var(--pl-sunk);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .pl-btn:hover {
+    border-color: var(--pl-ink-3);
+    background: var(--pl-sunk);
+  }
 }
 .pl-btn:active {
   scale: var(--dk-press);
 }
+/* Thumb-sized controls on touch screens (WO-042). */
+@media (pointer: coarse) {
+  .pl-btn {
+    min-height: 2.75rem;
+  }
+}
 /* The step's action is ink, not accent (the site's rule: accent fills only start something
    playable). The accent stays for the current stage and focus. */
 .pl-next {
+  /* the longest action ("Draft exec update") takes two lines in the narrowest column */
+  white-space: normal;
+  line-height: var(--dk-lh-snug);
+  text-align: center;
+  text-wrap: balance;
   border-color: var(--pl-ink);
   color: var(--pl-surface);
   background: var(--pl-ink);
 }
-.pl-next:is(:hover, :focus-visible) {
+.pl-next:focus-visible {
   border-color: var(--pl-ink-2);
   background: var(--pl-ink-2);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .pl-next:hover {
+    border-color: var(--pl-ink-2);
+    background: var(--pl-ink-2);
+  }
 }
 .pl-btn[aria-disabled='true'] {
   border-color: var(--pl-rule);
@@ -670,14 +707,6 @@
 .pl-cite summary:focus-visible {
   outline: var(--dk-focus) solid var(--pl-accent);
   outline-offset: 2px;
-}
-
-/* Below the laptop layout the stage follows the current step, so the controls sit right under
-   it instead of under the tallest step. */
-@container pl (max-width: 879px) {
-  .pl-step:not(.is-on) {
-    display: none;
-  }
 }
 
 /* Tablet widths: labelled track, side-by-side panels, a real three-column board. */
@@ -805,14 +834,6 @@
   }
   .pl-stage {
     grid-area: stage;
-  }
-  /* The step's main block fills the pane's height, so short steps don't end half-way. */
-  .pl-step {
-    display: flex;
-    flex-direction: column;
-  }
-  .pl-step > :is(.pl-panel, .pl-grid2) {
-    flex: 1;
   }
   .pl-controls {
     grid-area: ctrl;
