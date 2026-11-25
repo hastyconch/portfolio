@@ -71,6 +71,8 @@ export default function SchedulerDemo() {
   const [assigned, setAssigned] = useState<number | null>(null);
   const [active, setActive] = useState<[number, number]>([0, 0]);
   const [announce, setAnnounce] = useState('');
+  // A visible copy of the "fill the open shift first" message, for a tap that can't edit yet.
+  const [hint, setHint] = useState('');
   const cells = useRef<(HTMLTableCellElement | null)[][]>([]);
   const id = useId();
 
@@ -117,17 +119,49 @@ export default function SchedulerDemo() {
     };
   }, []);
 
-  // On a narrow screen the grid scrolls sideways: bring the open shift's column into view.
+  // On a narrow screen the grid scrolls sideways: bring the open shift's column into view, with
+  // the day after it when there is room.
   useEffect(() => {
     const wrap = gridWrap.current;
     if (!wrap || !gap || wrap.scrollWidth <= wrap.clientWidth) return;
-    const head = wrap.querySelectorAll('thead th')[gap.day + 1] as HTMLElement | undefined;
-    if (head) wrap.scrollLeft = Math.max(0, head.offsetLeft - wrap.clientWidth / 2);
+    const heads = wrap.querySelectorAll<HTMLElement>('thead th');
+    const head = heads[gap.day + 1];
+    if (!head) return;
+    revealCell(heads[gap.day + 2] ?? head);
+    revealCell(head);
   }, [gap?.day]);
 
-  function focusCell(r: number, c: number) {
+  /** Moves focus without letting the browser scroll the page (WO-042): only the roster scrolls,
+      and only far enough to bring the cell clear of the sticky name column and the edge fades.
+      Keyboard moves (`page`) also bring a cell back on screen if it has left it. */
+  function focusCell(r: number, c: number, page = false) {
     setActive([r, c]);
-    cells.current[r]?.[c]?.focus();
+    const cell = cells.current[r]?.[c];
+    if (!cell) return;
+    cell.focus({ preventScroll: true });
+    revealCell(cell);
+    if (page) {
+      const rect = cell.getBoundingClientRect();
+      const top = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      const dy =
+        rect.top < top ? rect.top - top : rect.bottom > innerHeight ? rect.bottom - innerHeight : 0;
+      if (dy) window.scrollBy({ top: dy, behavior: 'instant' });
+    }
+  }
+
+  /** The roster's scroll padding is the name column plus the fades, so it says where a cell is
+      fully clear (WO-042, WCAG 2.4.11). */
+  function revealCell(cell: HTMLElement) {
+    const wrap = gridWrap.current;
+    if (!wrap || wrap.scrollWidth <= wrap.clientWidth) return;
+    const cs = getComputedStyle(wrap);
+    const box = wrap.getBoundingClientRect();
+    const r = cell.getBoundingClientRect();
+    const from = box.left + wrap.clientLeft + (parseFloat(cs.scrollPaddingLeft) || 0);
+    const to =
+      box.left + wrap.clientLeft + wrap.clientWidth - (parseFloat(cs.scrollPaddingRight) || 0);
+    if (r.left < from) wrap.scrollLeft -= from - r.left;
+    else if (r.right > to) wrap.scrollLeft += r.right - to;
   }
 
   function nurseCellLabel(w: Shift[][], r: number, c: number, cellIssues: Issue[] = []) {
@@ -153,7 +187,9 @@ export default function SchedulerDemo() {
   function cycle(r: number, c: number) {
     if (r >= NURSES.length) return;
     if (!taskDone) {
-      setAnnounce('Fill the open shift first: choose a nurse in the Open shift panel.');
+      const msg = 'Fill the open shift first: choose a nurse in the Open shift panel.';
+      setAnnounce(msg);
+      setHint(msg);
       return;
     }
     const next = cloneWeek(week);
@@ -196,7 +232,7 @@ export default function SchedulerDemo() {
         return;
     }
     e.preventDefault();
-    focusCell(nr, nc);
+    focusCell(nr, nc, true);
   }
 
   function assign(cand: Candidate) {
@@ -214,6 +250,7 @@ export default function SchedulerDemo() {
     const have = coverageOf(next, gap.shift, gap.day);
     setWeek(next);
     setAssigned(cand.nurse);
+    setHint('');
     setAnnounce(
       `${n.name} assigned to ${gapWord(gap, true)}: ${have} of ${TARGET[gap.shift]} RNs. ` +
         `Rule check: ${summarise(nextIssues)}` +
@@ -226,6 +263,7 @@ export default function SchedulerDemo() {
     setWeek(cloneWeek(START));
     setAssigned(null);
     setActive([0, 0]);
+    setHint('');
     setAnnounce(
       `Scenario reset. ${DAYS[OPEN_DAY].full} night is open again: ${coverageOf(START, OPEN_SHIFT, OPEN_DAY)} of ${TARGET[OPEN_SHIFT]} RNs.`,
     );
@@ -283,8 +321,10 @@ export default function SchedulerDemo() {
         <div className="sch-main">
           {edges && (
             <p className="sch-scrollhint">
-              The roster scrolls sideways for the whole week
-              <span aria-hidden="true"> →</span>
+              {/* the arrows point to whichever side has more days (WO-042) */}
+              {edges !== 'end' && <span aria-hidden="true">←&nbsp;</span>}
+              The roster scrolls sideways for the whole&nbsp;week
+              {edges !== 'start' && <span aria-hidden="true">&nbsp;→</span>}
             </p>
           )}
           <div className="sch-gridwrap" ref={gridWrap} data-more={edges || undefined}>
@@ -323,7 +363,7 @@ export default function SchedulerDemo() {
                   return (
                     <tr role="row" key={n.name}>
                       <th role="rowheader" scope="row" className="sch-nurse">
-                        <span className="sch-name">{n.name}</span>
+                        <span className="sch-name">{n.name}</span>{' '}
                         <span className={`sch-hours${ot ? ' is-warn' : ''}`}>
                           {hours}h{ot ? ' · OT' : ''}
                           {n.extraNote && <span className="sch-extra"> incl. {n.extraNote}</span>}
@@ -408,7 +448,7 @@ export default function SchedulerDemo() {
                               </span>{' '}
                               <span className="sch-state">
                                 <Dot tone={state.tone} />
-                                {state.text}
+                                <span className="sch-word">{state.text}</span>
                               </span>
                             </span>
                           </td>
@@ -420,6 +460,7 @@ export default function SchedulerDemo() {
               </tbody>
             </table>
           </div>
+          {hint && <p className="sch-taphint">{hint}</p>}
 
           <div className="sch-foot">
             <ul className="sch-legend" aria-hidden="true">
@@ -438,10 +479,18 @@ export default function SchedulerDemo() {
             </ul>
             <p className="sch-help" id={`${id}-help`}>
               <span className="sch-vh">D day 07–19 · N night 19–07 · – off · ! rule problem. </span>
-              Arrow keys move;{' '}
-              {taskDone
-                ? 'Enter or Space (or a click) cycles Day → Night → Off.'
-                : 'cells become editable once the open shift is filled.'}{' '}
+              {/* Keyboard words for a mouse or trackpad, tapping words on a touch screen (WO-042). */}
+              <span className="sch-fine">
+                Arrow keys move;{' '}
+                {taskDone
+                  ? 'Enter or Space (or a click) cycles Day → Night → Off.'
+                  : 'cells become editable once the open shift is filled.'}
+              </span>
+              <span className="sch-coarse">
+                {taskDone
+                  ? 'Tap a cell to cycle Day → Night → Off.'
+                  : 'Once the open shift is filled, a tap on a cell cycles Day → Night → Off.'}
+              </span>{' '}
               Cover counts the whole unit, including colleagues not shown here.
             </p>
           </div>

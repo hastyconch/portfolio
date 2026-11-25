@@ -4,7 +4,7 @@
 // the overview, each stage with its output count; the stage is the detail. Rows follow the data's
 // flow (transcript, extracted items, outputs), numbers are tabular, one electric-blue accent, and
 // red, amber and green appear only where a threshold exists (RAG, overdue).
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import '../kit.css';
 import './pipeline.css';
 
@@ -473,7 +473,7 @@ const steps: Step[] = [
             <Icon name="check" />
             <strong>Delivered on time</strong>
             <span className="pl-done-sub">
-              Repeated after every stand-up until Release 3 shipped.
+              Repeated after every stand-up until Release&nbsp;3 shipped.
             </span>
           </p>
         )}
@@ -493,8 +493,13 @@ export default function PipelineDemo() {
   const [nudged, setNudged] = useState(false);
   const [synced, setSynced] = useState(false);
   const [say, setSay] = useState('');
+  // Under reduced motion Play never runs on a timer: each press shows the next step (WO-042).
+  const [reduce, setReduce] = useState(false);
   const base = useId();
   const view: View = { nudged, synced, uid: base };
+  // Steps that aren't showing are laid out in their finished state, so the stage is always as
+  // tall as the tallest step can get and the controls under it never move (WO-042).
+  const full: View = { nudged: true, synced: true, uid: `${base}-full` };
 
   function show(i: number) {
     const n = Math.max(0, Math.min(LAST, i));
@@ -505,13 +510,45 @@ export default function PipelineDemo() {
     if (n < LAST) setSynced(false);
   }
 
-  // Autoplay is opt-in (the Play button) and never runs under reduced motion.
+  // Autoplay is opt-in (the Play button) and never runs under reduced motion: there, Play steps.
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReady(true);
-    const stop = () => mq.matches && setPlaying(false);
-    mq.addEventListener('change', stop);
-    return () => mq.removeEventListener('change', stop);
+    setReduce(mq.matches);
+    const sync = () => {
+      setReduce(mq.matches);
+      if (mq.matches) setPlaying(false);
+    };
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  // The stage never shrinks at a given width. Every step is laid out from the start, the hidden
+  // ones in their finished state, so its first height is the tallest; holding it means a step
+  // that grows as it plays (the reply, the ticket sync) never moves the controls (WO-042).
+  const stage = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    let width = -1;
+    let tallest = 0;
+    const hold = () => {
+      const w = Math.round(el.getBoundingClientRect().width);
+      if (w !== width) {
+        width = w;
+        tallest = 0;
+        el.style.minHeight = '';
+      }
+      const h = el.getBoundingClientRect().height;
+      if (h > tallest + 0.5) {
+        tallest = h;
+        el.style.minHeight = `${h}px`;
+      }
+    };
+    hold();
+    const ro = new ResizeObserver(hold);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   // Arriving at the PM tool step: tickets start where they were, then sync across.
@@ -554,13 +591,14 @@ export default function PipelineDemo() {
 
   function togglePlay() {
     if (playing) return setPlaying(false);
+    if (reduce) return step === LAST ? show(0) : act();
     if (step === LAST) show(0);
     setPlaying(true);
   }
 
   const atStart = step === 0;
   const atEnd = step === LAST;
-  const playLabel = playing ? 'Pause' : atEnd ? 'Replay' : 'Play';
+  const playLabel = playing ? 'Pause' : atEnd ? 'Replay' : reduce ? 'Step' : 'Play';
   const actLabel = step === 3 && nudged ? 'Update PM tool' : (steps[step].action ?? 'Done');
 
   return (
@@ -602,7 +640,7 @@ export default function PipelineDemo() {
           ))}
         </ol>
 
-        <div className="pl-stage" id={`${base}-stage`} data-moved={moved || undefined}>
+        <div className="pl-stage" id={`${base}-stage`} ref={stage} data-moved={moved || undefined}>
           {steps.map((s, i) => (
             <div
               role="group"
@@ -619,7 +657,7 @@ export default function PipelineDemo() {
                   {s.title}
                 </strong>
               </p>
-              {typeof s.body === 'function' ? s.body(view) : s.body}
+              {typeof s.body === 'function' ? s.body(i === step ? view : full) : s.body}
             </div>
           ))}
         </div>

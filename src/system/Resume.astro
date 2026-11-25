@@ -27,6 +27,8 @@ const real = profile.links.filter((l) => /^(https?|mailto):/.test(l.href));
 const contacts = real.map((l) => l.href.replace(/^(https?:\/\/|mailto:)/, ''));
 // The saved file is named for who it is (Nakul-Iyer-Resume.pdf), not "resume.pdf".
 const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
+// WO-043: phones show each role's first bullets; the rest sit behind "Show N more".
+const FIRST = 3;
 ---
 
 <section id="resume" class="ln-sec resume" aria-labelledby="resume-h">
@@ -38,45 +40,47 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
       <p>{[profile.roleLine, profile.location, ...contacts].join(' · ')}</p>
       {resume.status === 'placeholder' && <p class="cv-print-draft">Draft: some details to come</p>}
     </div>
-    <SideHead title="Résumé" id="resume-h" />
+    <div class="cv-top">
+      <SideHead title="Résumé" id="resume-h" />
 
-    <div class="cv-panel">
-      <div class="cv-intro">
-        {resume.status === 'placeholder' && (
-          <p class="cv-status">
-            <Placeholder label="Some details to come" />
-          </p>
-        )}
-        <p class="cv-summary">{resume.summary}</p>
-        <div class="cv-actions">
-          <a class="cv-btn" href="/resume.pdf" download={file}>
-            Download résumé (PDF)
-          </a>
-          <button type="button" class="cv-text-btn" data-print>
-            Print résumé
-          </button>
-        </div>
-      </div>
-      <dl class="cv-facts">
-        <div>
-          <dt class="label">Now</dt>
-          <dd>{profile.roleLine}</dd>
-        </div>
-        <div>
-          <dt class="label">Based in</dt>
-          <dd>{profile.location}</dd>
-        </div>
-        {real.map((l, i) => (
-          <div>
-            <dt class="label">{l.label}</dt>
-            <dd>
-              <a class="cv-link" href={l.href}>
-                {contacts[i]}
-              </a>
-            </dd>
+      <div class="cv-panel">
+        <div class="cv-intro">
+          {resume.status === 'placeholder' && (
+            <p class="cv-status">
+              <Placeholder label="Some details to come" />
+            </p>
+          )}
+          <p class="cv-summary">{resume.summary}</p>
+          <div class="cv-actions">
+            <a class="cv-btn" href="/resume.pdf" download={file}>
+              Download résumé (PDF)
+            </a>
+            <button type="button" class="cv-text-btn" data-print>
+              Print résumé
+            </button>
           </div>
-        ))}
-      </dl>
+        </div>
+        <dl class="cv-facts">
+          <div>
+            <dt class="label">Now</dt>
+            <dd>{profile.roleLine}</dd>
+          </div>
+          <div>
+            <dt class="label">Based in</dt>
+            <dd>{profile.location}</dd>
+          </div>
+          {real.map((l, i) => (
+            <div>
+              <dt class="label">{l.label}</dt>
+              <dd>
+                <a class="cv-link" href={l.href}>
+                  {contacts[i]}
+                </a>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </div>
 
     <div class="cv-grid">
@@ -91,10 +95,23 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
               <h4 class="cv-org">{e.org}</h4>
               <p class="cv-title">{e.title}</p>
               <ul class="cv-bullets">
-                {e.bullets.map((b) => (
+                {e.bullets.slice(0, FIRST).map((b) => (
                   <li>{b}</li>
                 ))}
               </ul>
+              {e.bullets.length > FIRST && (
+                <details class="cv-more">
+                  <summary>
+                    <span class="cv-more-show">Show {e.bullets.length - FIRST} more</span>
+                    <span class="cv-more-hide">Show fewer</span>
+                  </summary>
+                  <ul class="cv-bullets">
+                    {e.bullets.slice(FIRST).map((b) => (
+                      <li>{b}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </li>
           ))}
         </ol>
@@ -167,6 +184,10 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
      title to the panel is SideHead's --rhythm-head; --cv-block is the larger break between the
      blocks under it. */
 
+  /* The title and the panel share a box only on phone screens (WO-043); elsewhere it adds none. */
+  .cv-top {
+    display: contents;
+  }
   /* The header panel: summary and actions, then the key facts. */
   .cv-panel {
     display: grid;
@@ -378,6 +399,57 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
     border: 3px solid var(--ln-ink-3);
     border-radius: 50%;
   }
+  /* WO-043: a role's bullets after the first three sit in a <details>. It only folds on phone
+     screens (below); everywhere else, print and the PDF included, its toggle is hidden and its
+     content always shows, so the two lists read as one. A browser that cannot style the
+     content keeps the toggle, so no bullet is ever out of reach. */
+  .cv-more > summary {
+    display: none;
+  }
+  .cv-more::details-content {
+    content-visibility: visible;
+  }
+  .cv-more > .cv-bullets {
+    margin-top: var(--space-2);
+  }
+  @supports not selector(::details-content) {
+    .cv-more > summary {
+      display: inline-flex;
+    }
+  }
+  .cv-more > summary {
+    align-items: center;
+    min-height: 44px;
+    margin-top: var(--space-1);
+    padding-left: var(--space-5);
+    list-style: none;
+    color: var(--ln-ink-2);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    text-decoration: underline;
+    text-decoration-color: var(--cv-tint-rule);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    cursor: pointer;
+    transition:
+      color var(--dur-quick) var(--ease-out),
+      text-decoration-color var(--dur-quick) var(--ease-out);
+  }
+  .cv-more > summary::-webkit-details-marker {
+    display: none;
+  }
+  .cv-more > summary:hover,
+  .cv-more > summary:focus-visible {
+    color: var(--ln-ink);
+    text-decoration-color: currentColor;
+  }
+  .cv-more > summary:active {
+    color: var(--ln-ink-3);
+  }
+  .cv-more[open] .cv-more-show,
+  .cv-more:not([open]) .cv-more-hide {
+    display: none;
+  }
 
   /* Capabilities and education: open groups parted by hairlines. The panel stays the one filled
      surface, and the accent keeps its one job (time). The first group's label shares a line
@@ -461,6 +533,158 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
       text-indent: calc(var(--space-3) * -1);
     }
   }
+  /* WO-043: phone screens (print keeps the rules above, so the PDF is unchanged). A document
+     for a phone: the title opens the tinted band (it still lands --rhythm-top under the header),
+     the summary is body size, each role shows its first bullets, the bullets get the width, and
+     each capability group is one inline run. */
+  @media screen and (max-width: 759.98px) {
+    .resume {
+      --cv-block: var(--space-6);
+      --cv-entry: var(--space-5);
+    }
+    .cv-top {
+      display: block;
+      position: relative;
+      margin: calc(var(--rhythm-top) * -1) calc(var(--ln-gutter) * -1) var(--space-5);
+      padding: var(--rhythm-top) var(--ln-gutter) var(--space-6);
+      background: var(--cv-tint);
+    }
+    .resume .cv-top :global(.sh) {
+      margin-bottom: var(--space-5);
+    }
+    .cv-panel {
+      margin: 0;
+      padding: 0;
+      background: none;
+    }
+    /* The placeholder marker shares the title's line. */
+    .cv-status {
+      position: absolute;
+      top: var(--rhythm-top);
+      right: var(--ln-gutter);
+      display: flex;
+      align-items: center;
+      height: calc(var(--text-2xl) * var(--leading-tight));
+    }
+    .cv-summary {
+      font-size: var(--text-md);
+    }
+    .cv-actions {
+      margin-top: 0;
+    }
+    /* Flush with the gutter when the actions wrap (320). */
+    .cv-text-btn {
+      padding-inline: 0;
+    }
+    /* The facts pack into rows (a short one beside another when they fit), at the size of the
+       panel's other secondary text. */
+    .cv-facts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3) var(--space-5);
+      padding-top: var(--space-4);
+    }
+    .cv-facts > * {
+      flex: 1 1 auto;
+    }
+    .cv-facts > :first-child {
+      flex-basis: 100%;
+    }
+    .cv-facts dd {
+      font-size: var(--text-sm);
+    }
+    body.ln .cv-org {
+      margin-top: var(--space-1);
+      font-size: var(--text-lg);
+    }
+
+    .cv-bullets li {
+      padding-left: var(--space-3);
+    }
+    .cv-more > summary {
+      display: inline-flex;
+      padding-left: var(--space-3);
+    }
+    .cv-more:not([open])::details-content {
+      content-visibility: hidden;
+    }
+    /* Open, the toggle ("Show fewer") follows the bullets it folds, so the role reads as one
+       list. */
+    .cv-more[open] {
+      display: flex;
+      flex-direction: column;
+    }
+    .cv-more[open] > summary {
+      order: 1;
+      align-self: flex-start;
+    }
+    .cv-more > summary {
+      color: var(--ln-ink);
+    }
+    /* Education's label takes the capability labels' size, so the side blocks are one. */
+    .cv-edu dt {
+      font-size: var(--text-sm);
+    }
+
+    /* One column. A group is one run: its label leads in bold, then its items, parted by
+       middots (Work's skills pattern: each item carries its dot in front, and the run is
+       clipped so a line never starts on one). An item never breaks inside, so a wrap is
+       always between items. */
+    .cv-caps {
+      grid-template-columns: none;
+    }
+    .cv-caps .cv-group,
+    .cv-caps .cv-group:nth-child(2),
+    .cv-caps .cv-group:nth-child(3) {
+      padding-block: var(--space-2);
+    }
+    .cv-caps .cv-group:first-child {
+      padding-top: 0;
+    }
+    .cv-caps .cv-group:last-child {
+      padding-bottom: 0;
+    }
+    .cv-caps .cv-group:nth-child(2) {
+      border-top: var(--ln-hairline);
+    }
+    .cv-caps .cv-group {
+      --cv-dot: 1.25em;
+      margin-left: calc(var(--cv-dot) * -1);
+      font-size: var(--text-sm);
+      line-height: var(--leading-normal);
+      clip-path: inset(0 0 0 var(--cv-dot));
+    }
+    .cv-caps dt {
+      display: inline;
+      margin: 0 var(--space-2) 0 var(--cv-dot);
+      line-height: inherit;
+    }
+    .cv-caps dt::after {
+      content: ':';
+    }
+    .cv-caps dd,
+    .cv-caps .cv-items {
+      display: inline;
+      margin: 0;
+    }
+    .cv-caps .cv-items li {
+      display: inline-block;
+      padding-left: 0;
+      line-height: inherit;
+      text-indent: 0;
+    }
+    .cv-caps .cv-items li:first-child::before {
+      content: none;
+    }
+    .cv-caps .cv-items li::before {
+      content: '·';
+      content: '·' / '';
+      display: inline-block;
+      width: var(--cv-dot);
+      text-align: center;
+      color: var(--ln-ink-3);
+    }
+  }
   @media (min-width: 760px) {
     .cv-panel {
       padding: var(--space-6);
@@ -541,6 +765,9 @@ const file = `${profile.name.trim().replace(/\s+/g, '-')}-Resume.pdf`;
     }
     .cv-bullets li {
       font-size: var(--text-sm);
+    }
+    .cv-more > .cv-bullets {
+      margin-top: var(--space-1);
     }
     .cv-caps {
       margin-bottom: var(--space-5);

@@ -137,8 +137,9 @@ test('demo-grocer offers clip in place', async ({ page }) => {
   await expect(tally).toHaveText(/^\+120\s*pts/);
   await expect(badge).toHaveText('1');
 
-  // Load cereal: the same button, in the same place, turns filled with a check and "Loaded".
-  const load = demo.getByRole('button', { name: 'Load offer: Buy any cereal' });
+  // Load cereal: the same button, in the same place, turns filled with a check and "Loaded"
+  // (its name follows the visible word, WO-041).
+  const load = demo.getByRole('button', { name: /^Load(?:ed)? offer: Buy any cereal$/ });
   const before = await load.boundingBox();
   const fill = () => load.evaluate((b) => getComputedStyle(b).backgroundColor);
   const off = await fill();
@@ -230,7 +231,9 @@ test('grocer checkout earns points and unlocks the reward', async ({ page }) => 
     await demo.getByRole('button', { name: new RegExp(`Load offer: .*${name}`, 'i') }).click();
   }
   await demo.getByRole('button', { name: 'Load all' }).click();
-  for (const b of await demo.getByRole('button', { name: /^Load offer/ }).all()) {
+  const loads = demo.getByRole('button', { name: /^Load(?:ed)? offer/ });
+  await expect(loads).toHaveCount(5);
+  for (const b of await loads.all()) {
     await expect(b).toHaveAttribute('aria-pressed', 'true');
   }
   // The recipe adds yogurt and berries to the list.
@@ -438,4 +441,191 @@ test('demo-grocer panel and tab bar rings are inset', async ({ page }) => {
     screen: getComputedStyle(el.closest('.df-screen')!).borderBottomLeftRadius,
   }));
   expect(corner.tab, 'curves with the screen corner').toBe(corner.screen);
+});
+
+// WO-041: focus follows the action, every control fits a thumb, and Load's name says its state.
+// (onScreen and settle match demo-airline.spec.ts.)
+
+/** Where `el` sits against the visible page: the band under the site's sticky header. */
+async function onScreen(el: Locator) {
+  return el.evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    const header = document.querySelector('header.np')?.getBoundingClientRect().bottom ?? 0;
+    return {
+      top: Math.round(r.top),
+      bottom: Math.round(r.bottom),
+      header: Math.round(header),
+      view: window.innerHeight,
+    };
+  });
+}
+
+/** Settle the demos' own animations, then the page's smooth scroll. */
+async function settle(page: Page) {
+  await page.evaluate(async () => {
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => {
+          const target = (a.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && target.closest('.sky-app, .gro-app');
+        })
+        .map((a) => a.finished.catch(() => undefined)),
+    );
+    let y = -1;
+    while (y !== window.scrollY) {
+      y = window.scrollY;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+  });
+}
+
+/** `el` has focus, and its top edge is on screen under the site header. */
+async function expectFocusShown(page: Page, el: Locator, what: string) {
+  await expect(el, `${what}: focused`).toBeFocused();
+  await settle(page);
+  const at = await onScreen(el);
+  expect(at.top, `${what}: top under the header ${JSON.stringify(at)}`).toBeGreaterThanOrEqual(
+    at.header - 1,
+  );
+  expect(at.top, `${what}: top on screen`).toBeLessThan(at.view - 100);
+}
+
+test('grocer focus follows tab switches', async ({ page }) => {
+  const demo = await grocerOnHome(page);
+  const tab = (name: string) => demo.getByRole('tab', { name });
+  const press = async (name: string) => {
+    const control = demo.getByRole('button', { name });
+    await tabInto(page, control);
+    // tabInto's stepping can start a smooth scroll; press once the page is still.
+    await settle(page);
+    await page.keyboard.press('Enter');
+  };
+
+  await press('See all 5');
+  await expect(tab('Offers')).toHaveAttribute('aria-selected', 'true');
+  await expectFocusShown(page, demo.getByRole('tabpanel', { name: 'Offers' }), 'See all 5');
+
+  await tab('Home').click();
+  await press('Open list');
+  await expect(tab('Lists')).toHaveAttribute('aria-selected', 'true');
+  await expectFocusShown(page, demo.getByRole('tabpanel', { name: 'Lists' }), 'Open list');
+
+  // Check out the whole list: the button goes away with it, and focus lands on the receipt.
+  for (const box of await demo.getByRole('checkbox').all()) {
+    if (!(await box.isChecked())) await box.check();
+  }
+  await press('Check out');
+  await expect(demo.getByRole('button', { name: /^Check out/ })).toHaveCount(0);
+  await expectFocusShown(page, demo.getByRole('group', { name: 'Receipt' }), 'Check out');
+
+  await press('See this week’s recipe');
+  await expectFocusShown(page, demo.getByRole('tabpanel', { name: 'Recipes' }), 'See recipe');
+
+  await tab('Home').click();
+  await press('View receipt');
+  await expectFocusShown(page, demo.getByRole('tabpanel', { name: 'Lists' }), 'View receipt');
+});
+
+test('grocer checkout focuses the receipt with items left', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a phone, where the button scrolled out of view');
+  const demo = await grocerOnHome(page);
+  await demo.getByRole('tab', { name: 'Lists' }).click();
+  await demo.getByRole('checkbox', { name: 'Bananas' }).check();
+  const checkout = demo.getByRole('button', { name: /^Check out/ });
+  await tabInto(page, checkout);
+  await page.keyboard.press('Enter');
+  await expectFocusShown(page, demo.getByRole('group', { name: 'Receipt' }), 'Check out');
+  // The ring is on the box around the slip, outside the slip's torn-edge mask.
+  const ring = await demo
+    .getByRole('group', { name: 'Receipt' })
+    .evaluate((el) => getComputedStyle(el).outlineStyle);
+  expect(ring).not.toBe('none');
+});
+
+test('grocer targets fit a thumb', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a touch screen at 375');
+  expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true);
+  const demo = await grocerOnHome(page);
+  const all: { name: string | null | undefined; h: number }[] = [];
+  const measure = async () =>
+    all.push(
+      ...(await demo.locator('button').evaluateAll((els) =>
+        els
+          .filter((b) => b.getClientRects().length)
+          .map((b) => ({
+            name: b.textContent?.trim(),
+            h: Math.round(b.getBoundingClientRect().height * 10) / 10,
+          })),
+      )),
+    );
+  for (const name of ['Home', 'Offers', 'Lists', 'Recipes']) {
+    await demo.getByRole('tab', { name }).click();
+    await measure();
+  }
+  // After a checkout: the receipt's links on Lists and Home.
+  await demo.getByRole('tab', { name: 'Lists' }).click();
+  for (const box of await demo.getByRole('checkbox').all()) await box.check();
+  await demo.getByRole('button', { name: /^Check out/ }).click();
+  await measure();
+  await demo.getByRole('tab', { name: 'Home' }).click();
+  await measure();
+  expect(all.length).toBeGreaterThan(15);
+  expect(all.filter((b) => b.h < 44)).toEqual([]);
+});
+
+test('grocer loaded state is named', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'runs once, on desktop');
+  await page.goto('/demos/grocer/');
+  await page.waitForSelector('astro-island:not([ssr])');
+  const demo = page.getByRole('group', { name: /grocer loyalty app/i });
+  await demo.getByRole('tab', { name: 'Offers' }).click();
+
+  // The name carries the visible word: "Load" before, "Loaded" after (label in name, 2.5.3).
+  const load = demo.getByRole('button', { name: 'Load offer: Buy any cereal', exact: true });
+  await load.click();
+  const loaded = demo.getByRole('button', { name: 'Loaded offer: Buy any cereal', exact: true });
+  await expect(loaded).toHaveAttribute('aria-pressed', 'true');
+  await expect(loaded.locator('.gro-load-on')).toHaveText('Loaded');
+  await loaded.click();
+  await expect(load).toHaveAttribute('aria-pressed', 'false');
+
+  // Every aria-controls points at an element that exists, and the selected tab at its panel.
+  for (const name of ['Home', 'Offers', 'Lists', 'Recipes']) {
+    const t = demo.getByRole('tab', { name });
+    await t.click();
+    const missing = await demo.evaluate((app) =>
+      [...app.querySelectorAll('[aria-controls]')]
+        .map((el) => el.getAttribute('aria-controls')!)
+        .filter((id) => !document.getElementById(id)),
+    );
+    expect(missing, `${name} selected`).toEqual([]);
+    const id = await t.getAttribute('aria-controls');
+    await expect(demo.getByRole('tabpanel')).toHaveAttribute('id', id!);
+  }
+});
+
+test('grocer offer names keep their width', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phones, 320 to 390');
+  for (const width of [320, 375, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    const demo = await grocerOnHome(page);
+    await demo.getByRole('tab', { name: 'Offers' }).click();
+    const rows = await demo.locator('.gro-offer').evaluateAll((els) =>
+      els.map((li) => ({
+        name: li.querySelector('.gro-offer-t')!.textContent,
+        w: Math.round(li.querySelector('.gro-offer-t')!.getBoundingClientRect().width),
+      })),
+    );
+    for (const r of rows) expect(r.w, `${width}: "${r.name}"`).toBeGreaterThanOrEqual(136);
+    // The checkout line breaks between its parts, not inside "+10 pts".
+    await demo.getByRole('tab', { name: 'Lists' }).click();
+    await demo.getByRole('checkbox', { name: 'Bananas' }).check();
+    const est = demo.locator('.gro-checkout .gro-nowrap');
+    await expect(est).toHaveText(/^about \+\d+ pts$/);
+    const lines = await est.evaluate(
+      (e) => e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight),
+    );
+    expect(lines, `${width}: one line`).toBeLessThan(1.5);
+  }
 });

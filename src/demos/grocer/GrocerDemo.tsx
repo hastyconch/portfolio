@@ -92,6 +92,15 @@ const recipeBonus = recipe.ingredients.reduce(
 );
 
 const fmt = (n: number) => n.toLocaleString('en-CA');
+
+/** Bring `el`'s top edge on screen under the site's sticky header, scrolling the page only when it
+ *  is not already there (the page's scroll padding is the header's height plus a little air). */
+function reveal(el: HTMLElement, from: HTMLElement = el) {
+  const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  const top = el.getBoundingClientRect().top;
+  if (top >= pad - 1 && top <= window.innerHeight * 0.6) return;
+  window.scrollBy({ top: from.getBoundingClientRect().top - pad });
+}
 const offerById = (id?: string) => offers.find((o) => o.id === id);
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
@@ -106,6 +115,11 @@ export default function GrocerDemo() {
   const [announce, setAnnounce] = useState('');
   const base = useId();
   const panel = useRef<HTMLDivElement>(null);
+  const appRef = useRef<HTMLDivElement>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  // Where focus goes after the next render: the new panel when a control inside a panel switches
+  // tab, or the receipt after a checkout (the button pressed may be gone, or scrolled away).
+  const follow = useRef<'panel' | 'receipt' | null>(null);
   const tabs: { id: Tab; label: string; icon: IconName }[] = [
     { id: 'home', label: 'Home', icon: 'home' },
     { id: 'offers', label: 'Offers', icon: 'tag' },
@@ -150,8 +164,19 @@ export default function GrocerDemo() {
     panel.current?.scrollTo?.({ top: 0 });
   }, [tab]);
 
-  function go(next: Tab) {
+  useEffect(() => {
+    const to = follow.current;
+    const el = to === 'receipt' ? receiptRef.current : to === 'panel' ? panel.current : null;
+    if (!el) return;
+    follow.current = null;
+    el.focus({ preventScroll: true });
+    reveal(el, to === 'panel' && appRef.current ? appRef.current : el);
+  }, [tab, lastShop]);
+
+  /** Switch tab. From a control inside a panel (`followFocus`), focus moves to the new panel. */
+  function go(next: Tab, followFocus = false) {
     setSeen(true);
+    if (followFocus) follow.current = 'panel';
     setTab(next);
   }
 
@@ -193,6 +218,7 @@ export default function GrocerDemo() {
     setLoaded((l) => l.filter((id) => !usedIds.includes(id)));
     setList((l) => l.filter((i) => !i.done));
     setLastShop({ items: inBasket.length, base, bonus, balance: total, unlocked });
+    follow.current = 'receipt';
     panel.current?.scrollTo?.({ top: 0 });
     setAnnounce(
       `Checked out ${inBasket.length} ${inBasket.length === 1 ? 'item' : 'items'}: plus ${earned} points` +
@@ -293,7 +319,9 @@ export default function GrocerDemo() {
               <Icon name="check" size={16} />
               Loaded
             </span>
-            <span className="dk-sr">Load offer: {o.title}</span>
+            <span className="dk-sr">
+              {on ? 'Loaded' : 'Load'} offer: {o.title}
+            </span>
           </button>
         )}
       </li>
@@ -320,7 +348,12 @@ export default function GrocerDemo() {
   const bar = { '--p': progress } as CSSProperties;
 
   return (
-    <div className="gro-app" aria-label="Demo: grocer loyalty app (mock data)" role="group">
+    <div
+      ref={appRef}
+      className="gro-app"
+      aria-label="Demo: grocer loyalty app (mock data)"
+      role="group"
+    >
       <header className="gro-top">
         <span className="gro-brand">Pantry Lane</span>
         <span className="gro-store">
@@ -333,6 +366,7 @@ export default function GrocerDemo() {
         ref={panel}
         className="gro-panel"
         role="tabpanel"
+        tabIndex={-1}
         id={`${base}-${tab}`}
         aria-labelledby={`${base}-tab-${tab}`}
       >
@@ -384,7 +418,7 @@ export default function GrocerDemo() {
                     +{lastShop.base + lastShop.bonus.reduce((n, b) => n + b.points, 0)} pts
                   </strong>
                 </span>
-                <button type="button" className="gro-link" onClick={() => go('lists')}>
+                <button type="button" className="gro-link" onClick={() => go('lists', true)}>
                   View receipt
                 </button>
               </div>
@@ -393,7 +427,7 @@ export default function GrocerDemo() {
             <div role="group" className="gro-picks" aria-labelledby={`${base}-picks`}>
               <div className="gro-sec-h">
                 <p id={`${base}-picks`}>Picked for you</p>
-                <button type="button" className="gro-link" onClick={() => go('offers')}>
+                <button type="button" className="gro-link" onClick={() => go('offers', true)}>
                   See all {offers.length}
                 </button>
               </div>
@@ -412,7 +446,7 @@ export default function GrocerDemo() {
             <div role="group" className="gro-next" aria-labelledby={`${base}-next`}>
               <div className="gro-sec-h">
                 <p id={`${base}-next`}>Your list</p>
-                <button type="button" className="gro-link" onClick={() => go('lists')}>
+                <button type="button" className="gro-link" onClick={() => go('lists', true)}>
                   Open list
                 </button>
               </div>
@@ -480,41 +514,53 @@ export default function GrocerDemo() {
         {tab === 'lists' && (
           <div className="gro-page">
             {lastShop && (
-              <div role="group" className="gro-receipt" aria-label="Receipt">
-                <div className="gro-receipt-head">
-                  <strong>Pantry Lane · Elm St</strong>
-                  <span className="gro-cap">Receipt · points earned</span>
-                </div>
-                {ledger(lastShop)}
-                <ul className="gro-ledger gro-ledger-sum">
-                  {lastShop.bonus.some((b) => b.save) && (
+              // The focus target after a checkout. The slip's torn edges are a mask, which would
+              // cut a ring drawn on the slip itself, so the ring is on this wrapper.
+              <div
+                ref={receiptRef}
+                role="group"
+                className="gro-receipt-box"
+                aria-label="Receipt"
+                tabIndex={-1}
+              >
+                <div className="gro-receipt">
+                  <div className="gro-receipt-head">
+                    <strong>Pantry Lane · Elm St</strong>
+                    <span className="gro-cap">Receipt · points earned</span>
+                  </div>
+                  {ledger(lastShop)}
+                  <ul className="gro-ledger gro-ledger-sum">
+                    {lastShop.bonus.some((b) => b.save) && (
+                      <li>
+                        <span>You saved</span>
+                        <span>${lastShop.bonus.reduce((n, b) => n + (b.save ?? 0), 0)}.00</span>
+                      </li>
+                    )}
                     <li>
-                      <span>You saved</span>
-                      <span>${lastShop.bonus.reduce((n, b) => n + (b.save ?? 0), 0)}.00</span>
+                      <span>Points earned</span>
+                      <span>
+                        +{lastShop.base + lastShop.bonus.reduce((n, b) => n + b.points, 0)}
+                      </span>
                     </li>
+                    <li>
+                      <span>New balance</span>
+                      <span>{fmt(lastShop.balance)}</span>
+                    </li>
+                  </ul>
+                  {lastShop.unlocked && (
+                    <p className="gro-unlock">
+                      <strong>Reward unlocked</strong>
+                      <span>{member.reward}, applied at your next checkout</span>
+                    </p>
                   )}
-                  <li>
-                    <span>Points earned</span>
-                    <span>+{lastShop.base + lastShop.bonus.reduce((n, b) => n + b.points, 0)}</span>
-                  </li>
-                  <li>
-                    <span>New balance</span>
-                    <span>{fmt(lastShop.balance)}</span>
-                  </li>
-                </ul>
-                {lastShop.unlocked && (
-                  <p className="gro-unlock">
-                    <strong>Reward unlocked</strong>
-                    <span>{member.reward}, applied at your next checkout</span>
-                  </p>
-                )}
+                </div>
               </div>
             )}
 
             {lastShop && list.length === 0 ? (
               <div className="gro-empty">
                 <p>Basket checked out. Add a recipe’s ingredients to start the next shop.</p>
-                <button type="button" className="gro-link" onClick={() => go('recipes')}>
+                <button type="button" className="gro-link" onClick={() => go('recipes', true)}>
                   See this week’s recipe
                 </button>
               </div>
@@ -580,9 +626,14 @@ export default function GrocerDemo() {
                 )}
                 <div className="gro-checkout">
                   <span className="gro-cap">
-                    {inBasket.length
-                      ? `${inBasket.length} ${inBasket.length === 1 ? 'item' : 'items'} · about +${estimate} pts`
-                      : 'Basket is empty'}
+                    {inBasket.length ? (
+                      <>
+                        {inBasket.length} {inBasket.length === 1 ? 'item' : 'items'} ·{' '}
+                        <span className="gro-nowrap">about +{estimate} pts</span>
+                      </>
+                    ) : (
+                      'Basket is empty'
+                    )}
                   </span>
                   <button type="button" className="gro-cta" onClick={checkout}>
                     Check out {inBasket.length > 0 && `(${inBasket.length})`}
@@ -658,7 +709,7 @@ export default function GrocerDemo() {
             role="tab"
             id={`${base}-tab-${t.id}`}
             aria-selected={tab === t.id}
-            aria-controls={`${base}-${t.id}`}
+            aria-controls={tab === t.id ? `${base}-${t.id}` : undefined}
             tabIndex={tab === t.id ? 0 : -1}
             onClick={() => go(t.id)}
             onKeyDown={(e) => onTabKey(e, i)}
