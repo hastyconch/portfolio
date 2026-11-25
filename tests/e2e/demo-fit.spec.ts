@@ -81,3 +81,55 @@ test.describe('demos fit their pane', () => {
     });
   }
 });
+
+// WO-040: on phones the Work frames drop the chrome that only costs room. Below 480px the phone
+// has no bezel, island or status strip (the screen keeps its corners and a 1px outline); below
+// 600px a window has no dots. Above those widths they are as before.
+test('demo-fit phone frames drop chrome', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone cases');
+  const chrome = () =>
+    page.evaluate(() => {
+      const phone = document.querySelector('#work .df-phone .df-device')!;
+      const s = getComputedStyle(phone);
+      const screen = getComputedStyle(phone.querySelector('.df-screen')!);
+      return {
+        bezel: parseFloat(s.paddingTop) + parseFloat(s.paddingLeft),
+        island: getComputedStyle(phone.querySelector('.df-island')!).display,
+        strip: parseFloat(screen.paddingTop),
+        radius: screen.borderTopLeftRadius,
+        outline: s.boxShadow,
+        dots: [...document.querySelectorAll('#work .df-titlebar')].map(
+          (t) => getComputedStyle(t).display,
+        ),
+      };
+    });
+  for (const width of [320, 375, 479]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/');
+    const c = await chrome();
+    expect(c.bezel, `${width}: no bezel`).toBe(0);
+    expect(c.island, `${width}: no island`).toBe('none');
+    expect(c.strip, `${width}: no status strip`).toBe(0);
+    expect(c.radius, `${width}: the screen keeps its corners`).not.toBe('0px');
+    expect(c.outline, `${width}: a 1px outline`).toMatch(/0px 0px 0px 1px/);
+    expect(c.dots.length).toBeGreaterThan(0);
+    expect(new Set(c.dots), `${width}: no window dots`).toEqual(new Set(['none']));
+    // The open phone app takes the column's full width, up to the phone's 360px.
+    const toggle = page.locator('#work [data-wk-try]').first();
+    await toggle.scrollIntoViewIfNeeded();
+    await toggle.click();
+    const app = (await page.locator('#work .sky-app').boundingBox())!;
+    const col = (await page.locator('#work .wk-live article').first().boundingBox())!;
+    expect(Math.round(app.width), `${width}: the app fills the column`).toBe(
+      Math.round(Math.min(col.width, 360)),
+    );
+  }
+  await page.setViewportSize({ width: 599, height: 800 });
+  await page.goto('/');
+  let c = await chrome();
+  expect(c.bezel, '599: the bezel is back').toBeGreaterThan(0);
+  expect(new Set(c.dots), '599: no window dots').toEqual(new Set(['none']));
+  await page.setViewportSize({ width: 600, height: 800 });
+  c = await chrome();
+  expect(new Set(c.dots), '600: the dots are back').toEqual(new Set(['flex']));
+});

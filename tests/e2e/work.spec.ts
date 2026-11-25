@@ -3,6 +3,22 @@ import { test, expect, type Page } from '@playwright/test';
 // WO-015: on laptops each demo engagement is one pane, one viewport tall below the sticky nav.
 // The page scrolls freely: WO-023 removed the vertical snap. Skill badges are text, never focusable.
 
+/** Wait until the page has stopped scrolling (a smooth scroll has landed). */
+async function settle(page: Page) {
+  let last = -1;
+  await expect
+    .poll(
+      async () => {
+        const y = await page.evaluate(() => window.scrollY);
+        const still = y === last;
+        last = y;
+        return still;
+      },
+      { intervals: [150] },
+    )
+    .toBe(true);
+}
+
 async function navHeight(page: Page) {
   return page.evaluate(() =>
     parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ln-header')),
@@ -149,8 +165,11 @@ test('work swipe passes over demos', async ({ page, context, isMobile }) => {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(start + 200);
 });
 
-test('skill badges are text, not controls', async ({ page }) => {
+test('skill badges are text, not controls', async ({ page, isMobile }) => {
   await page.goto('/');
+  // WO-040: on phones the skills wait behind Details.
+  if (isMobile)
+    await page.getByRole('button', { name: 'Details: Airline loyalty program' }).click();
   const badges = page.locator('#work .wk-badges li');
   expect(await badges.count()).toBeGreaterThan(0);
   const focusable = await page.evaluate(
@@ -213,7 +232,8 @@ test('work demo button and tags', async ({ page, isMobile }) => {
   const button = page.locator('#work [data-wk-try]').first();
   await expect(button).toHaveAccessibleName('Try the demo: Airline loyalty app');
   await expect(button).toHaveAccessibleDescription('Track tier progress, book a reward.');
-  await expect(button).toHaveText('Try the demo: Airline loyalty app ▸');
+  // WO-040: the visible label is short (it fits one line at 320) and is part of the name.
+  await expect(button).toHaveText('Try the demo ▸');
   await expect(button.locator('[aria-hidden="true"]')).toHaveText('▸');
   await expect(button).not.toContainText('↓');
   const fill = await button.evaluate((b) => {
@@ -222,13 +242,10 @@ test('work demo button and tags', async ({ page, isMobile }) => {
   });
   expect(fill.bg, 'the button is filled with the accent').toBe(accent);
   expect(fill.align, 'the label is centred').toBe('center');
-  // The one line stays outside the button, beneath it.
+  // The one line stays outside the button. WO-040: closed, the still says it; it shows as the
+  // demo's caption once the demo is open (below), and stays the button's description.
   await expect(button.locator('.wk-try-d')).toHaveCount(0);
-  const line = (await page
-    .locator(`#${await button.getAttribute('aria-describedby')}`)
-    .boundingBox())!;
-  const box = (await button.boundingBox())!;
-  expect(line.y, 'the line sits beneath the button').toBeGreaterThanOrEqual(box.y + box.height);
+  await expect(page.locator(`#${await button.getAttribute('aria-describedby')}`)).toBeHidden();
   for (const b of await page.locator('#work [data-wk-try]').all()) {
     await expect(b).toHaveAccessibleName(/^Try the demo: \S/);
     const box = (await b.boundingBox())!;
@@ -294,7 +311,7 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   for (const b of await buttons.all()) {
     const box = await b.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
-    expect(box!.width).toBeGreaterThanOrEqual(300);
+    expect(box!.width, 'the main control of its row').toBeGreaterThanOrEqual(200);
   }
   await expect(page.locator('#work .wk-collapse .wk-demo:visible')).toHaveCount(0);
 
@@ -308,28 +325,23 @@ test('work phone demos expand on demand', async ({ page, isMobile }) => {
   expect(chunks, 'collapsed demo code requested before Try the demo').toEqual([]);
 
   // Press the first one: the demo shows, its own group takes focus, and its code loads and
-  // hydrates. The page doesn't jump past the engagement (WO-025): its title stays on screen,
-  // clear of the header.
+  // hydrates. WO-040: the page brings the demo's screen flush under the header (it used to bring
+  // the title there, WO-025).
   const id = await buttons.first().getAttribute('aria-controls');
-  const first = page.locator(`[aria-controls="${id}"]`);
+  const first = page.locator(`[aria-controls="${id}"][data-wk-try]`);
   const demo = page.locator(`#${id}`);
   const region = demo.getByRole('group', { name: 'Demo: airline loyalty app (mock data)' });
-  const article = page.locator('#work article').filter({ has: demo });
   await first.scrollIntoViewIfNeeded();
   const loaded = page.waitForRequest((r) => LATER_DEMOS.test(r.url()));
   await first.click();
   await expect(demo).toBeVisible();
   await expect(region).toBeFocused();
   const nav = await navHeight(page);
-  const title = article.locator('.wk-title');
-  await expect(title).toBeInViewport();
-  await expect
-    .poll(() => title.evaluate((t) => Math.round(t.getBoundingClientRect().top)))
-    .toBeGreaterThanOrEqual(nav);
-  await page.waitForTimeout(800); // a smooth scroll settles
-  const top = await title.evaluate((t) => t.getBoundingClientRect().top);
-  expect(top, 'title clear of the header').toBeGreaterThanOrEqual(nav);
-  expect(top, 'title on screen').toBeLessThan(812 - 40);
+  const screen = demo.locator('.df-screen');
+  await settle(page);
+  const top = await screen.evaluate((t) => t.getBoundingClientRect().top);
+  expect(top, 'the demo clear of the header').toBeGreaterThanOrEqual(nav - 1);
+  expect(top, 'the demo just under it').toBeLessThanOrEqual(nav + 8);
   await expect(region).toBeFocused();
   await loaded;
   await expect(demo.locator('astro-island')).not.toHaveAttribute('ssr');
@@ -367,11 +379,15 @@ test('work phone demos open, close and come back', async ({ page, isMobile }) =>
   await expect(toggle).toHaveAccessibleName(/^Hide demo/);
   await expect(toggle).toHaveAccessibleDescription('Track tier progress, book a reward.');
   await expect(caption).toBeVisible();
-  const [cap, box] = [(await caption.boundingBox())!, (await demo.boundingBox())!];
-  expect(cap.y + cap.height, 'the caption sits above the demo').toBeLessThanOrEqual(box.y);
+  // Both measured in one frame: the page may still be scrolling to the demo.
+  const [capBottom, demoTop] = await caption.evaluate((c, id) => {
+    const d = document.getElementById(id)!;
+    return [c.getBoundingClientRect().bottom, d.getBoundingClientRect().top];
+  }, id);
+  expect(capBottom, 'the caption sits above the demo').toBeLessThanOrEqual(demoTop);
   await expect(demo.locator('astro-island')).not.toHaveAttribute('ssr');
 
-  await page.waitForTimeout(800); // the smooth scroll to the head settles
+  await settle(page); // the smooth scroll to the demo lands
   await toggle.click();
   await expect(demo).toBeHidden();
   await expect(toggle).toBeFocused();
@@ -602,4 +618,291 @@ test('work paging respects motion and touch', async ({ page, browser, baseURL, i
   expect(went).toBeGreaterThan(0);
   expect(went).toBeLessThanOrEqual(150);
   await ctx.close();
+});
+
+// WO-040: Work on phones. Each demo engagement is short (sector and role, title, intro line, a
+// still of the app, then "Try the demo" and "Details" in one row); the demo opens flush under the
+// header; the airline and grocer apps grow to their content so a swipe on them scrolls the page,
+// with the tab bar stuck to the bottom of the viewport; a second "Hide demo" follows the demo;
+// and a tap that lands before the demo hydrates is replayed once it has.
+
+/** Open the demo engagement `i` (0 airline, 1 grocer, 2 scheduler, 3 pipeline) and let it land. */
+async function openDemo(page: Page, i: number) {
+  const toggle = page.locator('#work [data-wk-try]').nth(i);
+  const demo = page.locator(`#${await toggle.getAttribute('aria-controls')}`);
+  await toggle.click();
+  await expect(demo).toBeVisible();
+  await expect(demo.locator('astro-island').first()).not.toHaveAttribute('ssr');
+  await settle(page);
+  return { toggle, demo };
+}
+
+/** A real one-finger swipe up by `dy` px from (x, y), through CDP touch events. */
+async function swipeUp(page: Page, x: number, y: number, dy: number) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+  const steps = 15;
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x, y: y - (dy * i) / steps }],
+    });
+    await page.waitForTimeout(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
+}
+
+test('work phone items are short and show a preview', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  await page.goto('/');
+  const items = page.locator('#work .wk-live');
+  await expect(items).toHaveCount(4);
+  for (const [i, item] of (await items.all()).entries()) {
+    const height = await item.evaluate((li) => li.getBoundingClientRect().height);
+    expect(height, `item ${i + 1} at 375 x 812`).toBeLessThanOrEqual(480);
+    // The still: a real image with its size and a description, lazy, of its app.
+    const img = item.locator('.wk-shot img');
+    await expect(img).toHaveCount(1);
+    await expect(img).toHaveAttribute('width', /\d+/);
+    await expect(img).toHaveAttribute('height', /\d+/);
+    await expect(img).toHaveAttribute('loading', 'lazy');
+    expect((await img.getAttribute('alt'))!.length, 'a descriptive alt').toBeGreaterThan(30);
+    await img.scrollIntoViewIfNeeded();
+    await expect(img).toBeVisible();
+    await expect
+      .poll(() => img.evaluate((m: HTMLImageElement) => m.naturalWidth))
+      .toBeGreaterThan(0);
+    const box = (await img.boundingBox())!;
+    expect(box.height, 'about 200px tall').toBeGreaterThanOrEqual(180);
+    expect(box.height).toBeLessThanOrEqual(260);
+    // Collapsed: the story's details wait behind "Details"; the role and intro line stay.
+    const article = item.locator('article');
+    await expect(article.locator('.wk-role')).toBeVisible();
+    await expect(article.locator('.wk-kicker')).toBeVisible();
+    for (const sel of ['.wk-summary', '.wk-details', '.wk-skills'])
+      await expect(article.locator(sel)).toBeHidden();
+  }
+
+  // Details opens them in place, as a button with aria-expanded.
+  const article = items.first().locator('article');
+  const more = article.getByRole('button', { name: 'Details: Airline loyalty program' });
+  await expect(more).toHaveAttribute('aria-expanded', 'false');
+  await more.click();
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  for (const sel of ['.wk-summary', '.wk-details', '.wk-skills'])
+    await expect(article.locator(sel)).toBeVisible();
+  await expect(article.getByRole('heading', { name: 'What I did' })).toBeVisible();
+  await more.click();
+  await expect(article.locator('.wk-details')).toBeHidden();
+
+  // Tapping the still opens the demo, as the button does.
+  const toggle = article.locator('[data-wk-try]');
+  await article.locator('.wk-shot').tap();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator(`#${await toggle.getAttribute('aria-controls')}`)).toBeVisible();
+  await expect(article.locator('.wk-shot')).toBeHidden();
+});
+
+test('work phone demo opens on screen', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  for (const size of [
+    { width: 375, height: 812 },
+    { width: 390, height: 664 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    const nav = await navHeight(page);
+    await page.locator('#work [data-wk-try]').first().scrollIntoViewIfNeeded();
+    await settle(page);
+    const { demo } = await openDemo(page, 0);
+    const box = (await demo.locator('.sky-app').boundingBox())!;
+    const tag = `${size.width}x${size.height}`;
+    expect(box.y, `${tag}: the app under the header`).toBeGreaterThanOrEqual(nav - 1);
+    expect(box.y, `${tag}: just under it`).toBeLessThanOrEqual(nav + 8);
+    const shown = Math.min(box.y + box.height, size.height) - box.y;
+    expect(shown, `${tag}: most of the app shows`).toBeGreaterThanOrEqual(
+      Math.min(560, size.height - nav - 8),
+    );
+  }
+  // Reduced motion: the same landing, at once.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const toggle = page.locator('#work [data-wk-try]').nth(1);
+  await toggle.scrollIntoViewIfNeeded();
+  await toggle.click();
+  const nav = await navHeight(page);
+  const screen = page.locator(`#${await toggle.getAttribute('aria-controls')} .df-screen`);
+  const top = await screen.evaluate((s) => s.getBoundingClientRect().top);
+  expect(top).toBeGreaterThanOrEqual(nav - 1);
+  expect(top).toBeLessThanOrEqual(nav + 8);
+});
+
+test('work phone swipe on a demo scrolls the page', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a touch swipe on a phone');
+  await page.goto('/');
+  for (const [i, app] of [
+    [0, '.sky-app'],
+    [1, '.gro-app'],
+  ] as const) {
+    const toggle = page.locator('#work [data-wk-try]').nth(i);
+    await toggle.scrollIntoViewIfNeeded();
+    const { demo } = await openDemo(page, i);
+    // Nothing inside the app scrolls on its own.
+    const scrollers = await demo.locator(app).evaluate(
+      (root) =>
+        [root, ...root.querySelectorAll('*')].filter((el) => {
+          const s = getComputedStyle(el);
+          return /(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1;
+        }).length,
+    );
+    expect(scrollers, `${app} has no inner vertical scroller`).toBe(0);
+    const [x, y] = [187, 520];
+    expect(
+      await page.evaluate(
+        ([x, y]) => !!document.elementFromPoint(x, y)?.closest('.df-screen'),
+        [x, y],
+      ),
+      'the swipe starts on the app',
+    ).toBe(true);
+    const start = await page.evaluate(() => window.scrollY);
+    await swipeUp(page, x, y, 250);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), { message: `swipe on ${app}` })
+      .toBeGreaterThanOrEqual(start + 200);
+    await settle(page);
+    await toggle.click(); // close it again before the next
+  }
+});
+
+test('work phone demo tab bar sticks', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  // A short phone (or a browser with its toolbars showing), so both apps outgrow the screen.
+  const vh = 600;
+  await page.setViewportSize({ width: 375, height: vh });
+  await page.goto('/');
+  for (const [i, app] of [
+    [0, '.sky-app'],
+    [1, '.gro-app'],
+  ] as const) {
+    const toggle = page.locator('#work [data-wk-try]').nth(i);
+    await toggle.scrollIntoViewIfNeeded();
+    const { demo } = await openDemo(page, i);
+    const root = demo.locator(app);
+    const bar = root.getByRole('tablist');
+    // The longest tab, so the app is taller than the screen.
+    const tabs = await bar.getByRole('tab').all();
+    let [longest, most] = [tabs[0], 0];
+    for (const tab of tabs) {
+      await tab.click();
+      const h = await root.evaluate((r) => r.getBoundingClientRect().height);
+      if (h > most) [longest, most] = [tab, h];
+    }
+    await longest.click();
+    await settle(page);
+    const { top, height } = await root.evaluate((r) => {
+      const b = r.getBoundingClientRect();
+      return { top: b.top + window.scrollY, height: b.height };
+    });
+    expect(height, `${app} grows to its content`).toBeGreaterThan(vh - 100);
+    // While the app is on screen, from its top coming into view to its end, the bar shows.
+    for (let y = top - 600; y <= top + height - 200; y += 150) {
+      await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), y);
+      const appTop = await root.evaluate((r) => r.getBoundingClientRect().top);
+      if (appTop > vh - 200) continue; // the app has barely come on screen
+      const b = (await bar.boundingBox())!;
+      const at = `${app} tab bar at scroll ${Math.round(y)}`;
+      expect(b.y, at).toBeGreaterThanOrEqual(0);
+      expect(b.y + b.height, at).toBeLessThanOrEqual(vh + 1);
+    }
+    // A tab picked with the app's top above the header brings the app back under the header.
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top + 300);
+    await bar.getByRole('tab', { selected: false }).first().click();
+    const nav = await navHeight(page);
+    await expect
+      .poll(() => root.evaluate((r) => Math.round(r.getBoundingClientRect().top)))
+      .toBeGreaterThanOrEqual(nav - 1);
+    await toggle.click();
+  }
+});
+
+test('work phone hide demo below', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  await page.goto('/');
+  const toggle = page.locator('#work [data-wk-try]').nth(2);
+  const article = page.locator('#work .wk-live article').nth(2);
+  await expect(article.locator('[data-wk-hide]')).toBeHidden();
+  await toggle.scrollIntoViewIfNeeded();
+  const { demo } = await openDemo(page, 2);
+  const below = demo.getByRole('button', { name: 'Hide demo: Nurse scheduler' });
+  await expect(below).toHaveText('Hide demo');
+  const frame = (await demo.locator('.df').boundingBox())!;
+  const box = (await below.boundingBox())!;
+  expect(box.y, 'it follows the demo').toBeGreaterThanOrEqual(frame.y + frame.height);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await below.click();
+  await expect(demo).toBeHidden();
+  await expect(toggle).toBeFocused();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(toggle).toHaveAccessibleName('Try the demo: Nurse scheduler');
+  const nav = await navHeight(page);
+  const title = (await article.locator('.wk-title').boundingBox())!;
+  expect(title.y, 'the title is back in view').toBeGreaterThanOrEqual(nav);
+  expect(title.y + title.height).toBeLessThanOrEqual(812);
+});
+
+test('work phone button fits at 320', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout');
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto('/');
+  for (const b of await page.locator('#work [data-wk-try]').all()) {
+    const fit = await b.evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
+      return {
+        lines: lines.size,
+        overflow: el.scrollWidth - el.clientWidth,
+        moreRight: el.nextElementSibling!.getBoundingClientRect().right,
+      };
+    });
+    expect(fit.lines, 'one line').toBe(1);
+    expect(fit.overflow).toBeLessThanOrEqual(0);
+    expect(fit.moreRight, 'Details fits beside it').toBeLessThanOrEqual(320);
+    // WCAG 2.5.3: the visible label is in the accessible name.
+    const visible = (await b.innerText()).replace('▸', '').trim();
+    expect(visible).toBe('Try the demo');
+    expect(await b.getAttribute('aria-label')).toContain(visible);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test('work phone early tap is kept', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a tap on a slow phone');
+  // Hold the airline demo's code back, as a slow network would.
+  let release!: () => void;
+  const held = new Promise<void>((r) => (release = r));
+  await page.route(/AirlineDemo[^/]*\.js/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/');
+  const toggle = page.locator('#work [data-wk-try]').first();
+  await toggle.scrollIntoViewIfNeeded();
+  await toggle.click();
+  const demo = page.locator(`#${await toggle.getAttribute('aria-controls')}`);
+  const island = demo.locator('astro-island').first();
+  await expect(island).toHaveAttribute('ssr');
+  await settle(page);
+  const status = demo.getByRole('tab', { name: 'Status' });
+  await expect(status).toHaveAttribute('aria-selected', 'false');
+  await status.tap();
+  await expect(island).toHaveAttribute('data-pending');
+  await expect(demo.locator('.df-screen')).toHaveAttribute('aria-busy', 'true');
+  release();
+  await expect(island).not.toHaveAttribute('ssr');
+  await expect(status).toHaveAttribute('aria-selected', 'true');
+  await expect(island).not.toHaveAttribute('data-pending');
+  await expect(demo.locator('.df-screen')).not.toHaveAttribute('aria-busy');
 });
