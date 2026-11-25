@@ -95,7 +95,7 @@ const thumbs = cur
             /
           </span>
           <a class="np-sec" href={here?.href ?? '#work'}>
-            {here?.label}
+            <span class="np-sec-t">{here?.label}</span>
           </a>
         </li>
         {jump && (
@@ -366,6 +366,7 @@ const thumbs = cur
 
   const secLi = header.querySelector<HTMLElement>('.np-c-sec');
   const secA = secLi?.querySelector<HTMLAnchorElement>('a');
+  const secT = secA?.querySelector<HTMLElement>('.np-sec-t');
   const itemLi = header.querySelector<HTMLElement>('.np-c-item');
   const itemT = header.querySelector<HTMLElement>('.np-item');
   const trigger = header.querySelector<HTMLButtonElement>('.np-trigger');
@@ -436,11 +437,11 @@ const thumbs = cur
         const s = sections[i];
         section = s?.id ?? '';
         mark(navLinks, (a) => !!s && (a as HTMLAnchorElement).hash === `#${s.id}`);
-        if (secLi && secA) {
+        if (secLi && secA && secT) {
           secLi.hidden = !s;
           if (s) {
             secA.href = `#${s.id}`;
-            swap(secA, s.label);
+            swap(secT, s.label);
           }
         }
         renderItem();
@@ -631,8 +632,13 @@ const thumbs = cur
   .np-c[hidden] {
     display: none;
   }
+  /* The section gives way only once the item has none left to give, and then truncates with an
+     ellipsis, so it never runs under Menu (WO-044). */
   .np-c-sec {
-    flex: none;
+    flex: 0 1 auto;
+  }
+  .np-c-item {
+    flex-shrink: 1000;
   }
   .np-sep {
     color: var(--ln-ink-3);
@@ -647,6 +653,7 @@ const thumbs = cur
     font-weight: 600;
   }
   .np-sec {
+    min-width: 0;
     color: var(--ln-ink-2);
     text-decoration: underline;
     text-decoration-color: transparent;
@@ -663,6 +670,13 @@ const thumbs = cur
   }
   .np-sec:active {
     color: var(--ln-ink-3);
+  }
+  /* The name clips with an ellipsis; its padding keeps the hover underline inside the clip. */
+  .np-sec-t {
+    min-width: 0;
+    padding-block: var(--space-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* The item: the current place, with the jump list's trigger laid over it (the button fills
      the item's box under its text, so the whole item is the target). */
@@ -1060,6 +1074,17 @@ const thumbs = cur
     .np[data-deep] .np-bar,
     .np[data-deep] .np-here {
       gap: var(--space-1);
+    }
+    /* Off a case study, the name and Menu leave the section a few letters at best (none under
+       text spacing), so it steps out of sight; it stays in the breadcrumb for assistive tech,
+       Menu marks the section, and the link shows again while it holds focus (WO-044). */
+    .np:not([data-deep]) .np-c-sec:not(:focus-within) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
   }
   @media (min-width: 760px) {
