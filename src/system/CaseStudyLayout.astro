@@ -31,6 +31,15 @@ const heroShot = cover?.image ?? fromSlot(cover?.slot);
 const frame = cover?.frame ?? 'browser';
 const isGame = frame === 'game';
 const gallery = d.gallery?.items.map((g) => ({ ...g, src: g.image ?? fromSlot(g.slot) }));
+// Each shot's width as laid out below (WO-044), so a 3x phone gets a sharp file: phones scroll a
+// row of 85% items (62% for a tall one) of the column, which is 100vw less a 1rem gutter under
+// 400px and 92vw (a 4vw gutter) to 760px; then a 4-column grid with 1rem gaps, beside the
+// 12rem "On this page" column from 1000px, and the column stops growing at 1240px (904px wide).
+const galSizes = {
+  full: '(min-width: 1240px) 904px, (min-width: 1000px) calc(100vw - 21rem), (min-width: 760px) 92vw, (min-width: 400px) 78vw, calc(85vw - 1.7rem)',
+  wide: '(min-width: 1240px) 444px, (min-width: 1000px) calc(50vw - 11rem), (min-width: 760px) calc(46vw - 0.5rem), (min-width: 400px) 78vw, calc(85vw - 1.7rem)',
+  tall: '(min-width: 1240px) 214px, (min-width: 1000px) calc(25vw - 6rem), (min-width: 760px) calc(23vw - 0.75rem), (min-width: 400px) 57vw, calc(62vw - 1.25rem)',
+};
 const pending = gallery?.some((g) => !g.src);
 // WO-024: a playable case study says so in its hero, so phones see it before scrolling.
 const playable = d.demo === 'billable' && Astro.slots.has('play');
@@ -211,14 +220,8 @@ const contents = [
                       <Image
                         src={g.src}
                         alt={g.alt}
-                        widths={g.shape === 'tall' ? [360, 480] : [720, 1440]}
-                        sizes={
-                          g.shape === 'full'
-                            ? '(min-width: 1000px) 760px, calc(100vw - 2rem)'
-                            : g.shape === 'wide'
-                              ? '(min-width: 760px) 380px, calc(100vw - 2rem)'
-                              : '(min-width: 760px) 180px, calc(50vw - 1.5rem)'
-                        }
+                        widths={g.shape === 'tall' ? [360, 480, 750] : [720, 1440]}
+                        sizes={galSizes[g.shape]}
                         quality={70}
                         loading="lazy"
                         decoding="async"
