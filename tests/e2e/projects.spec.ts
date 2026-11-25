@@ -338,3 +338,52 @@ test('projects potluck picker case study', async ({ page }) => {
       expect(href).toMatch(/^https:\/\/potluck-picker\.pages\.dev\/?$/);
   }
 });
+
+// WO-044: each Potluck screen's chosen file is sharp on a 3x phone: `sizes` matches the width the
+// screen is drawn at, and the file picked is at least 2.5 times that width.
+test('potluck gallery is sharp', async ({ browser, isMobile }) => {
+  test.skip(!isMobile, 'one run is enough: it opens its own 3x phone');
+  const ctx = await browser.newContext({
+    viewport: { width: 375, height: 812 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await ctx.newPage();
+  await page.goto('/projects/potluck-picker/');
+  const imgs = page.locator('#gallery img');
+  await expect(imgs).toHaveCount(5);
+  for (const [i, img] of (await imgs.all()).entries()) {
+    await img.evaluate((e) => e.scrollIntoView({ block: 'center', inline: 'start' }));
+    await expect
+      .poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0))
+      .toBe(true);
+    const r = await img.evaluate((e: HTMLImageElement) => {
+      const pick = e.srcset
+        .split(',')
+        .map((s) => s.trim().split(/\s+/))
+        .find(([url]) => e.currentSrc.endsWith(url));
+      return {
+        drawn: e.getBoundingClientRect().width,
+        // With width descriptors, the chosen file's density makes this the `sizes` slot.
+        slot: e.naturalWidth,
+        file: pick ? parseInt(pick[1]) : 0,
+      };
+    });
+    expect(Math.abs(r.slot - r.drawn), `screen ${i + 1}: sizes matches`).toBeLessThanOrEqual(2);
+    expect(r.file / r.drawn, `screen ${i + 1}: file / drawn width`).toBeGreaterThanOrEqual(2.5);
+  }
+  await ctx.close();
+});
+
+// WO-044: on a phone the Potluck card shows a crop of its screen, wide enough to read; laptops
+// keep the whole phone.
+test('potluck card shows a readable crop', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const img = page.locator('#rail > li').first().locator('.pc-art img');
+  await img.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => img.evaluate((e: HTMLImageElement) => e.currentSrc))
+    .toMatch(isMobile ? /\/card\./ : /\/01-board\./);
+  if (isMobile) expect((await img.boundingBox())!.width).toBeGreaterThanOrEqual(100);
+});

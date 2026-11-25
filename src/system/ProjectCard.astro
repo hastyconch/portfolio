@@ -6,7 +6,7 @@
 // WO-019: the art carries `data-art`, so a navigation to the case study can name it for the
 // card-to-hero morph (a cross-document view transition; see Shell.astro).
 import type { ImageMetadata } from 'astro';
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import type { Project } from '../lib/content';
 import Placeholder from './Placeholder.astro';
 
@@ -31,17 +31,45 @@ const slotted = cover?.slot
   : undefined;
 const shot = cover?.image ?? slotted?.[1].default;
 const frame = cover?.frame ?? 'browser';
+// A phone screen is ~48px wide on a phone's card, too small to read. A project may add a
+// `card` crop of its cover screen (src/assets/projects/<id>/card.*), shown on phones as the
+// corner of a phone that runs off the card's right and bottom edges; laptops keep the whole
+// phone (WO-044).
+const cardCrop =
+  frame === 'phone' && shot
+    ? Object.entries(dropins).find(([k]) => k.includes(`/projects/${project.id}/card.`))?.[1]
+        .default
+    : undefined;
+const crop = cardCrop ? await getImage({ src: cardCrop, widths: [250, 375] }) : undefined;
 ---
 
 <li class="pc">
   <div
-    class:list={['pc-art', `pa-${frame}`]}
+    class:list={['pc-art', `pa-${frame}`, { 'pa-crop': crop }]}
     style={`--bd: ${cover?.backdrop ?? d.accent}`}
     data-art={project.id}
     aria-hidden="true"
   >
     <div class="pa-dev">
-      {shot ? (
+      {shot && crop ? (
+        <picture>
+          <source
+            media="(max-width: 899px)"
+            srcset={crop.srcSet.attribute}
+            sizes="125px"
+            width={cardCrop!.width}
+            height={cardCrop!.height}
+          />
+          <Image
+            src={shot}
+            alt=""
+            widths={[120, 240]}
+            sizes="110px"
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
+      ) : shot ? (
         <Image
           src={shot}
           alt=""
@@ -175,6 +203,24 @@ const frame = cover?.frame ?? 'browser';
   .pa-phone .pa-dev :global(img),
   .pa-phone .pa-soon {
     border-radius: var(--radius-2);
+  }
+  .pa-dev picture {
+    display: contents;
+  }
+  /* Phone, cropped (phones only): the corner of the phone, running off the right and bottom
+     edges like the browser window, so the screen's title reads at card size. */
+  @media (max-width: 899px) {
+    .pa-crop .pa-dev {
+      left: 9%;
+      top: 13%;
+      width: 104%;
+      aspect-ratio: 4 / 3;
+      translate: none;
+      border-radius: var(--radius-3) 0 0 0;
+    }
+    .pa-crop .pa-dev :global(img) {
+      border-radius: var(--radius-2) 0 0 0;
+    }
   }
   /* Browser: a window that runs off the right and bottom edges. */
   .pa-browser .pa-dev {

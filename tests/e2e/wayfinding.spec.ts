@@ -642,3 +642,56 @@ test('crumb keeps its name at 320', async ({ page, isMobile }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await expect(crumbs(page).locator('.np-count')).toBeVisible();
 });
+
+// WO-044: on the home page the section crumb never runs under Menu. It truncates with an
+// ellipsis, and under 360px it steps out of sight (it stays named for assistive tech, and shows
+// while it holds focus); at 375 the names fit in full.
+test('crumb never runs under Menu at 320', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Menu is the phone header');
+  const sections = [
+    ['work', 'Work'],
+    ['projects', 'Projects'],
+    ['music', 'Music'],
+    ['resume', 'Résumé'],
+  ];
+  const link = section(page).getByRole('link');
+  const text = link.locator('.np-sec-t');
+  const menu = page.locator('.np-menu summary');
+  const right = async (l: Locator) => {
+    const b = (await l.boundingBox())!;
+    return b.x + b.width;
+  };
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 640 });
+    for (const spaced of [false, true]) {
+      await page.goto('/');
+      if (spaced)
+        await page.addStyleTag({
+          content:
+            '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important } p { margin-bottom: 2em !important }',
+        });
+      for (const [id, label] of sections) {
+        const at = `${label} at ${width}${spaced ? ', spaced' : ''}`;
+        await scrollTo(page, `#${id}`);
+        await expect(crumbs(page).getByRole('link', { name: label })).toHaveCount(1);
+        const menuLeft = (await menu.boundingBox())!.x;
+        for (const el of [section(page), link, text])
+          expect(await right(el), `${at}: clear of Menu`).toBeLessThanOrEqual(menuLeft);
+        if (width === 320) {
+          // Out of sight, and in sight (still clear of Menu) while it holds focus.
+          expect((await section(page).boundingBox())!.width, at).toBeLessThanOrEqual(1);
+          await link.focus();
+          await expect(link).toBeVisible();
+          expect(await right(link), `${at}, focused: clear of Menu`).toBeLessThanOrEqual(
+            (await menu.boundingBox())!.x,
+          );
+          await link.blur();
+        } else if (!spaced) {
+          await expect(text).toBeVisible();
+          const full = await text.evaluate((e) => e.scrollWidth <= e.clientWidth);
+          expect(full, `${at}: in full`).toBe(true);
+        }
+      }
+    }
+  }
+});
