@@ -336,6 +336,9 @@
   display: grid;
   justify-items: end;
 }
+.gro-tally-side .gro-link {
+  justify-self: end;
+}
 .gro-foot {
   margin-top: calc(var(--dk-2) * -1) !important;
 }

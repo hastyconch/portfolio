@@ -743,9 +743,12 @@
   cursor: not-allowed;
   scale: 1;
 }
+/* On touch screens the hit area grows to 44px, and negative margins give the extra back, so the
+   row keeps the same rhythm as on a laptop. */
 @media (pointer: coarse) {
   .sky-book {
     min-height: 2.75rem;
+    margin-block: calc(var(--dk-1) - 0.375rem) -0.375rem;
   }
 }
 .sky-booked {
