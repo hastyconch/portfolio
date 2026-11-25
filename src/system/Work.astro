@@ -27,8 +27,22 @@
 // script (work-paging.ts), not `scroll-snap-type: y mandatory`: mandatory snapping would need snap
 // points over the whole page, can snap back to the starting pane (WO-023's trap) and carries a
 // trackpad fling differently in Chromium, Firefox and Safari. The reasons are in the module.
+// WO-040: phones (under 760px, scripting on) show each demo engagement short: sector and role,
+// the title and the intro line, a still of the app's first screen (tapping it is the same as
+// "Try the demo"), then one row with the button and a "Details" toggle. The summary, what I did,
+// outcomes and skills wait behind Details. An opened demo lands flush under the header, a second
+// "Hide demo" follows it, and a tap inside it before it hydrates is replayed once it has.
+// 760px and up is unchanged: no still, no toggle, everything open.
 // Spacing: the section's padding is the shared rhythm (.ln-sec in liner.css).
+import type { ImageMetadata } from 'astro';
+import { Image, getImage } from 'astro:assets';
 import type { Work } from '../lib/content';
+import airlineShot from '../assets/work/airline.webp';
+import grocerShot from '../assets/work/grocer.webp';
+import pipelineShot from '../assets/work/pipeline.webp';
+import pipelineDark from '../assets/work/pipeline-dark.webp';
+import schedulerShot from '../assets/work/scheduler.webp';
+import schedulerDark from '../assets/work/scheduler-dark.webp';
 import AirlineDemo from '../demos/airline/AirlineDemo.tsx';
 import GrocerDemo from '../demos/grocer/GrocerDemo.tsx';
 import PipelineDemo from '../demos/pipeline/PipelineDemo.tsx';
@@ -56,6 +70,42 @@ const TRY: Record<string, { name: string; line: string }> = {
   scheduler: { name: 'Nurse scheduler', line: 'Fill an open shift within the rules.' },
   pipeline: { name: 'AI program pipeline', line: 'Transcript to exec update, step by step.' },
 };
+// WO-040: the phone still of each app's first screen, captured from the demo in Work at 375 and
+// cropped to 343 × 200 (see factory/decisions.md). The scheduler and pipeline follow the page's
+// scheme, as they do when opened, so they have a dark still too; the airline and grocer apps
+// stay light in both.
+const SHOT: Record<string, { src: ImageMetadata; dark?: ImageMetadata; alt: string }> = {
+  airline: {
+    src: airlineShot,
+    alt: 'The airline app home screen: a greeting and a plum member card with Gold status and 48,250 points.',
+  },
+  grocer: {
+    src: grocerShot,
+    alt: 'The grocer app home screen: a 4,650 points balance and a bar showing 350 points to $10 off.',
+  },
+  scheduler: {
+    src: schedulerShot,
+    dark: schedulerDark,
+    alt: 'The scheduler roster at the weekend: nurses down the side, and a Saturday night shift under by one nurse.',
+  },
+  pipeline: {
+    src: pipelineShot,
+    dark: pipelineDark,
+    alt: 'The pipeline at step 1 of 5, Meeting transcript in: a stand-up recording with its speakers listed.',
+  },
+};
+const SHOT_WIDTHS = [343, 686, 1029];
+const SHOT_SIZES = 'min(384px, calc(100vw - 2rem))';
+const darkSrcset = Object.fromEntries(
+  await Promise.all(
+    Object.entries(SHOT)
+      .filter(([, s]) => s.dark)
+      .map(async ([k, s]) => [
+        k,
+        (await getImage({ src: s.dark!, widths: SHOT_WIDTHS, quality: 70 })).srcSet.attribute,
+      ]),
+  ),
+) as Record<string, string>;
 const others = work.filter((w) => w.data.demo === 'none');
 ---
 
@@ -70,6 +120,7 @@ const others = work.filter((w) => w.data.demo === 'none');
         const live = LIVE.has(d.demo);
         const wide = live && isWide(d.demoFrame);
         const tryIt = live ? TRY[d.demo] : undefined;
+        const shot = tryIt ? SHOT[d.demo] : undefined;
         return (
           <li class:list={['wk', live && 'wk-live', wide && 'wk-wide']}>
             <article aria-labelledby={hid} class:list={[tryIt && 'wk-collapse']}>
@@ -86,23 +137,59 @@ const others = work.filter((w) => w.data.demo === 'none');
                   {d.title}
                 </h3>
                 <p class="wk-kicker">{d.kicker}</p>
-                <p class="wk-summary">{d.summary}</p>
+                <p class="wk-summary" id={`${hid}-sum`}>
+                  {d.summary}
+                </p>
               </div>
+
+              {shot && (
+                <picture class="wk-shot" data-wk-shot>
+                  {darkSrcset[d.demo] && (
+                    <source
+                      media="(prefers-color-scheme: dark)"
+                      srcset={darkSrcset[d.demo]}
+                      sizes={SHOT_SIZES}
+                      type="image/webp"
+                    />
+                  )}
+                  <Image
+                    src={shot.src}
+                    alt={shot.alt}
+                    widths={SHOT_WIDTHS}
+                    sizes={SHOT_SIZES}
+                    quality={70}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
+              )}
 
               {tryIt && (
                 <div class="wk-try">
-                  <button
-                    type="button"
-                    class="wk-try-b"
-                    data-wk-try
-                    data-wk-name={tryIt.name}
-                    aria-controls={`${hid}-demo`}
-                    aria-expanded="false"
-                    aria-label={`Try the demo: ${tryIt.name}`}
-                    aria-describedby={`${hid}-try-d`}
-                  >
-                    Try the demo: {tryIt.name} <span aria-hidden="true">▸</span>
-                  </button>
+                  <div class="wk-try-row">
+                    <button
+                      type="button"
+                      class="wk-try-b"
+                      data-wk-try
+                      data-wk-name={tryIt.name}
+                      aria-controls={`${hid}-demo`}
+                      aria-expanded="false"
+                      aria-label={`Try the demo: ${tryIt.name}`}
+                      aria-describedby={`${hid}-try-d`}
+                    >
+                      Try the demo <span aria-hidden="true">▸</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="wk-more-b"
+                      data-wk-more
+                      aria-expanded="false"
+                      aria-controls={`${hid}-sum ${hid}-details ${hid}-skillset`}
+                      aria-label={`Details: ${d.title}`}
+                    >
+                      Details
+                    </button>
+                  </div>
                   <p class="wk-try-d" id={`${hid}-try-d`}>
                     {tryIt.line}
                   </p>
@@ -136,9 +223,19 @@ const others = work.filter((w) => w.data.demo === 'none');
                   </DemoFrame>
                 )}
                 {!live && <DemoFrame frame={d.demoFrame} coming size="sm" />}
+                {tryIt && (
+                  <button
+                    type="button"
+                    class="wk-try-b wk-hide"
+                    data-wk-hide
+                    aria-label={`Hide demo: ${tryIt.name}`}
+                  >
+                    Hide demo
+                  </button>
+                )}
               </div>
 
-              <div class="wk-details">
+              <div class="wk-details" id={`${hid}-details`}>
                 <h4 class="wk-h label">What I did</h4>
                 <ul class="wk-ul">
                   {d.contributions.map((c) => (
@@ -157,7 +254,7 @@ const others = work.filter((w) => w.data.demo === 'none');
                 )}
               </div>
 
-              <div class="wk-skills">
+              <div class="wk-skills" id={`${hid}-skillset`}>
                 <h4 class="wk-skills-h label" id={`${hid}-skills`}>
                   Skills
                 </h4>
@@ -220,12 +317,13 @@ const others = work.filter((w) => w.data.demo === 'none');
 
   // The phone "Try the demo" toggle (WO-032). Opening shows the demo, so client:visible hydrates
   // it as it comes into view, and moves focus to the demo's own group (the only group: the
-  // wrapper has no role or name) without scrolling; then the page brings the engagement's head
-  // flush under the header, so the title stays on screen and the demo follows it. The button
-  // becomes "Hide demo" and the one-line task stays as the caption above the demo. Hiding only
-  // hides the demo (it stays mounted), returns focus to the toggle and keeps the title on screen.
-  // Which demos are open is kept in sessionStorage for this page: Back from a case study (or a
-  // reload) opens them again, before the browser restores the scroll position.
+  // wrapper has no role or name) without scrolling. WO-040: then the page brings the demo's
+  // screen flush under the header (the still and the caption make way), so the app opens on
+  // screen. The button becomes "Hide demo", and a second "Hide demo" follows the demo. Hiding
+  // only hides the demo (it stays mounted), returns focus to the toggle and brings the
+  // engagement's title back into view. Which demos are open is kept in sessionStorage for this
+  // page: Back from a case study (or a reload) opens them again, before the browser restores the
+  // scroll position.
   const KEY = 'wk-open';
   const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-wk-try]')];
   const parts = (btn: HTMLButtonElement) => ({
@@ -260,38 +358,52 @@ const others = work.filter((w) => w.data.demo === 'none');
   };
 
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const nav = () =>
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ln-header'));
+
+  const hide = (btn: HTMLButtonElement) => {
+    const { article } = parts(btn);
+    set(btn, false);
+    save();
+    btn.focus({ preventScroll: true });
+    // The title back in view: the engagement's first line (sector and role) under the header.
+    const meta = article?.querySelector<HTMLElement>('.wk-meta');
+    const title = article?.querySelector('.wk-title')?.getBoundingClientRect();
+    if (meta && title && (title.top < nav() || title.bottom > innerHeight)) {
+      meta.scrollIntoView({ block: 'start', behavior: 'instant' });
+    }
+  };
 
   for (const btn of buttons) {
+    const { article, demo } = parts(btn);
+    if (!article || !demo) continue;
     btn.addEventListener('click', () => {
-      const { article, demo } = parts(btn);
-      if (!article || !demo) return;
-      const open = btn.getAttribute('aria-expanded') !== 'true';
-      set(btn, open);
+      if (btn.getAttribute('aria-expanded') === 'true') return hide(btn);
+      set(btn, true);
       save();
-      const head = article.querySelector<HTMLElement>('.wk-head');
-      if (open) {
-        const group = demo.querySelector<HTMLElement>('.df-screen [role="group"]') ?? demo;
-        group.tabIndex = -1;
-        group.focus({ preventScroll: true });
-        head?.scrollIntoView({ block: 'start', behavior: still() ? 'instant' : 'smooth' });
-      } else {
-        btn.focus({ preventScroll: true });
-        const title = article.querySelector('.wk-title')?.getBoundingClientRect();
-        const nav = parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue('--ln-header'),
-        );
-        if (title && (title.top < nav || title.bottom > innerHeight)) {
-          head?.scrollIntoView({ block: 'start', behavior: 'instant' });
-        }
-      }
+      const group = demo.querySelector<HTMLElement>('.df-screen [role="group"]') ?? demo;
+      group.tabIndex = -1;
+      group.focus({ preventScroll: true });
+      const screen = demo.querySelector<HTMLElement>('.df-screen') ?? demo;
+      screen.scrollIntoView({ block: 'start', behavior: still() ? 'instant' : 'smooth' });
+    });
+    // The still is a larger target for the same button (pointer only; the button is the control).
+    article.querySelector('[data-wk-shot]')?.addEventListener('click', () => btn.click());
+    article.querySelector('[data-wk-hide]')?.addEventListener('click', () => hide(btn));
+    // Details: the summary, what I did, outcomes and skills (phones only; open from 760px).
+    const more = article.querySelector<HTMLButtonElement>('[data-wk-more]');
+    more?.addEventListener('click', () => {
+      const open = more.getAttribute('aria-expanded') !== 'true';
+      more.setAttribute('aria-expanded', String(open));
+      article.toggleAttribute('data-details', open);
     });
   }
 
   // Restore on Back or reload; a fresh visit starts with every demo closed.
   try {
-    const nav = performance.getEntriesByType('navigation')[0] as
+    const entry = performance.getEntriesByType('navigation')[0] as
       PerformanceNavigationTiming | undefined;
-    if (nav && (nav.type === 'back_forward' || nav.type === 'reload')) {
+    if (entry && (entry.type === 'back_forward' || entry.type === 'reload')) {
       const open = new Set(JSON.parse(sessionStorage.getItem(KEY) ?? '[]') as string[]);
       for (const btn of buttons)
         if (open.has(btn.getAttribute('aria-controls') ?? '')) set(btn, true);
@@ -301,6 +413,61 @@ const others = work.filter((w) => w.data.demo === 'none');
   } catch {
     // storage unavailable or unreadable: start closed
   }
+
+  // WO-040: on phones the airline and grocer apps grow to their content and the page scrolls
+  // them (their CSS), so the app's own "back to the top" on a new tab would do nothing. When a
+  // tab is selected while the app's top is above the header, bring the screen back under it.
+  const phone = matchMedia('(max-width: 759.98px)');
+  for (const btn of buttons) {
+    const screen = parts(btn).demo?.querySelector<HTMLElement>('.df-phone .df-screen');
+    if (!screen) continue;
+    new MutationObserver((records) => {
+      if (!phone.matches) return;
+      const picked = records.some(
+        (r) => (r.target as Element).getAttribute('aria-selected') === 'true',
+      );
+      if (picked && screen.getBoundingClientRect().top < nav()) {
+        screen.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+    }).observe(screen, { subtree: true, attributes: true, attributeFilter: ['aria-selected'] });
+  }
+
+  // WO-040: a tap inside a demo before it hydrates (a slow phone) is kept, not lost: the same
+  // treatment as Billable's Play (WO-029, WO-033). The island is marked pending and busy, and once
+  // Astro has hydrated it the last such tap is replayed on the same element.
+  const pending = new Map<Element, HTMLElement>();
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (!e.isTrusted) return;
+      const target = e.target as Element | null;
+      const island = target?.closest?.('#work .wk-demo astro-island[ssr]');
+      const control = target?.closest<HTMLElement>('button, a, [role="tab"], summary, label');
+      if (!island || !control || !island.contains(control)) return;
+      const first = !pending.has(island);
+      pending.set(island, control);
+      if (!first) return;
+      const screen = island.closest('.df-screen');
+      island.setAttribute('data-pending', '');
+      screen?.setAttribute('aria-busy', 'true');
+      island.addEventListener(
+        'astro:hydrate',
+        () =>
+          // The root commits in a transition: give it two frames before replaying.
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              const el = pending.get(island);
+              pending.delete(island);
+              island.removeAttribute('data-pending');
+              screen?.removeAttribute('aria-busy');
+              if (el?.isConnected) el.click();
+            }),
+          ),
+        { once: true },
+      );
+    },
+    true,
+  );
 </script>
 
 <style>
@@ -453,17 +620,17 @@ const others = work.filter((w) => w.data.demo === 'none');
     background: color-mix(in oklch, var(--ln-accent) 75%, var(--ln-ink));
     scale: var(--press-scale);
   }
-  /* Open, it is "Hide demo": outlined in the ink, so the demo under it is the thing to look at. */
-  .wk-try-b[aria-expanded='true'] {
+  /* Open, it is "Hide demo": outlined in the ink, so the demo under it is the thing to look at.
+     The second "Hide demo" under an open demo (WO-040) looks the same. */
+  .wk-try-b:is([aria-expanded='true'], .wk-hide) {
     border-color: var(--ln-ink-2);
     background: transparent;
     color: var(--ln-ink);
   }
-  .wk-try-b[aria-expanded='true']:hover,
-  .wk-try-b[aria-expanded='true']:focus-visible {
+  .wk-try-b:is([aria-expanded='true'], .wk-hide):is(:hover, :focus-visible) {
     background: color-mix(in oklch, var(--ln-ink) 6%, transparent);
   }
-  .wk-try-b[aria-expanded='true']:active {
+  .wk-try-b:is([aria-expanded='true'], .wk-hide):active {
     background: color-mix(in oklch, var(--ln-ink) 12%, transparent);
   }
   body.ln .wk-try-d {
@@ -472,6 +639,12 @@ const others = work.filter((w) => w.data.demo === 'none');
     line-height: var(--leading-snug);
     color: var(--ln-ink-2);
   }
+  /* WO-040: the phone-only parts (the still, the Details toggle, the second "Hide demo") are off
+     unless the phone layout below turns them on. */
+  .wk-shot,
+  .wk-hide {
+    display: none;
+  }
   /* Phones: with every demo behind its button, an engagement is a story and a button, so it
      takes a step less padding (WO-028). */
   @media (max-width: 759.98px) {
@@ -479,12 +652,147 @@ const others = work.filter((w) => w.data.demo === 'none');
       padding-block: var(--space-6);
     }
   }
+  /* WO-040: phones, scripting on. An engagement is its sector and role, title, intro line, a still
+     of the app and one row: "Try the demo" and "Details". The story's parts become the
+     article's own grid items, so the summary can wait behind Details with what I did, outcomes
+     and skills; the demo comes last. */
   @media (max-width: 759.98px) and (scripting: enabled) {
+    .wk .wk-collapse {
+      grid-template-areas:
+        'meta' 'title' 'kicker' 'shot' 'try' 'summary' 'details'
+        'skills' 'line' 'demo';
+      padding-block: var(--space-5);
+    }
+    .wk-collapse .wk-head {
+      display: contents;
+    }
+    .wk-collapse .wk-meta {
+      grid-area: meta;
+      /* Hiding a demo brings this line back under the header, with the root's breathing room. */
+      scroll-margin-top: 0;
+    }
+    .wk-collapse .wk-title {
+      grid-area: title;
+    }
+    .wk-collapse .wk-kicker {
+      grid-area: kicker;
+    }
+    .wk-collapse .wk-summary {
+      grid-area: summary;
+      max-width: var(--measure);
+    }
+    .wk-collapse:not([data-details]) :is(.wk-summary, .wk-details, .wk-skills) {
+      display: none;
+    }
+    .wk-collapse[data-details] .wk-summary {
+      margin-top: var(--space-5);
+    }
+    .wk-collapse .wk-details {
+      margin-top: var(--space-5);
+    }
+    .wk-collapse .wk-skills {
+      margin-top: var(--space-5);
+    }
+
+    /* The still: the app's first screen, a larger target for "Try the demo". */
+    .wk-collapse .wk-shot {
+      display: block;
+      grid-area: shot;
+      max-width: 24rem;
+      margin-top: var(--space-3);
+      overflow: hidden;
+      border: var(--ln-hairline);
+      border-radius: var(--radius-3);
+      background: var(--ln-bg-2);
+      cursor: pointer;
+      transition:
+        border-color var(--dur-quick) var(--ease-out),
+        scale var(--dur-quick) var(--ease-out);
+    }
+    .wk-shot :global(img) {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    /* Pointing at the still, or focusing the button it stands for, darkens its edge. */
+    .wk-collapse:has(.wk-shot:hover, .wk-try-b:focus-visible) .wk-shot {
+      border-color: var(--ln-ink-2);
+    }
+    .wk-collapse .wk-shot:active {
+      scale: var(--press-scale);
+    }
+    .wk-collapse[data-open] .wk-shot {
+      display: none;
+    }
+
+    /* The row and the one line become the article's own items: closed, the line is the still's
+       caption strip (what to try, and a cue that the still opens it); open, it sits above the
+       demo. Taps on the strip go through to the still. */
     .wk-collapse .wk-try {
-      display: grid;
+      display: contents;
+    }
+    .wk-try-row {
+      grid-area: try;
+      margin-top: var(--space-3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .wk-try-row .wk-try-b {
+      flex: 1;
+      width: auto;
+      white-space: nowrap;
+    }
+    /* Details: the same quiet disclosure as "More client work" below. */
+    .wk-more-b {
+      flex: none;
+      padding: 0 var(--space-1);
+      border: 0;
+      background: none;
+      font-family: inherit;
+    }
+    body.ln .wk-collapse .wk-try-d {
+      grid-area: line;
+      margin-top: var(--space-4);
+    }
+    body.ln .wk-collapse:not([data-open]) .wk-try-d {
+      grid-area: shot;
+      align-self: end;
+      z-index: 1;
+      width: calc(100% - 2px);
+      max-width: calc(24rem - 2px);
+      margin: 0 1px 1px;
+      padding: var(--space-2) var(--space-3);
+      border-top: var(--ln-hairline);
+      border-radius: 0 0 calc(var(--radius-3) - 1px) calc(var(--radius-3) - 1px);
+      background: var(--ln-bg);
+      color: var(--ln-ink);
+      pointer-events: none;
+    }
+    /* On phones the disclosures are in the second ink; the accent marks hover and focus. One
+       accent action per row: "Try the demo". */
+    .work :is(.wk-disc summary, .wk-more-b) {
+      color: var(--ln-ink-2);
+    }
+    .work :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
+      color: var(--ln-accent);
+    }
+    .work :is(.wk-disc summary, .wk-more-b):active {
+      color: var(--ln-ink);
     }
     .wk-collapse:not([data-open]) .wk-demo {
       display: none;
+    }
+    .wk-collapse .wk-demo {
+      margin-top: var(--space-4);
+    }
+    /* "Try the demo" lands the demo's screen just under the header, a hair clear of its rule. */
+    .wk-collapse .wk-demo :global(.df-screen) {
+      scroll-margin-top: calc(var(--ln-flush) + var(--space-1));
+    }
+    .wk-collapse .wk-hide {
+      display: block;
+      margin-top: var(--space-4);
     }
   }
 
@@ -554,7 +862,7 @@ const others = work.filter((w) => w.data.demo === 'none');
   .wk-disc {
     margin-top: var(--space-2);
   }
-  .wk-disc summary {
+  :is(.wk-disc summary, .wk-more-b) {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
@@ -573,7 +881,7 @@ const others = work.filter((w) => w.data.demo === 'none');
   .wk-disc summary::-webkit-details-marker {
     display: none;
   }
-  .wk-disc summary::before {
+  :is(.wk-disc summary, .wk-more-b)::before {
     content: '';
     width: 0.45em;
     height: 0.45em;
@@ -582,13 +890,13 @@ const others = work.filter((w) => w.data.demo === 'none');
     rotate: -45deg;
     transition: rotate var(--dur-quick) var(--ease-out);
   }
-  .wk-disc[open] summary::before {
+  :is(.wk-disc[open] summary, .wk-more-b[aria-expanded='true'])::before {
     rotate: 45deg;
   }
-  .wk-disc summary:is(:hover, :focus-visible) {
+  :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
     text-decoration-color: currentColor;
   }
-  .wk-disc summary:active {
+  :is(.wk-disc summary, .wk-more-b):active {
     color: var(--ln-ink);
   }
   .wk-disc-body {

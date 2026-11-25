@@ -5,6 +5,8 @@
 // down to it, keeping their proportions. Live desktop and diagram frames also honour any
 // definite height their container gives them: the screen scrolls inside the frame instead of
 // the frame growing past it.
+// WO-040: under 760px a phone frame has no height of its own (the app grows and the page scrolls
+// it); under 480px it drops the bezel, island and status strip; under 600px a window drops its dots.
 interface Props {
   frame: 'phone' | 'desktop' | 'diagram' | 'none';
   caption?: string;
@@ -259,6 +261,44 @@ const label = { phone: 'Phone demo', desktop: 'Desktop demo', diagram: 'Diagram'
   .df-titlebar,
   .df-cap {
     flex: none;
+  }
+
+  /* WO-040: phones (under 760px). The phone grows to its app's content, and the page scrolls it:
+     no screen height, nothing scrolls inside (the app's own phone rules make its tab bar stick to
+     the bottom of the viewport). The screen clips without becoming a scroller, so that sticky
+     bar sticks to the page. */
+  @media (max-width: 759.98px) {
+    .df-phone.df-lg .df-screen {
+      height: auto;
+      overflow: clip;
+    }
+    .df-phone.df-lg .df-screen > :global(*),
+    .df-phone.df-lg .df-screen > :global(*) > :global(*) {
+      height: auto;
+    }
+  }
+  /* Below 480px a phone drawn inside a phone only costs room: no bezel, island or status strip.
+     The screen keeps its corners and a 1px outline. */
+  @media (max-width: 479.98px) {
+    .df-phone.df-lg .df-device {
+      padding: 0;
+      border-radius: var(--df-r);
+      background: none;
+      box-shadow: 0 0 0 1px var(--ln-rule);
+    }
+    .df-phone.df-lg .df-screen {
+      padding-top: 0;
+      background: var(--df-screen, #f6f3fb);
+    }
+    .df-phone.df-lg .df-island {
+      display: none;
+    }
+  }
+  /* Below 600px the window dots read as decoration: the window is just its edge. */
+  @media (max-width: 599.98px) {
+    .df-titlebar {
+      display: none;
+    }
   }
 
   /* Coming soon state */

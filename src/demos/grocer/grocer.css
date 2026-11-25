@@ -774,3 +774,28 @@
     translate: 0 var(--dk-move-lg);
   }
 }
+
+/* WO-040: phones, in the Work section's frame (.df-screen). The app grows to its content and the
+   page scrolls it, so a swipe on the app moves the page (no inner scroller to catch it). The tab
+   bar sticks to the bottom of the viewport while the app is on screen, and focused controls stop
+   clear of it. The /demos/grocer/ harness keeps its fixed phone. WO-041 owns everything above
+   this block. */
+@media (max-width: 759.98px) {
+  .df-screen .gro-app {
+    height: auto;
+    overflow: clip;
+  }
+  .df-screen .gro-panel {
+    flex: none;
+    overflow: visible;
+  }
+  .df-screen .gro-panel,
+  .df-screen .gro-panel * {
+    scroll-margin-bottom: calc(3.5rem + var(--dk-3));
+  }
+  .df-screen .gro-tabs {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+  }
+}

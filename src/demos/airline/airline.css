@@ -948,3 +948,34 @@
     stroke-dashoffset: 100;
   }
 }
+
+/* WO-040: phones, in the Work section's frame (.df-screen). The app grows to its content and the
+   page scrolls it, so a swipe on the app moves the page (no inner scroller to catch it). The tab
+   bar sticks to the bottom of the viewport while the app is on screen, and the booking sheet
+   rises from the bottom of the viewport, not of the (now tall) app. Focused controls stop clear
+   of the sticky tab bar. The /demos/airline/ harness keeps its fixed phone. WO-041 owns
+   everything above this block. */
+@media (max-width: 759.98px) {
+  .df-screen .sky-app {
+    height: auto;
+    overflow: clip;
+  }
+  .df-screen .sky-panel {
+    flex: none;
+    overflow: visible;
+  }
+  .df-screen .sky-panel,
+  .df-screen .sky-panel * {
+    scroll-margin-bottom: calc(3.5rem + var(--dk-3));
+  }
+  .df-screen .sky-tabs {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+  }
+  /* Above the site header (z-index 50), like any sheet on a phone. */
+  .df-screen .sky-scrim {
+    position: fixed;
+    z-index: 60;
+  }
+}
