@@ -546,7 +546,7 @@ const FIRST = 3;
       display: block;
       position: relative;
       margin: calc(var(--rhythm-top) * -1) calc(var(--ln-gutter) * -1) var(--space-5);
-      padding: var(--rhythm-top) var(--ln-gutter) var(--space-5);
+      padding: var(--rhythm-top) var(--ln-gutter) var(--space-6);
       background: var(--cv-tint);
     }
     .resume .cv-top :global(.sh) {
@@ -571,6 +571,10 @@ const FIRST = 3;
     }
     .cv-actions {
       margin-top: 0;
+    }
+    /* Flush with the gutter when the actions wrap (320). */
+    .cv-text-btn {
+      padding-inline: 0;
     }
     /* The facts pack into rows (a short one beside another when they fit), at the size of the
        panel's other secondary text. */
@@ -603,6 +607,23 @@ const FIRST = 3;
     }
     .cv-more:not([open])::details-content {
       content-visibility: hidden;
+    }
+    /* Open, the toggle ("Show fewer") follows the bullets it folds, so the role reads as one
+       list. */
+    .cv-more[open] {
+      display: flex;
+      flex-direction: column;
+    }
+    .cv-more[open] > summary {
+      order: 1;
+      align-self: flex-start;
+    }
+    .cv-more > summary {
+      color: var(--ln-ink);
+    }
+    /* Education's label takes the capability labels' size, so the side blocks are one. */
+    .cv-edu dt {
+      font-size: var(--text-sm);
     }
 
     /* One column. A group is one run: its label leads in bold, then its items, parted by
