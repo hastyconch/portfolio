@@ -487,10 +487,15 @@ const [lead, ...story] = music.story.map(say);
       color var(--dur-quick) var(--ease-out),
       box-shadow var(--dur-quick) var(--ease-out);
   }
-  .mu-tab:hover,
   .mu-tab:focus-visible {
     background: var(--ln-hl);
     color: var(--ln-ink);
+  }
+  @media (hover: hover) {
+    .mu-tab:hover {
+      background: var(--ln-hl);
+      color: var(--ln-ink);
+    }
   }
   .mu-tab:active {
     background: var(--ln-hl-hover);
@@ -624,21 +629,33 @@ const [lead, ...story] = music.story.map(say);
     line-height: 1;
     transition: translate var(--dur-quick) var(--ease-out);
   }
-  .mu-call:hover,
   .mu-call:focus-within {
     background: var(--ln-hl);
+  }
+  @media (hover: hover) {
+    .mu-call:hover {
+      background: var(--ln-hl);
+    }
   }
   .mu-call:has(:focus-visible) {
     outline: var(--focus-width) solid var(--ln-accent);
     outline-offset: var(--focus-offset);
   }
-  .mu-call:hover .mu-call-a,
   .mu-call:focus-within .mu-call-a {
     text-decoration-color: currentColor;
   }
-  .mu-call:hover .mu-call-arrow,
+  @media (hover: hover) {
+    .mu-call:hover .mu-call-a {
+      text-decoration-color: currentColor;
+    }
+  }
   .mu-call:focus-within .mu-call-arrow {
     translate: var(--move-sm) 0;
+  }
+  @media (hover: hover) {
+    .mu-call:hover .mu-call-arrow {
+      translate: var(--move-sm) 0;
+    }
   }
   .mu-call:active {
     background: var(--ln-hl-hover);

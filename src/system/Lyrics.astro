@@ -180,9 +180,13 @@ let lineNo = 0;
     box-decoration-break: clone;
     transition: background-color var(--dur-quick) var(--ease-out);
   }
-  .ly-s:hover .ly-hl,
   .ly-s:focus-visible .ly-hl {
     background: var(--ln-hl-hover);
+  }
+  @media (hover: hover) {
+    .ly-s:hover .ly-hl {
+      background: var(--ln-hl-hover);
+    }
   }
   .ly-s:active .ly-hl {
     background: var(--ln-accent);
@@ -278,10 +282,15 @@ let lineNo = 0;
       color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .ly-close:hover,
   .ly-close:focus-visible {
     background: #1a1411;
     color: #f4ece1;
+  }
+  @media (hover: hover) {
+    .ly-close:hover {
+      background: #1a1411;
+      color: #f4ece1;
+    }
   }
   .ly-close:active {
     scale: var(--press-scale);

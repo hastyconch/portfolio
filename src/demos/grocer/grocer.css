@@ -385,14 +385,24 @@
   opacity: 1;
   translate: none;
 }
-.gro-load:is(:hover, :focus-visible) {
+.gro-load:is(:focus-visible) {
   background: var(--gro-tile);
+}
+@media (hover: hover) {
+  .gro-load:is(:hover, :focus-visible) {
+    background: var(--gro-tile);
+  }
 }
 .gro-load[aria-pressed='true'] {
   background: var(--gro-hi);
 }
-.gro-load[aria-pressed='true']:is(:hover, :focus-visible) {
+.gro-load[aria-pressed='true']:is(:focus-visible) {
   background: var(--gro-hi-2);
+}
+@media (hover: hover) {
+  .gro-load[aria-pressed='true']:is(:hover, :focus-visible) {
+    background: var(--gro-hi-2);
+  }
 }
 
 .gro-link {
@@ -408,9 +418,15 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-.gro-link:is(:hover, :focus-visible) {
+.gro-link:is(:focus-visible) {
   color: var(--gro-teal);
   text-decoration-thickness: 2px;
+}
+@media (hover: hover) {
+  .gro-link:is(:hover, :focus-visible) {
+    color: var(--gro-teal);
+    text-decoration-thickness: 2px;
+  }
 }
 .gro-link[aria-disabled='true'] {
   color: var(--gro-ink-2);
@@ -435,8 +451,13 @@
   color: #fff;
   background: var(--gro-teal);
 }
-.gro-cta:is(:hover, :focus-visible) {
+.gro-cta:is(:focus-visible) {
   background: var(--gro-teal-2);
+}
+@media (hover: hover) {
+  .gro-cta:is(:hover, :focus-visible) {
+    background: var(--gro-teal-2);
+  }
 }
 .gro-cta:active,
 .gro-load:active,
@@ -486,8 +507,13 @@
   cursor: pointer;
   transition: background-color var(--dk-quick) var(--dk-ease);
 }
-.gro-list label:is(:hover, :has(:focus-visible)) {
+.gro-list label:is(:has(:focus-visible)) {
   background: var(--gro-bg);
+}
+@media (hover: hover) {
+  .gro-list label:is(:hover, :has(:focus-visible)) {
+    background: var(--gro-bg);
+  }
 }
 .gro-list input {
   display: grid;
@@ -709,8 +735,13 @@
   color: var(--gro-ink);
   background: var(--gro-hi);
 }
-.gro-tabs button:is(:hover, :focus-visible) {
+.gro-tabs button:is(:focus-visible) {
   color: var(--gro-ink);
+}
+@media (hover: hover) {
+  .gro-tabs button:is(:hover, :focus-visible) {
+    color: var(--gro-ink);
+  }
 }
 .gro-tabs button:active {
   background: var(--gro-bg);

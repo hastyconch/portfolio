@@ -158,8 +158,13 @@ const crop = cardCrop ? await getImage({ src: cardCrop, widths: [250, 375] }) : 
   body.ln .pc-link:focus-visible {
     outline: none;
   }
-  .pc:is(:hover, :focus-within) .pc-link {
+  .pc:is(:focus-within) .pc-link {
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .pc:is(:hover, :focus-within) .pc-link {
+      text-decoration-color: currentColor;
+    }
   }
   .pc:active {
     background: var(--ln-hl);
@@ -355,14 +360,29 @@ const crop = cardCrop ? await getImage({ src: cardCrop, widths: [250, 375] }) : 
     .pa-dev {
       transition: translate var(--dur-base) var(--ease-out);
     }
-    .pc:is(:hover, :focus-within) .pa-phone .pa-dev {
+    .pc:is(:focus-within) .pa-phone .pa-dev {
       translate: -50% calc(var(--move-md) * -1);
     }
-    .pc:is(:hover, :focus-within) .pa-browser .pa-dev {
+    @media (hover: hover) {
+      .pc:is(:hover, :focus-within) .pa-phone .pa-dev {
+        translate: -50% calc(var(--move-md) * -1);
+      }
+    }
+    .pc:is(:focus-within) .pa-browser .pa-dev {
       translate: calc(var(--move-md) * -1) calc(var(--move-md) * -1);
     }
-    .pc:is(:hover, :focus-within) .pa-game .pa-dev {
+    @media (hover: hover) {
+      .pc:is(:hover, :focus-within) .pa-browser .pa-dev {
+        translate: calc(var(--move-md) * -1) calc(var(--move-md) * -1);
+      }
+    }
+    .pc:is(:focus-within) .pa-game .pa-dev {
       translate: -50% calc(-50% - var(--move-sm));
+    }
+    @media (hover: hover) {
+      .pc:is(:hover, :focus-within) .pa-game .pa-dev {
+        translate: -50% calc(-50% - var(--move-sm));
+      }
     }
     .pc:active .pa-dev {
       transition-duration: var(--dur-quick);

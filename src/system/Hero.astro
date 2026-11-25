@@ -216,10 +216,15 @@ const contacts = ['email', 'linkedin'].flatMap((k) =>
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .hero-quiet:hover,
   .hero-quiet:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .hero-quiet:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .hero-quiet:active {
     color: var(--ln-ink-3);

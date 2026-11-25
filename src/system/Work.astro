@@ -612,9 +612,13 @@ const others = work.filter((w) => w.data.demo === 'none');
       background-color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .wk-try-b:hover,
   .wk-try-b:focus-visible {
     background: color-mix(in oklch, var(--ln-accent) 85%, var(--ln-ink));
+  }
+  @media (hover: hover) {
+    .wk-try-b:hover {
+      background: color-mix(in oklch, var(--ln-accent) 85%, var(--ln-ink));
+    }
   }
   .wk-try-b:active {
     background: color-mix(in oklch, var(--ln-accent) 75%, var(--ln-ink));
@@ -627,8 +631,13 @@ const others = work.filter((w) => w.data.demo === 'none');
     background: transparent;
     color: var(--ln-ink);
   }
-  .wk-try-b:is([aria-expanded='true'], .wk-hide):is(:hover, :focus-visible) {
+  .wk-try-b:is([aria-expanded='true'], .wk-hide):is(:focus-visible) {
     background: color-mix(in oklch, var(--ln-ink) 6%, transparent);
+  }
+  @media (hover: hover) {
+    .wk-try-b:is([aria-expanded='true'], .wk-hide):is(:hover, :focus-visible) {
+      background: color-mix(in oklch, var(--ln-ink) 6%, transparent);
+    }
   }
   .wk-try-b:is([aria-expanded='true'], .wk-hide):active {
     background: color-mix(in oklch, var(--ln-ink) 12%, transparent);
@@ -715,8 +724,13 @@ const others = work.filter((w) => w.data.demo === 'none');
       height: auto;
     }
     /* Pointing at the still, or focusing the button it stands for, darkens its edge. */
-    .wk-collapse:has(.wk-shot:hover, .wk-try-b:focus-visible) .wk-shot {
+    .wk-collapse:has(.wk-try-b:focus-visible) .wk-shot {
       border-color: var(--ln-ink-2);
+    }
+    @media (hover: hover) {
+      .wk-collapse:has(.wk-shot:hover, .wk-try-b:focus-visible) .wk-shot {
+        border-color: var(--ln-ink-2);
+      }
     }
     .wk-collapse .wk-shot:active {
       scale: var(--press-scale);
@@ -774,8 +788,13 @@ const others = work.filter((w) => w.data.demo === 'none');
     .work :is(.wk-disc summary, .wk-more-b) {
       color: var(--ln-ink-2);
     }
-    .work :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
+    .work :is(.wk-disc summary, .wk-more-b):is(:focus-visible) {
       color: var(--ln-accent);
+    }
+    @media (hover: hover) {
+      .work :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
+        color: var(--ln-accent);
+      }
     }
     .work :is(.wk-disc summary, .wk-more-b):active {
       color: var(--ln-ink);
@@ -893,8 +912,13 @@ const others = work.filter((w) => w.data.demo === 'none');
   :is(.wk-disc[open] summary, .wk-more-b[aria-expanded='true'])::before {
     rotate: 45deg;
   }
-  :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
+  :is(.wk-disc summary, .wk-more-b):is(:focus-visible) {
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    :is(.wk-disc summary, .wk-more-b):is(:hover, :focus-visible) {
+      text-decoration-color: currentColor;
+    }
   }
   :is(.wk-disc summary, .wk-more-b):active {
     color: var(--ln-ink);

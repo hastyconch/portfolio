@@ -118,13 +118,21 @@ const real = (href: string) => external(href) || href.startsWith('mailto:');
     color: var(--ln-accent);
     transition: translate var(--dur-quick) var(--ease-out);
   }
-  .ft-links a:hover .ft-label,
   .ft-links a:focus-visible .ft-label {
     text-decoration-color: currentColor;
   }
-  .ft-links a:hover .ft-arrow,
+  @media (hover: hover) {
+    .ft-links a:hover .ft-label {
+      text-decoration-color: currentColor;
+    }
+  }
   .ft-links a:focus-visible .ft-arrow {
     translate: var(--move-sm) calc(var(--move-sm) * -1);
+  }
+  @media (hover: hover) {
+    .ft-links a:hover .ft-arrow {
+      translate: var(--move-sm) calc(var(--move-sm) * -1);
+    }
   }
   /* The press tint bleeds a little past the flush text on both sides (shadows, so the hairlines
      keep their length). */

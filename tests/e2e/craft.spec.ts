@@ -205,3 +205,35 @@ for (const route of ['/', '/projects/billable/', '/music/roadhouse/']) {
     expect(await page.locator('.reveal').count()).toBe(0);
   });
 }
+
+// Phase 14: on a touch screen a tap leaves `:hover` on whatever was tapped, so a hover tint
+// stayed on after the tap. Every hover rule in the built CSS (files and inline styles) sits
+// inside `@media (hover: hover)`; focus styles stay unguarded.
+test('craft hover rules only apply where hover exists', async ({ isMobile }) => {
+  test.skip(!!isMobile, 'a static scan of the build; once is enough');
+  const { readFileSync, readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const postcss = (await import('postcss')).default;
+  const files = (d: string): string[] =>
+    readdirSync(d).flatMap((n) => {
+      const p = join(d, n);
+      return statSync(p).isDirectory() ? files(p) : /\.(css|html)$/.test(n) ? [p] : [];
+    });
+  const loose: string[] = [];
+  for (const f of files(join(process.cwd(), 'dist'))) {
+    const text = readFileSync(f, 'utf8');
+    const sheets = f.endsWith('.css')
+      ? [text]
+      : [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+    for (const css of sheets) {
+      postcss.parse(css).walkRules((rule) => {
+        if (!rule.selector.includes(':hover')) return;
+        type Up = { type: string; params?: string; parent?: Up };
+        for (let p = rule.parent as Up | undefined; p; p = p.parent)
+          if (p.type === 'atrule' && /\(\s*hover\s*:\s*hover\s*\)/.test(p.params ?? '')) return;
+        loose.push(`${f.split('/dist/')[1]}: ${rule.selector.slice(0, 80)}`);
+      });
+    }
+  }
+  expect(loose, 'hover rules outside @media (hover: hover)').toEqual([]);
+});

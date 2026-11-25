@@ -144,10 +144,15 @@ const { projects } = Astro.props;
         color var(--dur-quick) var(--ease-out),
         scale var(--dur-quick) var(--ease-out);
     }
-    .rail-btn:hover:not([aria-disabled='true']),
     .rail-btn:focus-visible:not([aria-disabled='true']) {
       background: var(--ln-ink);
       color: var(--ln-bg);
+    }
+    @media (hover: hover) {
+      .rail-btn:hover:not([aria-disabled='true']) {
+        background: var(--ln-ink);
+        color: var(--ln-bg);
+      }
     }
     .rail-btn:active:not([aria-disabled='true']) {
       scale: var(--press-scale);

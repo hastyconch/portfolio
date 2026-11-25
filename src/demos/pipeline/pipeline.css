@@ -188,8 +188,13 @@
 .is-on .pl-short {
   color: var(--pl-ink);
 }
-.pl-node:is(:hover, :focus-visible) .pl-num {
+.pl-node:is(:focus-visible) .pl-num {
   border-color: var(--pl-accent);
+}
+@media (hover: hover) {
+  .pl-node:is(:hover, :focus-visible) .pl-num {
+    border-color: var(--pl-accent);
+  }
 }
 .pl-node:active .pl-num {
   background: var(--pl-sunk);
@@ -360,8 +365,13 @@
   display: none;
 }
 /* No transitions here: the fit test waits on every running animation while focus moves. */
-.pl-cite summary:is(:hover, :focus-visible) {
+.pl-cite summary:is(:focus-visible) {
   background: var(--pl-sunk);
+}
+@media (hover: hover) {
+  .pl-cite summary:is(:hover, :focus-visible) {
+    background: var(--pl-sunk);
+  }
 }
 .pl-cite summary:active {
   background: var(--pl-rule);
@@ -814,8 +824,13 @@
     padding: var(--dk-1) var(--dk-2);
     text-align: left;
   }
-  .pl-node:is(:hover, :focus-visible) {
+  .pl-node:is(:focus-visible) {
     background: var(--pl-sunk);
+  }
+  @media (hover: hover) {
+    .pl-node:is(:hover, :focus-visible) {
+      background: var(--pl-sunk);
+    }
   }
   .is-on .pl-node {
     background: var(--pl-surface);

@@ -114,10 +114,15 @@ const players = [
       background-color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  button.pl-play:hover,
   button.pl-play:focus-visible {
     border-color: var(--ln-ink-2);
     background: var(--ln-bg-3);
+  }
+  @media (hover: hover) {
+    button.pl-play:hover {
+      border-color: var(--ln-ink-2);
+      background: var(--ln-bg-3);
+    }
   }
   button.pl-play:active {
     scale: var(--press-scale);
@@ -178,10 +183,15 @@ const players = [
       border-color var(--dur-quick) var(--ease-out),
       background-color var(--dur-quick) var(--ease-out);
   }
-  .pl-link:hover,
   .pl-link:focus-visible {
     border-color: var(--ln-ink-2);
     background: var(--ln-bg-3);
+  }
+  @media (hover: hover) {
+    .pl-link:hover {
+      border-color: var(--ln-ink-2);
+      background: var(--ln-bg-3);
+    }
   }
   .pl-link:active {
     background: var(--ln-bg-2);
