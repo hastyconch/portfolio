@@ -131,6 +131,15 @@ const fmt = (n: number) => n.toLocaleString('en-CA');
 const reduced = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** Bring `el`'s top edge on screen under the site's sticky header, scrolling the page only when it
+ *  is not already there (the page's scroll padding is the header's height plus a little air). */
+function reveal(el: HTMLElement, from: HTMLElement = el) {
+  const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  const top = el.getBoundingClientRect().top;
+  if (top >= pad - 1 && top <= window.innerHeight * 0.6) return;
+  window.scrollBy({ top: from.getBoundingClientRect().top - pad });
+}
+
 /** Counts up to `to` once, on the first view only; static under reduced motion. */
 function useCountUp(to: number, run: boolean) {
   const [n, setN] = useState(to);
@@ -200,6 +209,9 @@ export default function AirlineDemo() {
   const panel = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const bookedRef = useRef<HTMLSpanElement>(null);
+  const appRef = useRef<HTMLDivElement>(null);
+  // Set when a control inside a panel switches tab: focus then moves to the new panel.
+  const follow = useRef(false);
 
   // The balance counts up the first time Home is seen, then never again.
   const shown = useCountUp(balance, tab === 'home' && !counted);
@@ -211,22 +223,52 @@ export default function AirlineDemo() {
 
   useEffect(() => {
     panel.current?.scrollTo?.({ top: 0 });
+    const el = panel.current;
+    if (!follow.current || !el) return;
+    follow.current = false;
+    el.focus({ preventScroll: true });
+    if (appRef.current) reveal(el, appRef.current);
   }, [tab]);
 
+  // The sheet takes focus on its heading without scrolling while it slides in, then, once it has
+  // landed, the page scrolls only as far as it takes to show it whole under the site header.
   useEffect(() => {
-    if (sheet) sheetRef.current?.querySelector<HTMLElement>('h2')?.focus();
+    const el = sheetRef.current;
+    if (!sheet || !el) return;
+    el.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+    let live = true;
+    Promise.all((el.getAnimations?.() ?? []).map((a) => a.finished))
+      .catch(() => undefined)
+      .then(() => {
+        if (live && el.isConnected) el.scrollIntoView({ block: 'nearest' });
+      });
+    return () => {
+      live = false;
+    };
   }, [sheet]);
 
-  function go(next: Tab) {
+  /** Switch tab. From a control inside a panel (`follow`), focus moves to the new panel. */
+  function go(next: Tab, followFocus = false) {
     if (tab === 'home') setCounted(true);
+    follow.current = followFocus;
     setTab(next);
   }
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>, i: number) {
-    const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (!dir) return;
+    const n = tabs.length;
+    const target =
+      e.key === 'ArrowRight'
+        ? (i + 1) % n
+        : e.key === 'ArrowLeft'
+          ? (i - 1 + n) % n
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? n - 1
+              : -1;
+    if (target < 0) return;
     e.preventDefault();
-    const next = tabs[(i + dir + tabs.length) % tabs.length].id;
+    const next = tabs[target].id;
     go(next);
     refs.current[next]?.focus();
   }
@@ -254,14 +296,18 @@ export default function AirlineDemo() {
       return;
     }
     if (e.key !== 'Tab') return;
-    const items = sheetRef.current?.querySelectorAll<HTMLElement>('button');
-    if (!items?.length) return;
+    // A modal sheet: Tab and Shift+Tab cycle through its buttons, and the heading (where focus
+    // starts) counts as the top of the loop, so focus never leaves it.
+    const el = sheetRef.current;
+    const items = el?.querySelectorAll<HTMLElement>('button');
+    if (!el || !items?.length) return;
     const first = items[0];
     const last = items[items.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
+    const at = document.activeElement;
+    if (e.shiftKey && (at === first || !(at instanceof HTMLButtonElement) || !el.contains(at))) {
       e.preventDefault();
       last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
+    } else if (!e.shiftKey && (at === last || !el.contains(at))) {
       e.preventDefault();
       first.focus();
     }
@@ -329,7 +375,12 @@ export default function AirlineDemo() {
   };
 
   return (
-    <div className="sky-app" aria-label="Demo: airline loyalty app (mock data)" role="group">
+    <div
+      ref={appRef}
+      className="sky-app"
+      aria-label="Demo: airline loyalty app (mock data)"
+      role="group"
+    >
       <header className="sky-top">
         <Mark />
         <span className="sky-brand">Skyward</span>
@@ -391,14 +442,14 @@ export default function AirlineDemo() {
 
             <ul className="sky-acts" aria-label="Quick actions">
               <li>
-                <button type="button" className="sky-act" onClick={() => go('redeem')}>
+                <button type="button" className="sky-act" onClick={() => go('redeem', true)}>
                   <span>
                     Book<span className="dk-sr"> reward</span>
                   </span>
                 </button>
               </li>
               <li>
-                <button type="button" className="sky-act" onClick={() => go('status')}>
+                <button type="button" className="sky-act" onClick={() => go('status', true)}>
                   <span>
                     <span className="dk-sr">Tier </span>Perks
                   </span>
@@ -678,7 +729,7 @@ export default function AirlineDemo() {
             role="tab"
             id={`${base}-tab-${t.id}`}
             aria-selected={tab === t.id}
-            aria-controls={`${base}-${t.id}`}
+            aria-controls={tab === t.id ? `${base}-${t.id}` : undefined}
             tabIndex={tab === t.id ? 0 : -1}
             onClick={() => go(t.id)}
             onKeyDown={(e) => onTabKey(e, i)}

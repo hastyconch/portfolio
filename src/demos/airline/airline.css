@@ -277,6 +277,12 @@
 .sky-act[aria-pressed='true'] .sky-ico {
   color: currentColor;
 }
+/* Thumb-sized on touch screens (WO-041): every control in the app is at least 44px tall. */
+@media (pointer: coarse) {
+  .sky-act {
+    min-height: 2.75rem;
+  }
+}
 
 /* Progress to the next tier: plain type and a bar on the page colour, no surface of its own. */
 .sky-meter {
@@ -479,6 +485,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 3px;
   margin-top: var(--dk-3);
+  container-type: inline-size;
 }
 .sky-seg {
   display: grid;
@@ -486,16 +493,25 @@
   min-width: 0;
 }
 .sky-seg-label {
-  overflow: hidden;
+  /* Wraps rather than cuts (WO-041): on a narrow phone, or with the user's own text spacing,
+     "Platinum 75k" takes two lines, and the inset keeps it clear of the label before it. */
+  padding-left: var(--dk-2);
   font-size: var(--dk-fs-xs);
   font-weight: 600;
+  line-height: var(--dk-lh-snug);
   text-align: right;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .sky-seg-at {
   font-weight: 400;
   color: var(--sky-ink-2);
+}
+/* A narrow track (a 320 phone): every label puts its threshold under its name, so the three
+   read alike instead of one of them wrapping on its own. */
+@container (max-width: 280px) {
+  .sky-seg-at {
+    display: block;
+  }
 }
 .sky-app .sky-readout {
   margin-top: var(--dk-3);
@@ -527,8 +543,9 @@
 }
 .sky-tier-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--dk-2);
+  gap: 0 var(--dk-2);
   padding: var(--dk-3) var(--dk-4) var(--dk-2);
 }
 .sky-tier-head strong {
@@ -537,6 +554,7 @@
 }
 .sky-tier-at {
   font-size: var(--dk-fs-sm);
+  white-space: nowrap;
   color: var(--sky-ink-2);
 }
 .sky-state {
@@ -724,6 +742,14 @@
   background: transparent;
   cursor: not-allowed;
   scale: 1;
+}
+/* On touch screens the hit area grows to 44px, and negative margins give the extra back, so the
+   row keeps the same rhythm as on a laptop. */
+@media (pointer: coarse) {
+  .sky-book {
+    min-height: 2.75rem;
+    margin-block: calc(var(--dk-1) - 0.375rem) -0.375rem;
+  }
 }
 .sky-booked {
   display: inline-flex;
