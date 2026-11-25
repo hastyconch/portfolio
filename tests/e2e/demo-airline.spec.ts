@@ -383,3 +383,249 @@ test('demo-airline status has no overflow', async ({ page, isMobile }) => {
     expect(bad, `${route} at ${w}×${h}`).toEqual([]);
   }
 });
+
+// WO-041: focus that follows the action, a sheet that behaves as a dialog, and controls that fit
+// a thumb.
+
+/** Where `el` sits against the visible page: the band under the site's sticky header. */
+async function onScreen(el: Locator) {
+  return el.evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    const header = document.querySelector('header.np')?.getBoundingClientRect().bottom ?? 0;
+    return {
+      top: Math.round(r.top),
+      bottom: Math.round(r.bottom),
+      header: Math.round(header),
+      view: window.innerHeight,
+    };
+  });
+}
+
+/** Every text run under `root` that is cut: by a clipping ancestor (on either axis, up to the
+ *  first scroller on the vertical one, whose content can be scrolled to), or by an ellipsis. */
+async function clippedText(root: Locator) {
+  return root.evaluate((rootEl) => {
+    const out: string[] = [];
+    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const text = n.textContent!.trim();
+      const host = n.parentElement!;
+      if (!text || host.closest('.dk-sr')) continue;
+      const range = document.createRange();
+      range.selectNodeContents(n);
+      const r = range.getBoundingClientRect();
+      if (!r.width) continue;
+      let vertical = true;
+      for (let a: HTMLElement | null = host; a && a !== document.body; a = a.parentElement) {
+        const s = getComputedStyle(a);
+        const box = a.getBoundingClientRect();
+        const name = `${a.tagName.toLowerCase()}.${[...a.classList].join('.')}`;
+        if (s.overflowX !== 'visible' && (r.left < box.left - 0.5 || r.right > box.right + 0.5))
+          out.push(`"${text}" is cut sideways by ${name}`);
+        if (
+          vertical &&
+          /hidden|clip/.test(s.overflowY) &&
+          (r.top < box.top - 0.5 || r.bottom > box.bottom + 0.5)
+        )
+          out.push(`"${text}" is cut vertically by ${name}`);
+        if (/auto|scroll/.test(s.overflowY)) vertical = false;
+        if (a.classList.contains('sky-app')) break;
+      }
+      const hs = getComputedStyle(host);
+      if (hs.textOverflow === 'ellipsis' && host.scrollWidth > host.clientWidth + 1)
+        out.push(`"${text}" ends in an ellipsis`);
+    }
+    return [...new Set(out)];
+  });
+}
+
+/** Settle the demos' own animations, then the page's smooth scroll. */
+async function settle(page: Page) {
+  await page.evaluate(async () => {
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => {
+          const target = (a.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && target.closest('.sky-app, .gro-app');
+        })
+        .map((a) => a.finished.catch(() => undefined)),
+    );
+    let y = -1;
+    while (y !== window.scrollY) {
+      y = window.scrollY;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+  });
+}
+
+test('airline sheet traps focus', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'keyboard pass runs on desktop');
+  await page.goto(ROUTE);
+  await page.waitForSelector('astro-island:not([ssr])');
+  const demo = page.getByRole('group', { name: /airline loyalty app/i });
+  await demo.getByRole('tab', { name: 'Redeem' }).click();
+  await demo.getByRole('button', { name: 'Book Vancouver for 15,000 points' }).focus();
+  await page.keyboard.press('Enter');
+  const sheet = demo.getByRole('dialog', { name: 'You’re going to Vancouver' });
+  await expect(sheet.getByRole('heading')).toBeFocused();
+  const inside = () => sheet.evaluate((d) => d.contains(document.activeElement));
+
+  // Shift+Tab from the heading wraps to the last button, not to the page behind the sheet.
+  await page.keyboard.press('Shift+Tab');
+  await expect(sheet.getByRole('button', { name: 'Done' })).toBeFocused();
+  for (const key of ['Shift+Tab', 'Shift+Tab', 'Shift+Tab', 'Tab', 'Tab', 'Tab', 'Tab']) {
+    await page.keyboard.press(key);
+    expect(await inside(), `after ${key}, focus is still in the sheet`).toBe(true);
+  }
+
+  // Escape closes it and gives focus back where the Book button was: the row's "Booked" mark.
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+  const row = demo.locator('.sky-dest').filter({ hasText: 'Vancouver' });
+  await expect(row.getByText('Booked', { exact: true })).toBeFocused();
+});
+
+test('airline sheet opens below the header', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a phone at 375 × 812, with motion on');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  // The audit's path: tap "Try the demo" (the page scrolls to the demo itself), then from the tab
+  // bar at the bottom of the app, Shift+Tab back to the first Book button. The page then sits
+  // with the app's top above the screen, where the sheet's resting place is under the header.
+  await page.goto('/');
+  await page
+    .locator('article')
+    .filter({ has: page.locator('.sky-app') })
+    .locator('[data-wk-try]')
+    .tap();
+  await page.locator('astro-island:not([ssr]) .sky-app').waitFor();
+  await settle(page);
+  const demo = page.getByRole('group', { name: /airline loyalty app/i });
+  const redeem = demo.getByRole('tab', { name: 'Redeem' });
+  await redeem.tap();
+  await redeem.focus();
+  await settle(page);
+  const book = demo.getByRole('button', { name: 'Book Vancouver for 15,000 points' });
+  for (let i = 0; i < 8; i++) {
+    if (await book.evaluate((b) => b === document.activeElement)) break;
+    await page.keyboard.press('Shift+Tab');
+  }
+  await expect(book).toBeFocused();
+  await settle(page);
+  await page.keyboard.press('Enter');
+  const heading = demo.getByRole('dialog').getByRole('heading');
+  await expect(heading).toBeFocused();
+  await settle(page);
+  const at = await onScreen(heading);
+  expect(at.top, `heading top under the header ${JSON.stringify(at)}`).toBeGreaterThanOrEqual(
+    at.header,
+  );
+  expect(at.bottom, 'heading on screen').toBeLessThanOrEqual(at.view);
+  // The whole sheet is in view, actions included.
+  const done = await onScreen(demo.getByRole('button', { name: 'Done' }));
+  expect(done.bottom, 'Done on screen').toBeLessThanOrEqual(done.view);
+});
+
+test('airline focus follows tab switches', async ({ page }) => {
+  const demo = await airlineOnHome(page);
+  for (const [button, next] of [
+    ['Book reward', 'Redeem'],
+    ['Tier Perks', 'Status'],
+  ]) {
+    await demo.getByRole('tab', { name: 'Home' }).click();
+    const control = demo.getByRole('button', { name: button });
+    await tabInto(page, control);
+    // tabInto's stepping can start a smooth scroll; press once the page is still.
+    await settle(page);
+    await page.keyboard.press('Enter');
+    await expect(demo.getByRole('tab', { name: next })).toHaveAttribute('aria-selected', 'true');
+    const panel = demo.getByRole('tabpanel', { name: next });
+    await expect(panel, `${button}: focus moves to the ${next} panel`).toBeFocused();
+    await settle(page);
+    const at = await onScreen(panel);
+    expect(at.top, `${button}: the panel's top is under the header`).toBeGreaterThanOrEqual(
+      at.header - 1,
+    );
+    expect(at.top, `${button}: and on screen`).toBeLessThan(at.view - 100);
+  }
+});
+
+test('airline status wraps under text spacing', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a phone, narrowed to 320');
+  await page.setViewportSize({ width: 320, height: 640 });
+  const screens = [
+    ['Status', '.sky-status'],
+    ['Redeem', '.sky-redeem'],
+  ];
+  for (const spacing of [false, true]) {
+    const demo = await airlineOnHome(page);
+    // WCAG 1.4.12's test values.
+    if (spacing)
+      await page.addStyleTag({
+        content: `* { line-height: 1.5 !important; letter-spacing: 0.12em !important;
+          word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }`,
+      });
+    for (const [name, screen] of screens) {
+      await demo.getByRole('tab', { name }).click();
+      await expect(demo.locator(screen)).toBeVisible();
+      await settle(page);
+      expect(
+        await clippedText(demo.locator(screen)),
+        `${name} at 320${spacing ? ' with text spacing' : ''}`,
+      ).toEqual([]);
+    }
+  }
+});
+
+test('airline targets fit a thumb', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a touch screen at 375');
+  expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true);
+  const demo = await airlineOnHome(page);
+  const heights = (scope: Locator) =>
+    scope.locator('button').evaluateAll((els) =>
+      els
+        .filter((b) => b.getClientRects().length)
+        .map((b) => ({
+          name: b.getAttribute('aria-label') ?? b.textContent?.trim(),
+          h: Math.round(b.getBoundingClientRect().height * 10) / 10,
+        })),
+    );
+  const all: { name: string | null | undefined; h: number }[] = [];
+  for (const name of ['Home', 'Status', 'Redeem']) {
+    await demo.getByRole('tab', { name }).click();
+    all.push(...(await heights(demo)));
+  }
+  await demo.getByRole('button', { name: 'Book Vancouver for 15,000 points' }).click();
+  all.push(...(await heights(demo.getByRole('dialog'))));
+  expect(all.length).toBeGreaterThan(10);
+  expect(all.filter((b) => b.h < 44)).toEqual([]);
+});
+
+test('airline tabs keys and controls', async ({ page, isMobile }) => {
+  test.skip(!!isMobile, 'keyboard pass runs on desktop');
+  await page.goto(ROUTE);
+  await page.waitForSelector('astro-island:not([ssr])');
+  const demo = page.getByRole('group', { name: /airline loyalty app/i });
+  const tab = (name: string) => demo.getByRole('tab', { name });
+
+  await tab('Home').focus();
+  await page.keyboard.press('End');
+  await expect(tab('Redeem')).toBeFocused();
+  await expect(tab('Redeem')).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Home');
+  await expect(tab('Home')).toBeFocused();
+  await expect(tab('Home')).toHaveAttribute('aria-selected', 'true');
+
+  // Every aria-controls points at an element that exists, and the selected tab at its panel.
+  for (const name of ['Home', 'Status', 'Redeem']) {
+    await tab(name).click();
+    const missing = await demo.evaluate((app) =>
+      [...app.querySelectorAll('[aria-controls]')]
+        .map((el) => el.getAttribute('aria-controls')!)
+        .filter((id) => !document.getElementById(id)),
+    );
+    expect(missing, `${name} selected`).toEqual([]);
+    const id = await tab(name).getAttribute('aria-controls');
+    await expect(demo.getByRole('tabpanel')).toHaveAttribute('id', id!);
+  }
+});

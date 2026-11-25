@@ -277,6 +277,12 @@
 .sky-act[aria-pressed='true'] .sky-ico {
   color: currentColor;
 }
+/* Thumb-sized on touch screens (WO-041): every control in the app is at least 44px tall. */
+@media (pointer: coarse) {
+  .sky-act {
+    min-height: 2.75rem;
+  }
+}
 
 /* Progress to the next tier: plain type and a bar on the page colour, no surface of its own. */
 .sky-meter {
@@ -486,12 +492,14 @@
   min-width: 0;
 }
 .sky-seg-label {
-  overflow: hidden;
+  /* Wraps rather than cuts (WO-041): on a narrow phone, or with the user's own text spacing,
+     "Platinum 75k" takes two lines, and the inset keeps it clear of the label before it. */
+  padding-left: var(--dk-2);
   font-size: var(--dk-fs-xs);
   font-weight: 600;
+  line-height: var(--dk-lh-snug);
   text-align: right;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .sky-seg-at {
   font-weight: 400;
@@ -527,8 +535,9 @@
 }
 .sky-tier-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--dk-2);
+  gap: 0 var(--dk-2);
   padding: var(--dk-3) var(--dk-4) var(--dk-2);
 }
 .sky-tier-head strong {
@@ -537,6 +546,7 @@
 }
 .sky-tier-at {
   font-size: var(--dk-fs-sm);
+  white-space: nowrap;
   color: var(--sky-ink-2);
 }
 .sky-state {
@@ -724,6 +734,11 @@
   background: transparent;
   cursor: not-allowed;
   scale: 1;
+}
+@media (pointer: coarse) {
+  .sky-book {
+    min-height: 2.75rem;
+  }
 }
 .sky-booked {
   display: inline-flex;
