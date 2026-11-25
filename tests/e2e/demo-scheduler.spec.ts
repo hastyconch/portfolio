@@ -211,3 +211,166 @@ test('scheduler coverage reads without colour', async ({ page }) => {
   await expect(demo.locator('.sch-status')).toHaveText('2 problems.');
   await expect(demo.locator('.sch-status .sch-dot')).toHaveAttribute('data-tone', 'under');
 });
+
+// WO-042: the scheduler on phones. Focus never sits under the sticky name column, programmatic
+// focus never jumps the page, at least three days show beside the names at 375 (two at 320), a tap
+// on a locked cell says why in view, touch screens get tapping words, and buttons fit a thumb.
+
+/** How the focused cell sits in the roster: px hidden under the name column, and whether it is
+    clear of the name column and inside the scroller. */
+async function placement(page: Page) {
+  return page.evaluate(() => {
+    const cell = document.activeElement as HTMLElement;
+    const wrap = cell.closest('.sch-gridwrap') as HTMLElement;
+    const names = wrap.querySelector('.sch-corner') as HTMLElement;
+    const r = cell.getBoundingClientRect();
+    const w = wrap.getBoundingClientRect();
+    const n = names.getBoundingClientRect();
+    return {
+      name: cell.getAttribute('aria-label') ?? '',
+      hidden: Math.max(0, Math.min(r.right, n.right) - Math.max(r.left, n.left)),
+      inside: r.left >= n.right - 1 && r.right <= w.right + 1,
+    };
+  });
+}
+
+test('scheduler focus never hides under the name column', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const { cell } = await open(page);
+  await cell(/^Renee, Monday/).focus();
+  const seen: string[] = [];
+  const check = async () => {
+    const p = await placement(page);
+    seen.push(p.name.split(':')[0]);
+    expect(p.hidden, p.name).toBeLessThan(1);
+    expect(p.inside, p.name).toBe(true);
+  };
+  await check();
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('ArrowRight');
+    await check();
+  }
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('ArrowLeft');
+    await check();
+  }
+  // Home and End jump the whole week; the cover rows behave the same.
+  await page.keyboard.press('End');
+  await check();
+  await page.keyboard.press('Control+End');
+  await check();
+  await page.keyboard.press('Home');
+  await check();
+  expect(seen).toContain('Renee, Sunday');
+  expect(seen.filter((s) => s === 'Renee, Tuesday')).toHaveLength(2);
+});
+
+test('scheduler assign keeps the page still', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const { demo, cell } = await open(page);
+  const scrollY = () => page.evaluate(() => window.scrollY);
+  const settle = () => page.waitForTimeout(600);
+
+  // A tap on a cell focuses it without moving the page.
+  const odette = cell(/^Odette, Monday/);
+  await odette.scrollIntoViewIfNeeded();
+  await settle();
+  let before = await scrollY();
+  await odette.click();
+  await settle();
+  expect(Math.abs((await scrollY()) - before)).toBeLessThanOrEqual(40);
+
+  // Assign moves focus to the assigned cell in the roster, which is off screen above.
+  const assign = demo.getByRole('button', { name: 'Assign Renee' });
+  await assign.scrollIntoViewIfNeeded();
+  await settle();
+  before = await scrollY();
+  await assign.click();
+  await expect(cell(/^Renee, Saturday: Night/)).toBeFocused();
+  await settle();
+  expect(Math.abs((await scrollY()) - before)).toBeLessThanOrEqual(40);
+  // The roster still scrolled sideways to show it.
+  expect((await placement(page)).inside).toBe(true);
+});
+
+test('scheduler shows more days on phones', async ({ page }) => {
+  for (const [width, least] of [
+    [375, 3],
+    [320, 2],
+  ]) {
+    await page.setViewportSize({ width, height: 800 });
+    const { demo } = await open(page);
+    const wrap = demo.locator('.sch-gridwrap');
+    const shown = await wrap.evaluate((el) => {
+      const w = el.getBoundingClientRect();
+      const n = el.querySelector('.sch-corner')!.getBoundingClientRect();
+      return [...el.querySelectorAll('thead th:not(.sch-corner)')].filter((th) => {
+        const r = th.getBoundingClientRect();
+        return r.left >= n.right - 1 && r.right <= w.right + 1;
+      }).length;
+    });
+    expect(shown, `whole days beside the names at ${width}`).toBeGreaterThanOrEqual(least);
+    // The open shift's day is one of them.
+    const day = (await demo.locator('thead th.is-open').boundingBox())!;
+    const box = (await wrap.boundingBox())!;
+    expect(day.x + day.width).toBeLessThanOrEqual(box.x + box.width + 1);
+    // Name and hours share a line.
+    const oneLine = await demo.getByRole('rowheader', { name: /^Renee/ }).evaluate((th) => {
+      const a = th.querySelector('.sch-name')!.getBoundingClientRect();
+      const b = th.querySelector('.sch-hours')!.getBoundingClientRect();
+      return Math.abs(a.bottom - b.bottom) < 4;
+    });
+    expect(oneLine, `Renee and her hours on one line at ${width}`).toBe(true);
+  }
+});
+
+test.describe('on a touch screen', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+
+  test('scheduler touch feedback and copy', async ({ page }) => {
+    const { demo, cell, live } = await open(page);
+    const help = demo.locator('.sch-help');
+    // The instructions talk about tapping, not arrow keys.
+    await expect(help).toContainText(/tap/i);
+    expect(await help.evaluate((e) => (e as HTMLElement).innerText)).not.toMatch(/arrow keys/i);
+
+    // A tap on a cell that can't take the shift yet says why, in view.
+    const hint = demo.locator('.sch-taphint');
+    await expect(hint).toHaveCount(0);
+    await cell(/^Renee, Monday/).tap();
+    await expect(hint).toBeVisible();
+    await expect(hint).toHaveText(/^Fill the open shift first/);
+    await expect(live).toContainText('Fill the open shift first');
+    await expect(hint).toBeInViewport();
+
+    // Once the shift is filled the hint goes, and the copy says what a tap does.
+    await demo.getByRole('button', { name: 'Assign Renee' }).tap();
+    await expect(hint).toHaveCount(0);
+    await expect(help).toContainText(/Tap a cell to cycle/);
+  });
+
+  test('scheduler targets fit a thumb', async ({ page }) => {
+    const { demo } = await open(page);
+    const sizes = await demo.locator('button, summary').evaluateAll((els) =>
+      els
+        .filter((e) => (e as HTMLElement).offsetParent !== null)
+        .map((e) => ({
+          name: (e.textContent ?? '').trim(),
+          h: e.getBoundingClientRect().height,
+        })),
+    );
+    expect(sizes.length).toBeGreaterThanOrEqual(6);
+    for (const s of sizes) expect(s.h, s.name).toBeGreaterThanOrEqual(44);
+  });
+});
+
+// On a mouse or trackpad the instructions keep the keyboard words.
+test.describe('with a mouse', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false });
+
+  test('scheduler keeps keyboard words for a fine pointer', async ({ page }) => {
+    const { demo } = await open(page);
+    const help = demo.locator('.sch-help');
+    expect(await help.evaluate((e) => (e as HTMLElement).innerText)).toMatch(/Arrow keys move/);
+  });
+});

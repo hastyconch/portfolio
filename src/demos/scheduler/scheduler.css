@@ -203,9 +203,16 @@
 
 /* Roster grid: rows of hairlines, cells as flat blocks. */
 .sch-gridwrap {
+  /* The sticky name column and the edge fades. The scroll padding says where a cell is fully in
+     view: the browser's focus scroll and SchedulerDemo's revealCell() both keep cells inside it, so
+     focus never sits under the name column (WO-042, WCAG 2.4.11). */
+  --sch-namecol: 7.5rem;
+  --sch-fade-start: 28px;
+  --sch-fade-end: 28px;
   /* positioned so visually hidden header text is clipped with the grid, not the page */
   position: relative;
   overflow-x: auto;
+  scroll-padding-inline: calc(var(--sch-namecol) + var(--sch-fade-start)) var(--sch-fade-end);
   border: 1px solid var(--sch-rule);
   border-radius: var(--dk-r3);
   background: var(--sch-surface);
@@ -411,26 +418,99 @@
   outline-offset: -1px;
 }
 
-/* Narrow columns: a slimmer name column, the course note on its own line, cover cells kept on
-   one line (the roster scrolls sideways), and the figures spread across the top bar. */
+/* Narrow columns (phones, WO-042): a slim name column with the name and hours on one line, day
+   columns sized to the container so three show beside it (two in the narrowest), a sliver of the
+   next day under the end fade, and the roster snapping to whole days. The course note takes its
+   own line, and the figures spread across the top bar. */
 @container sch (max-width: 559px) {
+  .sch-body {
+    padding-inline: var(--dk-2);
+  }
+  .sch-gridwrap {
+    --sch-namecol: 5.5rem;
+    --sch-fade-start: 0px;
+    --sch-fade-end: 12px;
+    /* the day area: the container less the body's padding, the wrap's border and the names */
+    --sch-days: calc(100cqi - 2 * var(--dk-2) - 2px - var(--sch-namecol));
+    --sch-col: calc((var(--sch-days) - var(--sch-fade-end)) / 3);
+    /* room after Sunday, so the last snap shows whole days with no sliver beside the names */
+    padding-inline-end: var(--sch-fade-end);
+    scroll-snap-type: x mandatory;
+  }
+  .sch-grid {
+    width: calc(var(--sch-namecol) + 7 * var(--sch-col));
+    table-layout: fixed;
+  }
+  .sch-grid thead th:not(.sch-corner) {
+    width: var(--sch-col);
+    scroll-snap-align: start;
+  }
   .sch-corner,
   .sch-nurse {
-    width: 7.5rem;
-    min-width: 7.5rem;
-    max-width: 7.5rem;
+    width: var(--sch-namecol);
+    min-width: var(--sch-namecol);
+    max-width: var(--sch-namecol);
     white-space: normal;
   }
-  .sch-extra {
+  .sch-nurse {
+    padding: 0 var(--dk-1) 0 var(--dk-2);
+  }
+  .sch-name {
+    font-size: var(--dk-fs-sm);
+  }
+  .sch-grid tbody:not(.sch-coverage) :is(.sch-name, .sch-hours) {
+    display: inline;
+    white-space: nowrap;
+  }
+  .sch-extra,
+  .sch-hours.is-warn .sch-extra {
     display: block;
     white-space: normal;
   }
+  .sch-cell {
+    min-width: 0;
+  }
   .sch-count {
-    min-width: 5rem;
+    padding-inline: 1px;
+  }
+  /* Cover: the shape beside the count, the state in words under it, clear of the cell's border. */
+  .sch-count .sch-pill {
+    display: grid;
+    grid-template-columns: 1fr auto auto 1fr;
+    align-content: center;
+    justify-content: center;
+    gap: 0 var(--dk-1);
+    padding-inline: 3px;
+  }
+  .sch-count .sch-state {
+    display: contents;
+  }
+  .sch-count .sch-dot {
+    grid-area: 1 / 2;
+    align-self: center;
+    margin: 0;
+  }
+  .sch-count .sch-glyph {
+    grid-area: 1 / 3;
+  }
+  .sch-count .sch-word {
+    grid-area: 2 / 1 / 3 / -1;
+    text-align: center;
+    white-space: normal;
   }
   .sch-kpis {
     justify-content: space-between;
     width: 100%;
+  }
+}
+@container sch (max-width: 329px) {
+  .sch-gridwrap {
+    --sch-col: calc((var(--sch-days) - var(--sch-fade-end)) / 2);
+  }
+}
+@container sch (min-width: 440px) and (max-width: 559px) {
+  .sch-gridwrap {
+    --sch-col: calc((var(--sch-days) - var(--sch-fade-end)) / 4);
   }
 }
 
@@ -480,6 +560,32 @@
   line-height: var(--dk-lh-snug);
   color: var(--sch-muted);
 }
+/* Keyboard words for a fine pointer, tapping words on a touch screen. */
+.sch-coarse {
+  display: none;
+}
+@media (pointer: coarse) {
+  .sch-fine {
+    display: none;
+  }
+  .sch-coarse {
+    display: inline;
+  }
+}
+/* What a tap on a locked cell says (it is also announced). It sits under the roster and sticks
+   to the bottom of the screen while the roster runs past it, so it shows wherever the tap was. */
+.sch-taphint {
+  position: sticky;
+  bottom: var(--dk-3);
+  z-index: 2;
+  padding: var(--dk-1) var(--dk-3);
+  border-left: 2px solid var(--sch-accent);
+  font-size: var(--dk-fs-sm);
+  font-weight: 500;
+  line-height: var(--dk-lh-snug);
+  color: var(--sch-ink);
+  background: var(--sch-accent-soft);
+}
 /* Scroll cue on narrow screens: a hint, and a fade on whichever edge has more columns. */
 .sch-scrollhint {
   font-size: var(--dk-fs-xs);
@@ -487,19 +593,24 @@
   color: var(--sch-muted);
 }
 .sch-gridwrap[data-more='end'] {
-  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--sch-fade-end)), transparent);
 }
 /* The start fade begins after the sticky name column, so names stay solid. */
 .sch-gridwrap[data-more='start'] {
-  mask-image: linear-gradient(to right, #000 7.5rem, transparent 7.5rem, #000 calc(7.5rem + 28px));
+  mask-image: linear-gradient(
+    to right,
+    #000 var(--sch-namecol),
+    transparent var(--sch-namecol),
+    #000 calc(var(--sch-namecol) + var(--sch-fade-start))
+  );
 }
 .sch-gridwrap[data-more='both'] {
   mask-image: linear-gradient(
     to right,
-    #000 7.5rem,
-    transparent 7.5rem,
-    #000 calc(7.5rem + 28px),
-    #000 calc(100% - 28px),
+    #000 var(--sch-namecol),
+    transparent var(--sch-namecol),
+    #000 calc(var(--sch-namecol) + var(--sch-fade-start)),
+    #000 calc(100% - var(--sch-fade-end)),
     transparent
   );
 }
@@ -570,6 +681,16 @@
 }
 .sch-rules summary:active {
   background: var(--sch-sunk);
+}
+/* Thumb-sized controls on touch screens (WO-042). */
+@media (pointer: coarse) {
+  .sch-btn {
+    min-height: 2.75rem;
+  }
+  .sch-rules summary {
+    min-height: 2.75rem;
+    padding-block: calc((2.75rem - 1lh) / 2);
+  }
 }
 .sch-rules ul {
   position: absolute;

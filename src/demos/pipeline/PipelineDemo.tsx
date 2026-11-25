@@ -493,8 +493,13 @@ export default function PipelineDemo() {
   const [nudged, setNudged] = useState(false);
   const [synced, setSynced] = useState(false);
   const [say, setSay] = useState('');
+  // Under reduced motion Play never runs on a timer: each press shows the next step (WO-042).
+  const [reduce, setReduce] = useState(false);
   const base = useId();
   const view: View = { nudged, synced, uid: base };
+  // Steps that aren't showing are laid out in their finished state, so the stage is always as
+  // tall as the tallest step can get and the controls under it never move (WO-042).
+  const full: View = { nudged: true, synced: true, uid: `${base}-full` };
 
   function show(i: number) {
     const n = Math.max(0, Math.min(LAST, i));
@@ -505,13 +510,17 @@ export default function PipelineDemo() {
     if (n < LAST) setSynced(false);
   }
 
-  // Autoplay is opt-in (the Play button) and never runs under reduced motion.
+  // Autoplay is opt-in (the Play button) and never runs under reduced motion: there, Play steps.
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReady(true);
-    const stop = () => mq.matches && setPlaying(false);
-    mq.addEventListener('change', stop);
-    return () => mq.removeEventListener('change', stop);
+    setReduce(mq.matches);
+    const sync = () => {
+      setReduce(mq.matches);
+      if (mq.matches) setPlaying(false);
+    };
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
   }, []);
 
   // Arriving at the PM tool step: tickets start where they were, then sync across.
@@ -554,13 +563,14 @@ export default function PipelineDemo() {
 
   function togglePlay() {
     if (playing) return setPlaying(false);
+    if (reduce) return step === LAST ? show(0) : act();
     if (step === LAST) show(0);
     setPlaying(true);
   }
 
   const atStart = step === 0;
   const atEnd = step === LAST;
-  const playLabel = playing ? 'Pause' : atEnd ? 'Replay' : 'Play';
+  const playLabel = playing ? 'Pause' : atEnd ? 'Replay' : reduce ? 'Step' : 'Play';
   const actLabel = step === 3 && nudged ? 'Update PM tool' : (steps[step].action ?? 'Done');
 
   return (
@@ -619,9 +629,20 @@ export default function PipelineDemo() {
                   {s.title}
                 </strong>
               </p>
-              {typeof s.body === 'function' ? s.body(view) : s.body}
+              {typeof s.body === 'function' ? s.body(i === step ? view : full) : s.body}
             </div>
           ))}
+          {/* The nudge step grows when the reply comes in: its finished state, unseen, holds that
+              height from the start. (The PM tool step is the shortest either way.) */}
+          {step === 3 && (
+            <div className="pl-step" aria-hidden="true" inert>
+              <p className="pl-head">
+                <span className="pl-count">Step</span>
+                <strong className="pl-title">{steps[step].title}</strong>
+              </p>
+              {(steps[step].body as (v: View) => ReactNode)(full)}
+            </div>
+          )}
         </div>
 
         <div className="pl-controls">
