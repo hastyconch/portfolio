@@ -321,8 +321,10 @@ export default function SchedulerDemo() {
         <div className="sch-main">
           {edges && (
             <p className="sch-scrollhint">
+              {/* the arrows point to whichever side has more days (WO-042) */}
+              {edges !== 'end' && <span aria-hidden="true">← </span>}
               The roster scrolls sideways for the whole week
-              <span aria-hidden="true"> →</span>
+              {edges !== 'start' && <span aria-hidden="true"> →</span>}
             </p>
           )}
           <div className="sch-gridwrap" ref={gridWrap} data-more={edges || undefined}>
@@ -487,7 +489,7 @@ export default function SchedulerDemo() {
               <span className="sch-coarse">
                 {taskDone
                   ? 'Tap a cell to cycle Day → Night → Off.'
-                  : 'Fill the open shift first; then a tap on a cell cycles Day → Night → Off.'}
+                  : 'Once the open shift is filled, a tap on a cell cycles Day → Night → Off.'}
               </span>{' '}
               Cover counts the whole unit, including colleagues not shown here.
             </p>

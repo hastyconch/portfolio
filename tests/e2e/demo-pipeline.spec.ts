@@ -144,10 +144,12 @@ test('pipeline play respects reduced motion', async ({ page }) => {
 });
 
 // WO-042: the steps share one cell, so the action row (and the TPM's action in it) keeps its
-// place from step to step: a thumb that stays put keeps hitting it.
+// place from step to step: a thumb that stays put keeps hitting it. Checked on arrival and again
+// once the step has played (the reply arrives, the tickets sync).
 test('pipeline main button stays put', async ({ page }) => {
   for (const [width, height] of [
     [375, 812],
+    [320, 640],
     [1440, 900],
   ]) {
     await page.setViewportSize({ width, height });
@@ -167,10 +169,13 @@ test('pipeline main button stays put', async ({ page }) => {
     for (const label of labels) {
       await expect(act).toHaveText(label);
       await act.click();
-      // let the step settle (the PM tool step syncs its tickets after a beat)
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(50);
       const y = (await act.boundingBox())!.y;
-      expect(Math.abs(y - y0), `after "${label}" at ${width}`).toBeLessThanOrEqual(4);
+      expect(Math.abs(y - y0), `on arrival after "${label}" at ${width}`).toBeLessThanOrEqual(4);
+      // the PM tool step syncs its tickets after a beat
+      await page.waitForTimeout(900);
+      const settled = (await act.boundingBox())!.y;
+      expect(Math.abs(settled - y0), `settled after "${label}" at ${width}`).toBeLessThanOrEqual(4);
     }
     await expect(on(d).getByText('Delivered on time', { exact: true })).toBeVisible();
   }

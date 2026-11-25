@@ -4,7 +4,7 @@
 // the overview, each stage with its output count; the stage is the detail. Rows follow the data's
 // flow (transcript, extracted items, outputs), numbers are tabular, one electric-blue accent, and
 // red, amber and green appear only where a threshold exists (RAG, overdue).
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import '../kit.css';
 import './pipeline.css';
 
@@ -473,7 +473,7 @@ const steps: Step[] = [
             <Icon name="check" />
             <strong>Delivered on time</strong>
             <span className="pl-done-sub">
-              Repeated after every stand-up until Release 3 shipped.
+              Repeated after every stand-up until Release 3 shipped.
             </span>
           </p>
         )}
@@ -521,6 +521,34 @@ export default function PipelineDemo() {
     };
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  // The stage never shrinks at a given width. Every step is laid out from the start, the hidden
+  // ones in their finished state, so its first height is the tallest; holding it means a step
+  // that grows as it plays (the reply, the ticket sync) never moves the controls (WO-042).
+  const stage = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    let width = -1;
+    let tallest = 0;
+    const hold = () => {
+      const w = Math.round(el.getBoundingClientRect().width);
+      if (w !== width) {
+        width = w;
+        tallest = 0;
+        el.style.minHeight = '';
+      }
+      const h = el.getBoundingClientRect().height;
+      if (h > tallest + 0.5) {
+        tallest = h;
+        el.style.minHeight = `${h}px`;
+      }
+    };
+    hold();
+    const ro = new ResizeObserver(hold);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   // Arriving at the PM tool step: tickets start where they were, then sync across.
@@ -612,7 +640,7 @@ export default function PipelineDemo() {
           ))}
         </ol>
 
-        <div className="pl-stage" id={`${base}-stage`} data-moved={moved || undefined}>
+        <div className="pl-stage" id={`${base}-stage`} ref={stage} data-moved={moved || undefined}>
           {steps.map((s, i) => (
             <div
               role="group"
@@ -632,17 +660,6 @@ export default function PipelineDemo() {
               {typeof s.body === 'function' ? s.body(i === step ? view : full) : s.body}
             </div>
           ))}
-          {/* The nudge step grows when the reply comes in: its finished state, unseen, holds that
-              height from the start. (The PM tool step is the shortest either way.) */}
-          {step === 3 && (
-            <div className="pl-step" aria-hidden="true" inert>
-              <p className="pl-head">
-                <span className="pl-count">Step</span>
-                <strong className="pl-title">{steps[step].title}</strong>
-              </p>
-              {(steps[step].body as (v: View) => ReactNode)(full)}
-            </div>
-          )}
         </div>
 
         <div className="pl-controls">

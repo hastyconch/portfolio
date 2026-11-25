@@ -173,9 +173,16 @@
     border-color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
-.sch-btn:is(:hover, :focus-visible) {
+.sch-btn:focus-visible {
   border-color: var(--sch-muted);
   background: var(--sch-sunk);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .sch-btn:hover {
+    border-color: var(--sch-muted);
+    background: var(--sch-sunk);
+  }
 }
 .sch-btn:active {
   scale: var(--dk-press);
@@ -428,13 +435,12 @@
   }
   .sch-gridwrap {
     --sch-namecol: 5.5rem;
-    --sch-fade-start: 0px;
+    --sch-fade-start: 12px;
     --sch-fade-end: 12px;
-    /* the day area: the container less the body's padding, the wrap's border and the names */
+    /* the day area: the container less the body's padding, the wrap's border and the names; whole
+     days fill it but for a 12px sliver of the next (or the last) day under a fade */
     --sch-days: calc(100cqi - 2 * var(--dk-2) - 2px - var(--sch-namecol));
     --sch-col: calc((var(--sch-days) - var(--sch-fade-end)) / 3);
-    /* room after Sunday, so the last snap shows whole days with no sliver beside the names */
-    padding-inline-end: var(--sch-fade-end);
     scroll-snap-type: x mandatory;
   }
   .sch-grid {
@@ -578,8 +584,8 @@
   position: sticky;
   bottom: var(--dk-3);
   z-index: 2;
-  padding: var(--dk-1) var(--dk-3);
-  border-left: 2px solid var(--sch-accent);
+  padding: var(--dk-2) var(--dk-3);
+  border-radius: var(--dk-r2);
   font-size: var(--dk-fs-sm);
   font-weight: 500;
   line-height: var(--dk-lh-snug);
@@ -801,18 +807,33 @@
   border-color: var(--sch-accent);
   color: var(--sch-accent);
 }
-.sch-assign:is(:hover, :focus-visible) {
+.sch-assign:focus-visible {
   border-color: var(--sch-accent);
   background: var(--sch-accent-soft);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .sch-assign:hover {
+    border-color: var(--sch-accent);
+    background: var(--sch-accent-soft);
+  }
 }
 .sch-assign.is-primary {
   color: var(--sch-on-accent);
   background: var(--sch-accent);
 }
-.sch-assign.is-primary:is(:hover, :focus-visible) {
+.sch-assign.is-primary:focus-visible {
   border-color: var(--sch-ink);
   color: var(--sch-surface);
   background: var(--sch-ink);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .sch-assign.is-primary:hover {
+    border-color: var(--sch-ink);
+    color: var(--sch-surface);
+    background: var(--sch-ink);
+  }
 }
 .sch-assign[aria-disabled='true'] {
   border-color: var(--sch-rule);

@@ -556,6 +556,8 @@
 /* 5 · PM tool: three columns of tickets on hairlines */
 .pl-board {
   display: grid;
+  /* the stretched panel's spare room pools under the board, not between its columns */
+  align-content: start;
   gap: 0 var(--dk-4);
   padding-bottom: var(--dk-3);
 }
@@ -648,9 +650,16 @@
     background-color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
-.pl-btn:is(:hover, :focus-visible) {
+.pl-btn:focus-visible {
   border-color: var(--pl-ink-3);
   background: var(--pl-sunk);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .pl-btn:hover {
+    border-color: var(--pl-ink-3);
+    background: var(--pl-sunk);
+  }
 }
 .pl-btn:active {
   scale: var(--dk-press);
@@ -668,13 +677,21 @@
   white-space: normal;
   line-height: var(--dk-lh-snug);
   text-align: center;
+  text-wrap: balance;
   border-color: var(--pl-ink);
   color: var(--pl-surface);
   background: var(--pl-ink);
 }
-.pl-next:is(:hover, :focus-visible) {
+.pl-next:focus-visible {
   border-color: var(--pl-ink-2);
   background: var(--pl-ink-2);
+}
+/* hover only where there is a real hover, so a tapped button doesn't stay shaded */
+@media (hover: hover) {
+  .pl-next:hover {
+    border-color: var(--pl-ink-2);
+    background: var(--pl-ink-2);
+  }
 }
 .pl-btn[aria-disabled='true'] {
   border-color: var(--pl-rule);
