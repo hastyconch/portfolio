@@ -278,3 +278,102 @@ test('résumé columns balance', async ({ page, isMobile }) => {
     `experience ends at ${main.end}, the side column at ${side.end}`,
   ).toBeLessThanOrEqual(240);
 });
+
+// WO-043: the résumé on phones. A third shorter: each role shows its first three bullets and
+// the rest sit behind "Show N more"; the bullets get the width; print shows every bullet.
+
+/** Each bullet's text width (its box less its padding) and whether it shows. */
+const bullets = (page: Page) =>
+  page.locator('#resume .cv-bullets li').evaluateAll((els) =>
+    els.map((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        shown: el.checkVisibility(),
+        width: el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+      };
+    }),
+  );
+
+test('résumé is short on phones', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phones only');
+  await page.goto('/');
+  const height = await page
+    .locator('#resume')
+    .evaluate((el) => Math.round(el.getBoundingClientRect().height));
+  expect(height, `résumé height at 375 × 812`).toBeLessThanOrEqual(2100);
+  // Collapsed, every role shows at most its first three bullets.
+  const shown = await page
+    .locator('#resume .cv-item')
+    .evaluateAll((items) =>
+      items.map(
+        (it) =>
+          [...it.querySelectorAll('.cv-bullets li')].filter((li) => li.checkVisibility()).length,
+      ),
+    );
+  for (const n of shown) expect(n).toBeLessThanOrEqual(3);
+});
+
+test('résumé bullets are readable on phones', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phones only');
+  for (const [width, min] of [
+    [375, 260],
+    [320, 220],
+  ] as const) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.goto('/');
+    // Open every fold, so every bullet is measured.
+    for (const more of await page.locator('#resume .cv-more > summary').all()) await more.click();
+    const all = await bullets(page);
+    expect(all.length).toBeGreaterThan(3);
+    for (const [i, b] of all.entries()) {
+      expect(b.shown, `${width}: bullet ${i} shows once opened`).toBe(true);
+      expect(b.width, `${width}: bullet ${i} is ${b.width}px wide`).toBeGreaterThanOrEqual(min);
+    }
+  }
+});
+
+test('résumé more bullets', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const total = (await bullets(page)).length;
+  const fold = page.locator('#resume .cv-more').first();
+  const hidden = await fold.locator('li').count();
+  expect(hidden, 'a role with more than three bullets').toBeGreaterThan(0);
+  if (isMobile) {
+    // A native disclosure (<details>): what the browser announces for the toggle, read from
+    // Chromium's accessibility tree (Playwright's role engine does not map <summary>).
+    const cdp = await page.context().newCDPSession(page);
+    const announced = async () => {
+      const { root } = await cdp.send('DOM.getDocument', { depth: -1 });
+      const { nodeId } = await cdp.send('DOM.querySelector', {
+        nodeId: root.nodeId,
+        selector: '#resume .cv-more > summary',
+      });
+      const { nodes } = await cdp.send('Accessibility.getPartialAXTree', {
+        nodeId,
+        fetchRelatives: false,
+      });
+      const [n] = nodes;
+      const expanded = n.properties?.find((p) => p.name === 'expanded')?.value.value;
+      return { name: n.name?.value, expanded };
+    };
+    const toggle = fold.locator('summary');
+    await expect(toggle).toBeVisible();
+    expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(fold.locator('li').first()).toBeHidden();
+    expect(await announced()).toEqual({ name: `Show ${hidden} more`, expanded: false });
+    await toggle.click();
+    for (const li of await fold.locator('li').all()) await expect(li).toBeVisible();
+    expect(await announced()).toEqual({ name: 'Show fewer', expanded: true });
+    await toggle.press('Enter');
+    await expect(fold.locator('li').first()).toBeHidden();
+    expect(await announced()).toEqual({ name: `Show ${hidden} more`, expanded: false });
+  } else {
+    // Wider screens show every bullet, with no toggle.
+    await expect(fold.locator('summary')).toBeHidden();
+    expect((await bullets(page)).filter((b) => b.shown).length).toBe(total);
+  }
+  // Print (and the PDF) shows every bullet, with no toggle, even with the fold closed.
+  await page.emulateMedia({ media: 'print' });
+  await expect(fold.locator('summary')).toBeHidden();
+  expect((await bullets(page)).filter((b) => b.shown).length).toBe(total);
+});
