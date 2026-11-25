@@ -485,6 +485,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 3px;
   margin-top: var(--dk-3);
+  container-type: inline-size;
 }
 .sky-seg {
   display: grid;
@@ -504,6 +505,13 @@
 .sky-seg-at {
   font-weight: 400;
   color: var(--sky-ink-2);
+}
+/* A narrow track (a 320 phone): every label puts its threshold under its name, so the three
+   read alike instead of one of them wrapping on its own. */
+@container (max-width: 280px) {
+  .sky-seg-at {
+    display: block;
+  }
 }
 .sky-app .sky-readout {
   margin-top: var(--dk-3);
