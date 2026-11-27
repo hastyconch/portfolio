@@ -264,8 +264,13 @@
 .sky-acts li:last-child .sky-act {
   border-radius: 0 calc(var(--dk-r2) - 1px) calc(var(--dk-r2) - 1px) 0;
 }
-.sky-act:is(:hover, :focus-visible) {
+.sky-act:is(:focus-visible) {
   background: var(--sky-tint);
+}
+@media (hover: hover) {
+  .sky-act:is(:hover, :focus-visible) {
+    background: var(--sky-tint);
+  }
 }
 .sky-act:active {
   scale: var(--dk-press);
@@ -691,16 +696,27 @@
   color: var(--sky-plum);
   background: var(--sky-card);
 }
-.sky-ghost:is(:hover, :focus-visible) {
+.sky-ghost:is(:focus-visible) {
   background: var(--sky-tint);
+}
+@media (hover: hover) {
+  .sky-ghost:is(:hover, :focus-visible) {
+    background: var(--sky-tint);
+  }
 }
 .sky-cta {
   color: #fff;
   background: var(--sky-plum);
 }
-.sky-cta:is(:hover, :focus-visible) {
+.sky-cta:is(:focus-visible) {
   border-color: var(--sky-plum-2);
   background: var(--sky-plum-2);
+}
+@media (hover: hover) {
+  .sky-cta:is(:hover, :focus-visible) {
+    border-color: var(--sky-plum-2);
+    background: var(--sky-plum-2);
+  }
 }
 .sky-cta:active,
 .sky-ghost:active {
@@ -727,8 +743,13 @@
     background-color var(--dk-quick) var(--dk-ease),
     scale var(--dk-quick) var(--dk-ease);
 }
-.sky-book:is(:hover, :focus-visible) {
+.sky-book:is(:focus-visible) {
   background: var(--sky-tint);
+}
+@media (hover: hover) {
+  .sky-book:is(:hover, :focus-visible) {
+    background: var(--sky-tint);
+  }
 }
 .sky-book:active {
   scale: var(--dk-press);
@@ -850,8 +871,13 @@
   scale: 0 1;
   transition: scale var(--dk-base) var(--dk-ease);
 }
-.sky-tabs button:is(:hover, :focus-visible) {
+.sky-tabs button:is(:focus-visible) {
   color: var(--sky-plum);
+}
+@media (hover: hover) {
+  .sky-tabs button:is(:hover, :focus-visible) {
+    color: var(--sky-plum);
+  }
 }
 .sky-tabs button:active {
   color: var(--sky-plum-2);

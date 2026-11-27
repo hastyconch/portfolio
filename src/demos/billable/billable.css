@@ -112,8 +112,10 @@
   background: var(--bm-green);
   cursor: pointer;
 }
-.bm-btn:hover {
-  background: #a3d65f;
+@media (hover: hover) {
+  .bm-btn:hover {
+    background: #a3d65f;
+  }
 }
 /* Pressed: the button sinks (the Play button drops onto its shadow). */
 .bm-btn:active {

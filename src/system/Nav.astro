@@ -590,9 +590,13 @@ const thumbs = cur
   /* The disc turns once when the name is hovered or focused (a full turn, so there is no
      visible return on leave). */
   @media (prefers-reduced-motion: no-preference) {
-    .np-brand:hover .np-disc,
     .np-brand:focus-visible .np-disc {
       animation: np-turn var(--dur-reveal) var(--ease-out);
+    }
+    @media (hover: hover) {
+      .np-brand:hover .np-disc {
+        animation: np-turn var(--dur-reveal) var(--ease-out);
+      }
     }
   }
   @keyframes np-turn {
@@ -663,10 +667,15 @@ const thumbs = cur
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .np-sec:hover,
   .np-sec:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .np-sec:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .np-sec:active {
     color: var(--ln-ink-3);
@@ -702,10 +711,14 @@ const thumbs = cur
     cursor: pointer;
     transition: background-color var(--dur-quick) var(--ease-out);
   }
-  .np-trigger:hover,
   .np-trigger:focus-visible,
   .np:has(.np-jump:popover-open) .np-trigger {
     background: var(--ln-hl);
+  }
+  @media (hover: hover) {
+    .np-trigger:hover {
+      background: var(--ln-hl);
+    }
   }
   .np-trigger:active {
     background: var(--ln-hl-hover);
@@ -782,10 +795,15 @@ const thumbs = cur
     rotate: -135deg;
     translate: -0.1em 0;
   }
-  .np-arrow:is(a, button:not([aria-disabled='true'])):hover,
   .np-arrow:is(a, button:not([aria-disabled='true'])):focus-visible {
     background: var(--ln-hl);
     color: var(--ln-ink);
+  }
+  @media (hover: hover) {
+    .np-arrow:is(a, button:not([aria-disabled='true'])):hover {
+      background: var(--ln-hl);
+      color: var(--ln-ink);
+    }
   }
   .np-arrow:is(a, button:not([aria-disabled='true'])):active {
     scale: var(--press-scale);
@@ -863,10 +881,15 @@ const thumbs = cur
       background-color var(--dur-quick) var(--ease-out),
       color var(--dur-quick) var(--ease-out);
   }
-  .np-jump a:hover,
   .np-jump a:focus-visible {
     background: var(--ln-hl);
     color: var(--ln-ink);
+  }
+  @media (hover: hover) {
+    .np-jump a:hover {
+      background: var(--ln-hl);
+      color: var(--ln-ink);
+    }
   }
   .np-jump a:active {
     background: var(--ln-hl-hover);
@@ -935,9 +958,13 @@ const thumbs = cur
   .np-menu summary::-webkit-details-marker {
     display: none;
   }
-  .np-menu summary:hover,
   .np-menu summary:focus-visible {
     background: var(--ln-hl);
+  }
+  @media (hover: hover) {
+    .np-menu summary:hover {
+      background: var(--ln-hl);
+    }
   }
   .np-menu summary:active {
     scale: var(--press-scale);
@@ -984,9 +1011,13 @@ const thumbs = cur
   .np-menu-list li:last-child a {
     border-bottom: 0;
   }
-  .np-menu-list a:hover,
   .np-menu-list a:focus-visible {
     color: var(--ln-accent);
+  }
+  @media (hover: hover) {
+    .np-menu-list a:hover {
+      color: var(--ln-accent);
+    }
   }
   .np-menu-list a:active {
     background: var(--ln-hl);
@@ -1121,10 +1152,15 @@ const thumbs = cur
         color var(--dur-quick) var(--ease-out),
         text-decoration-color var(--dur-quick) var(--ease-out);
     }
-    .np-links a:hover,
     .np-links a:focus-visible {
       color: var(--ln-ink);
       text-decoration-color: currentColor;
+    }
+    @media (hover: hover) {
+      .np-links a:hover {
+        color: var(--ln-ink);
+        text-decoration-color: currentColor;
+      }
     }
     .np-links a:active {
       background: var(--ln-hl);

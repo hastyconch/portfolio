@@ -143,10 +143,15 @@ const allSongs = `/#song-${song.id}`;
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .sg-back a:hover,
   .sg-back a:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .sg-back a:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .sg-back a:active {
     color: var(--ln-ink-3);
@@ -211,9 +216,13 @@ const allSongs = `/#song-${song.id}`;
     text-underline-offset: 0.2em;
     transition: text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .sg-pg:hover .sg-pg-t,
   .sg-pg:focus-visible .sg-pg-t {
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .sg-pg:hover .sg-pg-t {
+      text-decoration-color: currentColor;
+    }
   }
   /* As in the footer: shadows bleed the tint past the flush text, so the rule keeps its length. */
   .sg-pg:active {

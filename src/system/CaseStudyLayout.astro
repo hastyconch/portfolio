@@ -478,10 +478,15 @@ const contents = [
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .cs-back a:hover,
   .cs-back a:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .cs-back a:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .cs-back a:active {
     color: var(--ln-ink-3);
@@ -546,10 +551,15 @@ const contents = [
       background-color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .cs-playit a:hover,
   .cs-playit a:focus-visible {
     background: var(--ln-ink);
     color: var(--ln-bg);
+  }
+  @media (hover: hover) {
+    .cs-playit a:hover {
+      background: var(--ln-ink);
+      color: var(--ln-bg);
+    }
   }
   .cs-playit a:active {
     scale: var(--press-scale);
@@ -583,10 +593,15 @@ const contents = [
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .cs-toc a:hover,
   .cs-toc a:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .cs-toc a:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .cs-toc a:active {
     color: var(--ln-ink-3);
@@ -741,9 +756,13 @@ const contents = [
     text-underline-offset: 0.2em;
     transition: text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .cs-pg:hover .cs-pg-t,
   .cs-pg:focus-visible .cs-pg-t {
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .cs-pg:hover .cs-pg-t {
+      text-decoration-color: currentColor;
+    }
   }
   .cs-pg:active {
     background: var(--ln-hl);

@@ -61,10 +61,15 @@ import Shell from '../system/Shell.astro';
       color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .nf-btn:hover,
   .nf-btn:focus-visible {
     background: var(--ln-ink);
     color: var(--ln-bg);
+  }
+  @media (hover: hover) {
+    .nf-btn:hover {
+      background: var(--ln-ink);
+      color: var(--ln-bg);
+    }
   }
   .nf-btn:active {
     scale: var(--press-scale);
@@ -74,10 +79,16 @@ import Shell from '../system/Shell.astro';
     background: var(--ln-ink);
     color: var(--ln-bg);
   }
-  .nf-home:hover,
   .nf-home:focus-visible {
     border-color: var(--ln-accent);
     background: var(--ln-accent);
     color: var(--ln-accent-ink);
+  }
+  @media (hover: hover) {
+    .nf-home:hover {
+      border-color: var(--ln-accent);
+      background: var(--ln-accent);
+      color: var(--ln-accent-ink);
+    }
   }
 </style>

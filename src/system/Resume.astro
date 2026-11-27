@@ -233,11 +233,17 @@ const FIRST = 3;
       color var(--dur-quick) var(--ease-out),
       scale var(--dur-quick) var(--ease-out);
   }
-  .cv-btn:hover,
   .cv-btn:focus-visible {
     border-color: var(--ln-accent);
     background: var(--ln-accent);
     color: var(--ln-accent-ink);
+  }
+  @media (hover: hover) {
+    .cv-btn:hover {
+      border-color: var(--ln-accent);
+      background: var(--ln-accent);
+      color: var(--ln-accent-ink);
+    }
   }
   .cv-btn:active {
     scale: var(--press-scale);
@@ -262,10 +268,15 @@ const FIRST = 3;
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .cv-text-btn:hover,
   .cv-text-btn:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .cv-text-btn:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .cv-text-btn:active {
     color: var(--ln-ink-3);
@@ -293,10 +304,15 @@ const FIRST = 3;
       color var(--dur-quick) var(--ease-out),
       text-decoration-color var(--dur-quick) var(--ease-out);
   }
-  .cv-link:hover,
   .cv-link:focus-visible {
     color: var(--ln-accent);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .cv-link:hover {
+      color: var(--ln-accent);
+      text-decoration-color: currentColor;
+    }
   }
   .cv-link:active {
     color: var(--ln-ink-2);
@@ -438,10 +454,15 @@ const FIRST = 3;
   .cv-more > summary::-webkit-details-marker {
     display: none;
   }
-  .cv-more > summary:hover,
   .cv-more > summary:focus-visible {
     color: var(--ln-ink);
     text-decoration-color: currentColor;
+  }
+  @media (hover: hover) {
+    .cv-more > summary:hover {
+      color: var(--ln-ink);
+      text-decoration-color: currentColor;
+    }
   }
   .cv-more > summary:active {
     color: var(--ln-ink-3);
